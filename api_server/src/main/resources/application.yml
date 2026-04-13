@@ -1,0 +1,12 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: concierge-api
+
+logging:
+  level:
+    com.daol.concierge: DEBUG

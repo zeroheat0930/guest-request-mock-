@@ -1,0 +1,14 @@
+# Node / Vue
+vue_client/node_modules/
+vue_client/dist/
+vue_client/.vite/
+
+# Java / Maven
+api_server/target/
+api_server/.mvn/
+api_server/.idea/
+api_server/*.iml
+
+# OS
+.DS_Store
+Thumbs.db
