@@ -7,13 +7,19 @@
 				<router-link to="/amenity">어메니티</router-link>
 				<router-link to="/housekeeping">객실정비</router-link>
 				<router-link to="/late-checkout">레이트체크아웃</router-link>
+				<router-link to="/dashboard">대시보드</router-link>
 			</nav>
 		</header>
 		<main class="app-body">
 			<router-view />
 		</main>
+		<ChatFab />
 	</div>
 </template>
+
+<script setup>
+import ChatFab from './components/ChatFab.vue';
+</script>
 
 <style scoped>
 .app-shell { display: flex; flex-direction: column; height: 100%; }

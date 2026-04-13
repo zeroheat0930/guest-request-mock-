@@ -51,6 +51,8 @@ Base: `http://localhost:8080/api/gr`
 
 | Method | Path | 설명 |
 |---|---|---|
+| GET  | `/reservation?rsvNo=`  | 예약 단건 조회 (perUseLang 포함) |
+| GET  | `/reservation/list`    | 예약 목록 조회 |
 | GET  | `/amenity/items`       | 어메니티 품목 마스터 조회 |
 | GET  | `/amenity/list?rsvNo=` | 어메니티 요청 목록 |
 | POST | `/amenity`             | 어메니티 요청 등록 |
@@ -100,6 +102,46 @@ npx cap add android
 npx cap add ios
 npm run build && npx cap sync
 ```
+
+---
+
+## 🤖 AI 다국어 채팅 컨시어지 (구현 완료)
+
+`feat/ai-chat-concierge` 브랜치에서 다음이 구현됨:
+
+- **플로팅 챗봇 (`ChatFab.vue`)** — 우측 하단 떠 있는 버튼 → 360px 채팅창
+- **자연어 → 의도 파싱 (`src/chat/intent.js`)**
+  - 기본: **룰 기반** (한/영/일/중 키워드 사전, API 키 불필요, 오프라인 동작)
+  - LLM 모드: `.env.local`에 `VITE_ANTHROPIC_API_KEY` 넣으면 Claude API 호출, 실패 시 룰로 자동 폴백
+- **다국어 메시지 사전 (`src/i18n/messages.js`)** — ko_KR/en_US/ja_JP/zh_CN, 예약의 `perUseLang`에 자동 매칭
+- **예약 메타 API** — `GET /api/gr/reservation`, `GET /api/gr/reservation/list` (백엔드 신규)
+- **레이트 체크아웃 2단계 확인 플로우** — 챗봇이 요금 보여주고 "네/yes/はい/是" 받으면 실제 신청
+
+### LLM 모드 활성화
+
+```bash
+cp vue_client/.env.local.example vue_client/.env.local
+# .env.local에 키 입력
+```
+
+### 룰 기반 동작 예시 (13/13 단위테스트 통과)
+
+| 입력 | 호출되는 API | payload |
+|---|---|---|
+| `수건 2개 가져다 주세요` | `POST /amenity` | `{itemList:[{itemCd:"AM001",qty:2}]}` |
+| `タオルを2枚ください` | `POST /amenity` | `{itemList:[{itemCd:"AM001",qty:2}]}` |
+| `请给我两瓶水` | `POST /amenity` | `{itemList:[{itemCd:"AM002",qty:2}]}` |
+| `please bring three towels` | `POST /amenity` | `{itemList:[{itemCd:"AM001",qty:3}]}` |
+| `방해금지 부탁` / `do not disturb` | `POST /housekeeping` | `{hkStatCd:"DND"}` |
+| `방 청소 해주세요` | `POST /housekeeping` | `{hkStatCd:"MU"}` |
+| `2시간 늦게 나갈 수 있나요?` | `GET /late-checkout` | `{reqOutTm:"1300"}` |
+| `extend checkout to 2pm` | `GET /late-checkout` | `{reqOutTm:"1400"}` |
+
+## 📊 대시보드 + PWA (구현 완료)
+
+- **`/dashboard` 라우트** — 어메니티 요청 폴링(3/5/10초 선택), 신규 요청 노란색 플래시
+- **PWA manifest** — `public/manifest.json` + `icon.svg` 추가, `npm run build` 후 `dist/` 정적 서빙하면 태블릿 "홈 화면에 추가" 가능
+- Apple `apple-mobile-web-app-*` 메타태그 + `theme-color` 지정
 
 ---
 

@@ -11,6 +11,10 @@ client.interceptors.response.use(
 	e => Promise.reject(e.response?.data || { resCd: '9999', resMsg: e.message, map: {} })
 );
 
+// 예약
+export const fetchReservation     = (rsvNo) => client.get('/reservation', { params: { rsvNo } });
+export const fetchReservationList = ()      => client.get('/reservation/list');
+
 // 어메니티
 export const fetchAmenityItems = ()       => client.get('/amenity/items');
 export const fetchAmenityList  = (rsvNo)  => client.get('/amenity/list', { params: { rsvNo } });

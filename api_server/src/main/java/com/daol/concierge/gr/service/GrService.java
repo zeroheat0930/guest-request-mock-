@@ -68,6 +68,26 @@ public class GrService {
 		}
 	}
 
+	// ==================== 예약 ====================
+
+	/**
+	 * 예약 정보 조회 (챗봇 다국어 처리에 perUseLang 필요)
+	 */
+	public Map<String, Object> getReservation(String rsvNo) {
+		if (rsvNo == null || rsvNo.isEmpty()) {
+			throw new BizException("9001", "필수값 누락");
+		}
+		Map<String, Object> rsv = reservations.get(rsvNo);
+		if (rsv == null) {
+			throw new BizException("9404", "예약 없음");
+		}
+		return new LinkedHashMap<>(rsv);
+	}
+
+	public List<Map<String, Object>> getReservationList() {
+		return new ArrayList<>(reservations.values());
+	}
+
 	// ==================== 어메니티 ====================
 
 	public List<Map<String, Object>> getAmenityItemList() {
