@@ -27,6 +27,22 @@ public class GrController {
 	private GrService grService;
 
 	/**
+	 * 예약 단건 조회 (챗봇이 perUseLang/roomNo 가져가는 용도)
+	 */
+	@RequestMapping(value = "/reservation", method = RequestMethod.GET, produces = APPLICATION_JSON)
+	public ApiResponse getReservation(@RequestParam String rsvNo) {
+		return Responses.MapResponse.of(grService.getReservation(rsvNo));
+	}
+
+	/**
+	 * 예약 목록 조회 (대시보드 / 챗봇 예약 선택 드롭다운)
+	 */
+	@RequestMapping(value = "/reservation/list", method = RequestMethod.GET, produces = APPLICATION_JSON)
+	public Responses.ListResponse getReservationList() {
+		return Responses.ListResponse.of(grService.getReservationList());
+	}
+
+	/**
 	 * 어메니티 품목 마스터 조회
 	 */
 	@RequestMapping(value = "/amenity/items", method = RequestMethod.GET, produces = APPLICATION_JSON)

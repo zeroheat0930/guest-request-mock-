@@ -12,3 +12,9 @@ api_server/*.iml
 # OS
 .DS_Store
 Thumbs.db
+
+# Local env
+vue_client/.env.local
+
+# OMC tooling state
+.omc/
