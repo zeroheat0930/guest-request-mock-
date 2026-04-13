@@ -280,7 +280,21 @@ cp vue_client/.env.local.example vue_client/.env.local
 
 ---
 
+## 🗓️ 진행 로그
+
+### 2026-04-13 (맥북 세션)
+- ✅ `feat/ai-chat-concierge` 브랜치에 AI 챗봇 + 대시보드 + PWA 풀구현 커밋
+- ✅ Vue 클라이언트: `npm install` + `vite build` 통과, dev 서버 정상 구동 확인
+- ✅ 룰 기반 의도 파서 13/13 단위테스트 통과 (한/영/일/중)
+- ⚠️ Spring 백엔드 라이브 검증 보류 — 맥북에 **JDK/Maven 미설치** 상태
+- 📌 다음 세션: `brew install maven` → `mvn spring-boot:run`으로 백엔드 띄우고
+  http://localhost:5173 에서 우측 하단 💬 챗봇 실제 호출 흐름 확인
+
+---
+
 ## 📝 커밋 히스토리 메모
 - `92899e7` Init: Node(Express) + Flutter 초기 구성
 - `bbc1dae` refactor: Flutter/Node 제거, Vue3 + Spring Boot(PMS 스타일)로 재구성
 - `8a4a65f` docs: README 추가 (구조/실행/맥북 이어서 할 작업 Todo)
+- `df77b9e` docs: README에 프로젝트 배경/결정사항/대화 히스토리 추가
+- `61d8389` feat: AI 다국어 채팅 컨시어지 + 대시보드 + PWA
