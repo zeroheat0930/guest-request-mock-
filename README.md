@@ -162,6 +162,83 @@ npm run build && npx cap sync
 
 ---
 
+## 💡 프로젝트 배경 & 결정사항 (대화 히스토리)
+
+맥북/집에서 이어갈 때 컨텍스트 안 잃어버리려고 그동안의 논의 정리.
+
+### 🎯 이 프로젝트의 정체성
+**"버튼 탭 기반 컨시어지 태블릿 → 자연어 대화형으로 바꾼 버전"**
+
+기존 호텔 객실 태블릿은 이런 식:
+> 메뉴 → 어메니티 → 수건 → +/- 2개 → 확인 버튼
+
+이 프로젝트가 만드는 건:
+> 챗봇에 *"수건 2개랑 생수 좀 주세요"* 라고 말하면 → AI가 의도 파악 → 적절한 API 자동 호출 → 프론트 데스크에 전달
+
+**홈화면의 3개 카드(어메니티/정비/레이트체크아웃)는 사실 Fallback UI**고,
+진짜 주인공은 **우측 하단 플로팅 챗봇**. 심사 시연도 챗봇으로 하는 게 임팩트 최대.
+
+### 🏆 차별화 포인트 (임원/심사위원 어필용)
+1. **언어 장벽 제거** — 중국/일본/동남아 관광객 급증 대응, 메뉴 번역 유지보수 불필요
+2. **메뉴에 없는 롱테일 요청 커버** — *"베개 하나 더"*, *"방이 너무 추워요"* 도 AI가 하우스키핑 티켓으로 라우팅
+3. **압도적 UX** — 노인/비IT층도 말만 하면 됨. 레이트 체크아웃(매출 직결) 전환율 상승 기대
+4. **대화 로그 데이터** — FAQ/서비스 개선 인사이트 자산화
+
+### ⚙️ 기술 스택 결정 과정
+- **초기**: Node(Express) + Flutter Web → 버림
+- **이유**: 회사 신규 프로젝트가 Vue3 + Java(Spring Boot)라 "수상 후 사내 이식" 고려 시 스택 일치가 유리
+- **최종**: Vue3(Vite) + Spring Boot 3.2 / Java 17 + 인메모리 Mock
+- **앱 배포**: 네이티브 아님. **PWA로 태블릿/폰 "홈화면에 추가"** 가 가장 빠름. 필요 시 Capacitor로 랩핑해서 APK/IPA 뽑기 가능
+
+### 🤔 실제 PMS 이식 관련 판단
+대표님이 **개발 IT팀 본인**이라 기술적으로는 전혀 빡세지 않음:
+- 하우스키핑 상태: `RoomStatusChangeController` 계열 재사용
+- 레이트 체크아웃: `ChkOutDelayMgmtController` 거의 그대로
+- 어메니티: 신규 테이블 1~2개만 추가
+- 모듈당 2~3일, MVP 2~3주 스프린트 가능
+
+**그러나 프로토타입 단계에선 이식 불필요** — 확정:
+- 시연할 때 심사위원은 뒷단이 PMS든 Mock이든 모름
+- Mock 장점: 네트워크 끊겨도 동작 / 보안 리스크 0 / 실데이터 오염 0 / 맥북 단독 완결
+- **실제 이식은 수상 → 사내 파일럿 승인 후** 로드맵
+
+### 🚧 실제 이식 시 걸림돌 (미래 참고)
+*코드가 아니라 주변 인프라가 본체*
+1. **게스트 인증** — 직원 세션(`SessionUser.propCd/cmpxCd`) 전제인 PMS에 예약번호 기반 단기 토큰 레이어 필요 (`sy` 모듈에 `GuestTokenController` 신규, 예약번호+체크인일자+생년월일 → JWT, 체크아웃까지 만료)
+2. **네트워크** — 객실 태블릿/게스트 폰에서 사내 PMS 접근 → API Gateway 또는 DMZ 프록시
+3. **프론트 데스크 알림** — `CustMessageMgmtController` 또는 기존 알림 큐 연동
+4. **멀티 프로퍼티** — `propCd`/`cmpxCd` 필터링 누락 시 체인 단위 오작동
+5. **보안팀 리뷰** — 외부망 → 내부 PMS 직접 호출 구조라 필수
+6. **파일럿 호텔 섭외** — 태블릿 실제로 깔 곳
+7. **게스트 대면 UX/디자인** — 대충 만들면 컴플레인 직격
+
+### 🎨 PMS 스타일 모방 근거
+`src/main/java/com/daol/pms/ht/rs/RegCardMgmtController.java` 를 레퍼런스로 잡음:
+- `@Controller + @ResponseBody + @RequestMapping("/api/ht/rs/...")`
+- `extends BaseController`, `Responses.ListResponse.of()` / `MapResponse.of()`
+- `RequestParams requestParams` + `getParams()` 패턴
+- 한국어 javadoc, 탭 들여쓰기
+
+이 프로젝트는 infra(`BaseController`, `CommonDAO`, `SessionUser`)까지 복제하면 과해서 **경량 미니 버전**만 구현. 수상 후 실제 이식할 땐 회사 infra에 얹으면 됨.
+
+### 📱 앱 배포 3가지 옵션 (논의 결과)
+| 옵션 | 난이도 | 추천 상황 |
+|---|---|---|
+| **PWA** | 최저 (10분) | 대회/데모/사내 파일럿 — 이걸로 충분 |
+| **Capacitor** | 중 (반나절) | 카메라/푸시 등 네이티브 기능 필요 시 |
+| **Tauri/Electron** | 중상 | 데스크탑 앱까지 필요 시 |
+
+### 🙅 지켜야 할 코딩 규칙 (사내 관례)
+- 서비스 레이어에 한국어 변수/메서드명 금지 (주석만 OK)
+- 컨트롤러는 얇게 (로직은 서비스로)
+- 헬퍼/유틸 private 메서드 만들지 말고 인라인 처리
+- DDL 파일(`schema.sql`, `create_table.sql` 등) 프로젝트에 포함 금지
+- properties 파일 수정 시 반드시 `mode: append`, overwrite 금지
+- CRLF 줄바꿈 유지 (SVN 프로젝트 기준, 이 레포는 Git이라 경고만 뜸)
+
+---
+
 ## 📝 커밋 히스토리 메모
 - `92899e7` Init: Node(Express) + Flutter 초기 구성
 - `bbc1dae` refactor: Flutter/Node 제거, Vue3 + Spring Boot(PMS 스타일)로 재구성
+- `8a4a65f` docs: README 추가 (구조/실행/맥북 이어서 할 작업 Todo)
