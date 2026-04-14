@@ -309,21 +309,22 @@ cp vue_client/.env.local.example vue_client/.env.local
   - 이유 4: iOS 16.4+에서 PWA 푸시 지원 완료. 홈화면 설치 UX도 네이티브와 동등 수준.
   - 이전에 Flutter/Node로 갔다가 돌아온 전례(`bbc1dae`) 재확인 — 같은 실수 반복 금지.
 
-- **LLM 호출 구조**: 현재는 프론트에서 Anthropic API 직접 호출(`VITE_ANTHROPIC_API_KEY`).
-  **이건 개발/데모 전용 임시 구조**. 상용화 전 반드시 Spring Boot 프록시로 전환 필요 (1번 작업).
-  이유: 브라우저 번들에 박힌 API 키는 누구나 추출 가능 → 크레딧 탈취 위험.
+- **LLM 호출 구조**: ✅ `POST /api/ai/chat` 서버 프록시 경유 (US-001). 키는 `ANTHROPIC_API_KEY`
+  환경변수로만 로드되고 프론트 번들에는 없음.
 
-- **데이터 영속성**: 현재 인메모리 `Map/List`. 상용화 = 실제 DB 필수 (3번 작업).
+- **데이터 영속성**: ✅ Spring Data JPA (US-003). dev 는 H2 파일 모드(MySQL/MariaDB 호환),
+  prod 는 **MariaDB** — 회사 PMS 가 MariaDB 를 쓰므로 스택 일치.
 
-- **멀티 테넌시**: 호텔 체인 타겟이므로 `propCd/cmpxCd` 필터링이 모든 쿼리에 들어가야 함.
-  나중에 추가하면 전 API 수정이라 비용 폭증 → 처음부터 넣기 (5번 작업).
+- **멀티 테넌시**: ✅ 모든 엔티티에 `propCd` 컬럼, 모든 쿼리가 JWT principal 의 `propCd` 로 격리
+  (US-005). 향후 PMS 이식 시 `cmpxCd` 만 추가하면 됨 — 실제 `PMS_RESERVATION` 는 `(PROP_CD, CMPX_CD)` 2-레벨.
 
 ### 상용화 전 미결 이슈
 
-- LLM 시스템 프롬프트 튜닝: 현재 *"방이 너무 추워요"* 가 `chat`으로 떨어짐 → `housekeeping` + `reqMemo` 로 라우팅되도록 프롬프트 보강 필요
-- 대회 시연 환경(ngrok or Vercel) vs 실제 운영 환경(사내 인프라) 배포 분리
-- 프론트 데스크 알림 채널 (현재는 등록만 되고 알림 없음)
-- i18n 메시지 사전 DB화 (현재 하드코딩)
+- ✅ ~~LLM 시스템 프롬프트 튜닝~~ — US-001 에서 "방이 너무 추운데요" → `housekeeping` 라우팅 확인됨
+- ⏳ 대회 시연 환경(ngrok or Vercel) vs 실제 운영 환경(사내 인프라) 배포 분리
+- ⏳ 프론트 데스크 알림 채널 (현재는 등록만 되고 알림 없음)
+- ⏳ i18n 메시지 사전 DB화 (현재 하드코딩)
+- ⏳ **PMS dev 서버 Level 1 미러링** — 다음 세션에서 이어서 (아래 "2026-04-14 진행 로그" 참고)
 
 ---
 
@@ -346,6 +347,63 @@ cp vue_client/.env.local.example vue_client/.env.local
     6. 멀티스테이지 Dockerfile(api/web) + `docker-compose.yml` + GitHub Actions CI (api build → vue build → 이미지 빌드 캐시)
     7. Capacitor 8 설치, `android/` 플랫폼 scaffold, `npm run cap:android` 원샷 스크립트
 - ✅ `smoke-test.sh` 27개 체크 통과 (비인증 401 가드 + 멀티 프로퍼티 격리 포함)
+- ✅ **Architect 리뷰 → 하드닝** (`9b63e7e`): prod 기동 시 JWT_SECRET 미설정이면 fail-fast
+  (`JwtSecretGuard`), `/h2-console` 은 dev 프로파일 한정, `/api/auth/**` → `/api/auth/guest-token` 만 공개,
+  `anyRequest().denyAll()` 안전 디폴트, `AiChatService` 방어적 auth 재확인, postgres 5432 포트 노출 제거
+- ✅ **PostgreSQL → MariaDB 교체** (`f85e25d`): 회사 PMS 스택 일치
+  - pom.xml 드라이버 교체, H2 호환 모드 MYSQL 로 전환, `docker-compose.yml` 을 `mariadb:11` 로
+  - dev 로컬은 여전히 Docker 불필요 (H2 파일 모드)
+
+---
+
+### 📋 다음 세션 이어받기: **PMS dev 서버 Level 1 미러링**
+
+오늘 세션 말미에 PMS 레포(`C:\DAOL\PMS`)를 read-only 로 탐색해서 실제 dev 서버 접속 정보와
+`PMS_RESERVATION` 스키마를 확인함. 아래는 다음 세션에서 바로 이어받기 위한 요약.
+
+**Level 1 정의**: 기동 시 PMS dev MariaDB 에 read-only 로 붙어 실제 예약 2~3건을 우리 mock 의
+`gr_reservation` 로 미러링 → 데모에서 *"이 예약은 PMS dev 에 실제로 존재합니다"* 라고 보여주는 단계.
+쓰기는 여전히 mock H2 / MariaDB 로만. 리스크 최소.
+
+**PMS dev 서버 접속 정보** (`C:\DAOL\PMS\.idea\workspace.xml` + `datasource-dev.properties` 에서 추출)
+
+| 항목 | 값 |
+|---|---|
+| Host | `211.34.228.191` |
+| Port | `3336` |
+| DB | `PMS` |
+| 계정 | `DBE` / `PMS` / `PMS_API` (전부 Jasypt 암호화) |
+| Jasypt key | `DAOLVISION` (`PBEWithMD5AndDES`) — `JasyptConfig.java:15` 하드코딩 |
+
+**실제 스키마 요약** (`PMS_RESERVATION`, 113+ 컬럼) — 우리가 쓸 7개
+
+| mock 필드 | 실제 컬럼 |
+|---|---|
+| `rsvNo` | `RESV_NO` |
+| `propCd` | `PROP_CD` (**PK 는 `PROP_CD` + `CMPX_CD` 복합키**) |
+| (신규 추가 필요) | `CMPX_CD` — 우리 entity 에 `cmpxCd` 필드 추가해야 함 |
+| `roomNo` | `RM_NO` |
+| `perNm` | `PER_NM` (평문) |
+| `chkInDt` | `ARR_DT` |
+| `chkOutDt` | `DEP_DT` |
+| `chkOutTm` | `DEP_HOUR` |
+| `roomTpCd` | `RM_TP_CD` |
+| `perUseLang` | **❓ PMS_RESERVATION 에 없음** — `PMS_CUST_MGMT` 조인 필요 or 기본값 `ko_KR` |
+
+필터 조건: `PROP_CD=? AND CMPX_CD=? AND USE_YN='Y' AND RESV_STAT IN ('R','A','I') LIMIT 5`
+
+**남은 블로커 3개**
+1. **계정 확보** — 권장: DBA 에게 `concierge_ro` 같은 read-only 계정 요청
+   (대안: 기존 PMS 계정의 ENC 비번을 jasypt 키로 복호화 → 비추, 감사 로그 섞임)
+2. **네트워크 도달** — `Test-NetConnection -ComputerName 211.34.228.191 -Port 3336` 로 확인
+   (사내망/VPN 필요할 가능성 큼)
+3. **대상 프로퍼티 선정** — 데모에 쓸 `PROP_CD` / `CMPX_CD` 한 조합
+
+**다음 세션 프롬프트 템플릿**
+
+> "guest-request-mock 이어서. README 의 'PMS dev 서버 Level 1 미러링' 섹션 읽고,
+> PMS dev 에 3336 포트 도달되는지 확인했으니 (도달 O / X) 이제 `PmsMirrorService` 짜서
+> 기동 시 5건 미러링하는 코드 추가해줘. 계정은 `<user>` / `<pw>` / PROP_CD=`<prop>` CMPX_CD=`<cmpx>`."
 
 ### 2026-04-13 (맥북 세션)
 - ✅ `feat/ai-chat-concierge` 브랜치에 AI 챗봇 + 대시보드 + PWA 풀구현 커밋
