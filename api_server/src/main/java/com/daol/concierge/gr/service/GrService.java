@@ -1,7 +1,21 @@
 package com.daol.concierge.gr.service;
 
+import com.daol.concierge.auth.SecurityContextUtil;
 import com.daol.concierge.core.api.BizException;
+import com.daol.concierge.gr.domain.AmenityItem;
+import com.daol.concierge.gr.domain.AmenityRequest;
+import com.daol.concierge.gr.domain.AmenityRequestItem;
+import com.daol.concierge.gr.domain.HousekeepingRequest;
+import com.daol.concierge.gr.domain.LateCheckoutRequest;
+import com.daol.concierge.gr.domain.Reservation;
+import com.daol.concierge.gr.repo.AmenityItemRepository;
+import com.daol.concierge.gr.repo.AmenityRequestRepository;
+import com.daol.concierge.gr.repo.HousekeepingRequestRepository;
+import com.daol.concierge.gr.repo.LateCheckoutRequestRepository;
+import com.daol.concierge.gr.repo.ReservationRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -10,100 +24,91 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 /**
- * 투숙객 요청 서비스 (인메모리 Mock - 서버 재시작 시 초기화)
+ * 투숙객 요청 서비스 (JPA 기반)
+ *
+ * US-003 에서 인메모리 Map/List → Spring Data JPA 로 전환.
+ * propCd 는 단일 프로퍼티 환경에서 "HQ" 기본값을 사용하며, US-005 에서 SecurityContext 주입으로 확장 예정.
+ * 응답 Map 의 key 이름은 PMS 스타일(camelCase 약어) 그대로 유지 → 프론트 호환성 확보.
  */
 @Service
 public class GrService {
 
 	private static final DateTimeFormatter FMT_DT = DateTimeFormatter.ofPattern("yyyyMMdd");
 	private static final DateTimeFormatter FMT_TM = DateTimeFormatter.ofPattern("HHmm");
-
-	// 예약 마스터
-	private final Map<String, Map<String, Object>> reservations = new HashMap<>();
-	// 어메니티 품목 마스터
-	private final Map<String, Map<String, Object>> amenityItems = new LinkedHashMap<>();
-
-	// 요청 저장소
-	private final List<Map<String, Object>> amenityRequests = new ArrayList<>();
-	private final List<Map<String, Object>> housekeepingRequests = new ArrayList<>();
-	private final List<Map<String, Object>> lateCheckoutRequests = new ArrayList<>();
-
-	public GrService() {
-		// 예약 샘플 시드
-		String[][] rsvRows = {
-				{"R2026041300001", "1205", "HONG GILDONG", "20260413", "20260415", "1100", "DLX", "ko_KR"},
-				{"R2026041300002", "0807", "JOHN SMITH",   "20260413", "20260414", "1100", "STD", "en_US"}
-		};
-		for (String[] row : rsvRows) {
-			Map<String, Object> r = new LinkedHashMap<>();
-			r.put("rsvNo", row[0]);
-			r.put("roomNo", row[1]);
-			r.put("perNm", row[2]);
-			r.put("chkInDt", row[3]);
-			r.put("chkOutDt", row[4]);
-			r.put("chkOutTm", row[5]);
-			r.put("roomTpCd", row[6]);
-			r.put("perUseLang", row[7]);
-			reservations.put(row[0], r);
-		}
-
-		// 어메니티 품목 시드
-		Object[][] itemRows = {
-				{"AM001", "수건",     "Towel",          4},
-				{"AM002", "생수",     "Mineral Water",  6},
-				{"AM003", "비누",     "Soap",           3},
-				{"AM004", "샴푸",     "Shampoo",        3},
-				{"AM005", "칫솔세트", "Toothbrush Set", 4}
-		};
-		for (Object[] row : itemRows) {
-			Map<String, Object> item = new LinkedHashMap<>();
-			item.put("itemCd", row[0]);
-			item.put("itemNm", row[1]);
-			item.put("itemNmEng", row[2]);
-			item.put("maxQty", row[3]);
-			amenityItems.put((String) row[0], item);
-		}
+	/** 현재 인증된 게스트의 propCd 를 꺼낸다 (멀티 프로퍼티 격리 US-005). */
+	private static String principalPropCd() {
+		return SecurityContextUtil.requirePrincipal().propCd();
 	}
+
+	@Autowired private ReservationRepository reservationRepo;
+	@Autowired private AmenityItemRepository amenityItemRepo;
+	@Autowired private AmenityRequestRepository amenityRequestRepo;
+	@Autowired private HousekeepingRequestRepository housekeepingRepo;
+	@Autowired private LateCheckoutRequestRepository lateCheckoutRepo;
 
 	// ==================== 예약 ====================
 
-	/**
-	 * 예약 정보 조회 (챗봇 다국어 처리에 perUseLang 필요)
-	 */
+	@Transactional(readOnly = true)
 	public Map<String, Object> getReservation(String rsvNo) {
 		if (rsvNo == null || rsvNo.isEmpty()) {
 			throw new BizException("9001", "필수값 누락");
 		}
-		Map<String, Object> rsv = reservations.get(rsvNo);
-		if (rsv == null) {
-			throw new BizException("9404", "예약 없음");
-		}
-		return new LinkedHashMap<>(rsv);
+		SecurityContextUtil.assertOwnsRsv(rsvNo);
+		Reservation r = reservationRepo.findById(rsvNo)
+				.orElseThrow(() -> new BizException("9404", "예약 없음"));
+		return reservationToMap(r);
 	}
 
+	/**
+	 * 인증된 게스트 본인의 예약만 반환 (프론트가 "내 예약" 단건만 봐야 함).
+	 * 복수 예약이 있는 경우 같은 propCd + 같은 rsvNo 로 1건만 매칭.
+	 */
+	@Transactional(readOnly = true)
 	public List<Map<String, Object>> getReservationList() {
-		return new ArrayList<>(reservations.values());
+		var principal = SecurityContextUtil.requirePrincipal();
+		List<Map<String, Object>> out = new ArrayList<>();
+		reservationRepo.findById(principal.rsvNo()).ifPresent(r -> out.add(reservationToMap(r)));
+		return out;
 	}
 
 	// ==================== 어메니티 ====================
 
+	/**
+	 * 어메니티 품목 마스터는 체인 전체가 공유하는 공통 카탈로그로 취급 → propCd 필터 없음.
+	 * (개별 프로퍼티가 독자 품목을 가지는 요구가 생기면 그때 propCd 필터로 바꾸면 됨.)
+	 */
+	@Transactional(readOnly = true)
 	public List<Map<String, Object>> getAmenityItemList() {
-		return new ArrayList<>(amenityItems.values());
+		SecurityContextUtil.requirePrincipal(); // 인증만 요구, propCd 필터는 안 쓴다
+		List<Map<String, Object>> out = new ArrayList<>();
+		for (AmenityItem it : amenityItemRepo.findAll()) {
+			out.add(amenityItemToMap(it));
+		}
+		return out;
 	}
 
+	@Transactional(readOnly = true)
 	public List<Map<String, Object>> getAmenityList(String rsvNo) {
-		if (rsvNo == null || rsvNo.isEmpty()) {
-			return new ArrayList<>(amenityRequests);
+		// rsvNo 가 없으면 인증된 본인 것, 있으면 본인 것인지 확인
+		var principal = SecurityContextUtil.requirePrincipal();
+		String target = (rsvNo == null || rsvNo.isEmpty()) ? principal.rsvNo() : rsvNo;
+		if (!target.equals(principal.rsvNo())) {
+			throw new BizException("9102", "권한 없음");
 		}
-		return amenityRequests.stream()
-				.filter(r -> rsvNo.equals(r.get("rsvNo")))
-				.collect(Collectors.toList());
+		List<AmenityRequest> rows =
+				amenityRequestRepo.findByPropCdAndRsvNoOrderByReqDtDescReqTmDesc(principalPropCd(), target);
+		List<Map<String, Object>> out = new ArrayList<>();
+		for (AmenityRequest r : rows) {
+			out.add(amenityRequestToMap(r));
+		}
+		return out;
 	}
 
 	@SuppressWarnings("unchecked")
+	@Transactional
 	public Map<String, Object> insertAmenityReq(Map<String, Object> params) {
 		String rsvNo = (String) params.get("rsvNo");
 		String roomNo = (String) params.get("roomNo");
@@ -113,35 +118,39 @@ public class GrService {
 		if (rsvNo == null || roomNo == null || itemList == null || itemList.isEmpty()) {
 			throw new BizException("9001", "필수값 누락");
 		}
-		if (!reservations.containsKey(rsvNo)) {
+		SecurityContextUtil.assertOwnsRsv(rsvNo);
+		if (reservationRepo.findById(rsvNo).isEmpty()) {
 			throw new BizException("9404", "예약 없음");
 		}
+
+		AmenityRequest req = new AmenityRequest();
+		req.setPropCd(principalPropCd());
+		req.setRsvNo(rsvNo);
+		req.setRoomNo(roomNo);
+		req.setReqMemo(reqMemo);
+		req.setProcStatCd("REQ");
+
 		for (Map<String, Object> it : itemList) {
 			String itemCd = (String) it.get("itemCd");
-			Map<String, Object> master = amenityItems.get(itemCd);
-			if (master == null) {
-				throw new BizException("9002", "품목코드 오류: " + itemCd);
+			AmenityItem master = amenityItemRepo.findById(itemCd)
+					.orElseThrow(() -> new BizException("9002", "품목코드 오류: " + itemCd));
+			Object qtyObj = it.get("qty");
+			if (!(qtyObj instanceof Number)) {
+				throw new BizException("9001", "qty 필수");
 			}
-			int qty = ((Number) it.get("qty")).intValue();
-			int maxQty = ((Number) master.get("maxQty")).intValue();
-			if (qty > maxQty) {
-				throw new BizException("9003", "최대수량 초과: " + master.get("itemNm"));
+			int qty = ((Number) qtyObj).intValue();
+			if (qty > master.getMaxQty()) {
+				throw new BizException("9003", "최대수량 초과: " + master.getItemNm());
 			}
+			req.getItems().add(new AmenityRequestItem(itemCd, qty));
 		}
 
 		LocalDateTime now = LocalDateTime.now();
 		String reqNo = "AM" + System.currentTimeMillis();
-		Map<String, Object> record = new LinkedHashMap<>();
-		record.put("reqNo", reqNo);
-		record.put("rsvNo", rsvNo);
-		record.put("roomNo", roomNo);
-		record.put("itemList", itemList);
-		record.put("reqMemo", reqMemo);
-		record.put("procStatCd", "REQ");
-		record.put("procStatNm", "접수");
-		record.put("reqDt", now.format(FMT_DT));
-		record.put("reqTm", now.format(FMT_TM));
-		amenityRequests.add(record);
+		req.setReqNo(reqNo);
+		req.setReqDt(now.format(FMT_DT));
+		req.setReqTm(now.format(FMT_TM));
+		amenityRequestRepo.save(req);
 
 		Map<String, Object> res = new LinkedHashMap<>();
 		res.put("reqNo", reqNo);
@@ -152,29 +161,34 @@ public class GrService {
 
 	// ==================== 하우스키핑 ====================
 
+	@Transactional(readOnly = true)
 	public Map<String, Object> getHousekeepingStat(String rsvNo) {
-		if (!reservations.containsKey(rsvNo)) {
-			throw new BizException("9404", "예약 없음");
-		}
-		Map<String, Object> rsv = reservations.get(rsvNo);
-		Map<String, Object> latest = null;
-		for (int i = housekeepingRequests.size() - 1; i >= 0; i--) {
-			if (rsvNo.equals(housekeepingRequests.get(i).get("rsvNo"))) {
-				latest = housekeepingRequests.get(i);
-				break;
-			}
-		}
+		SecurityContextUtil.assertOwnsRsv(rsvNo);
+		Reservation rsv = reservationRepo.findById(rsvNo)
+				.orElseThrow(() -> new BizException("9404", "예약 없음"));
+
+		Optional<HousekeepingRequest> latest = housekeepingRepo
+				.findFirstByPropCdAndRsvNoOrderByReqDtDescReqTmDesc(principalPropCd(), rsvNo);
 
 		Map<String, Object> res = new LinkedHashMap<>();
 		res.put("rsvNo", rsvNo);
-		res.put("roomNo", rsv.get("roomNo"));
-		res.put("hkStatCd", latest != null ? latest.get("hkStatCd") : "CLR");
-		res.put("hkStatNm", latest != null ? latest.get("hkStatNm") : "해제");
-		res.put("lastReqDt", latest != null ? latest.get("reqDt") : null);
-		res.put("lastReqTm", latest != null ? latest.get("reqTm") : null);
+		res.put("roomNo", rsv.getRoomNo());
+		if (latest.isPresent()) {
+			HousekeepingRequest hk = latest.get();
+			res.put("hkStatCd", hk.getHkStatCd());
+			res.put("hkStatNm", hkStatNm(hk.getHkStatCd()));
+			res.put("lastReqDt", hk.getReqDt());
+			res.put("lastReqTm", hk.getReqTm());
+		} else {
+			res.put("hkStatCd", "CLR");
+			res.put("hkStatNm", "해제");
+			res.put("lastReqDt", null);
+			res.put("lastReqTm", null);
+		}
 		return res;
 	}
 
+	@Transactional
 	public Map<String, Object> updateHousekeepingStat(Map<String, Object> params) {
 		String rsvNo = (String) params.get("rsvNo");
 		String hkStatCd = (String) params.get("hkStatCd");
@@ -183,52 +197,48 @@ public class GrService {
 		if (rsvNo == null || hkStatCd == null) {
 			throw new BizException("9001", "필수값 누락");
 		}
-
-		Map<String, String> statNmMap = new HashMap<>();
-		statNmMap.put("MU", "객실정비요청");
-		statNmMap.put("DND", "방해금지");
-		statNmMap.put("CLR", "해제");
-		if (!statNmMap.containsKey(hkStatCd)) {
+		SecurityContextUtil.assertOwnsRsv(rsvNo);
+		String nm = hkStatNm(hkStatCd);
+		if (nm == null) {
 			throw new BizException("9002", "상태코드 오류");
 		}
-		if (!reservations.containsKey(rsvNo)) {
-			throw new BizException("9404", "예약 없음");
-		}
 
-		Map<String, Object> rsv = reservations.get(rsvNo);
+		Reservation rsv = reservationRepo.findById(rsvNo)
+				.orElseThrow(() -> new BizException("9404", "예약 없음"));
+
 		LocalDateTime now = LocalDateTime.now();
 		String reqNo = "HK" + System.currentTimeMillis();
 
-		Map<String, Object> record = new LinkedHashMap<>();
-		record.put("reqNo", reqNo);
-		record.put("rsvNo", rsvNo);
-		record.put("roomNo", rsv.get("roomNo"));
-		record.put("hkStatCd", hkStatCd);
-		record.put("hkStatNm", statNmMap.get(hkStatCd));
-		record.put("reqMemo", reqMemo);
-		record.put("reqDt", now.format(FMT_DT));
-		record.put("reqTm", now.format(FMT_TM));
-		housekeepingRequests.add(record);
+		HousekeepingRequest hk = new HousekeepingRequest();
+		hk.setReqNo(reqNo);
+		hk.setPropCd(principalPropCd());
+		hk.setRsvNo(rsvNo);
+		hk.setRoomNo(rsv.getRoomNo());
+		hk.setHkStatCd(hkStatCd);
+		hk.setReqMemo(reqMemo);
+		hk.setReqDt(now.format(FMT_DT));
+		hk.setReqTm(now.format(FMT_TM));
+		housekeepingRepo.save(hk);
 
 		Map<String, Object> res = new LinkedHashMap<>();
 		res.put("reqNo", reqNo);
 		res.put("hkStatCd", hkStatCd);
-		res.put("hkStatNm", statNmMap.get(hkStatCd));
+		res.put("hkStatNm", nm);
 		return res;
 	}
 
 	// ==================== 레이트 체크아웃 ====================
 
+	@Transactional(readOnly = true)
 	public Map<String, Object> getLateCheckoutInfo(String rsvNo, String reqOutTm) {
 		if (rsvNo == null || reqOutTm == null) {
 			throw new BizException("9001", "필수값 누락");
 		}
-		if (!reservations.containsKey(rsvNo)) {
-			throw new BizException("9404", "예약 없음");
-		}
+		SecurityContextUtil.assertOwnsRsv(rsvNo);
+		Reservation rsv = reservationRepo.findById(rsvNo)
+				.orElseThrow(() -> new BizException("9404", "예약 없음"));
 
-		Map<String, Object> rsv = reservations.get(rsvNo);
-		String chkOutTm = (String) rsv.get("chkOutTm");
+		String chkOutTm = rsv.getChkOutTm();
 		int curOutH = Integer.parseInt(chkOutTm.substring(0, 2));
 		int reqH = Integer.parseInt(reqOutTm.substring(0, 2));
 		int diffH = reqH - curOutH;
@@ -252,7 +262,7 @@ public class GrService {
 
 		Map<String, Object> res = new LinkedHashMap<>();
 		res.put("rsvNo", rsvNo);
-		res.put("roomNo", rsv.get("roomNo"));
+		res.put("roomNo", rsv.getRoomNo());
 		res.put("curChkOutTm", chkOutTm);
 		res.put("reqChkOutTm", reqOutTm);
 		res.put("availYn", availYn);
@@ -263,6 +273,7 @@ public class GrService {
 		return res;
 	}
 
+	@Transactional
 	public Map<String, Object> insertLateCheckoutReq(Map<String, Object> params) {
 		String rsvNo = (String) params.get("rsvNo");
 		String reqOutTm = (String) params.get("reqOutTm");
@@ -271,31 +282,82 @@ public class GrService {
 		if (rsvNo == null || reqOutTm == null) {
 			throw new BizException("9001", "필수값 누락");
 		}
-		if (!reservations.containsKey(rsvNo)) {
-			throw new BizException("9404", "예약 없음");
-		}
+		SecurityContextUtil.assertOwnsRsv(rsvNo);
+		Reservation rsv = reservationRepo.findById(rsvNo)
+				.orElseThrow(() -> new BizException("9404", "예약 없음"));
 
-		Map<String, Object> rsv = reservations.get(rsvNo);
 		LocalDateTime now = LocalDateTime.now();
 		String reqNo = "LC" + System.currentTimeMillis();
 
-		Map<String, Object> record = new LinkedHashMap<>();
-		record.put("reqNo", reqNo);
-		record.put("rsvNo", rsvNo);
-		record.put("roomNo", rsv.get("roomNo"));
-		record.put("curChkOutTm", rsv.get("chkOutTm"));
-		record.put("reqChkOutTm", reqOutTm);
-		record.put("addAmt", addAmt);
-		record.put("procStatCd", "REQ");
-		record.put("procStatNm", "접수");
-		record.put("reqDt", now.format(FMT_DT));
-		record.put("reqTm", now.format(FMT_TM));
-		lateCheckoutRequests.add(record);
+		LateCheckoutRequest lc = new LateCheckoutRequest();
+		lc.setReqNo(reqNo);
+		lc.setPropCd(principalPropCd());
+		lc.setRsvNo(rsvNo);
+		lc.setRoomNo(rsv.getRoomNo());
+		lc.setCurChkOutTm(rsv.getChkOutTm());
+		lc.setReqChkOutTm(reqOutTm);
+		lc.setAddAmt(addAmt);
+		lc.setProcStatCd("REQ");
+		lc.setReqDt(now.format(FMT_DT));
+		lc.setReqTm(now.format(FMT_TM));
+		lateCheckoutRepo.save(lc);
 
 		Map<String, Object> res = new LinkedHashMap<>();
 		res.put("reqNo", reqNo);
 		res.put("procStatCd", "REQ");
 		res.put("aprUserNm", "FRONT DESK");
 		return res;
+	}
+
+	// ==================== 헬퍼 ====================
+
+	private Map<String, Object> reservationToMap(Reservation r) {
+		Map<String, Object> m = new LinkedHashMap<>();
+		m.put("rsvNo", r.getRsvNo());
+		m.put("roomNo", r.getRoomNo());
+		m.put("perNm", r.getPerNm());
+		m.put("chkInDt", r.getChkInDt());
+		m.put("chkOutDt", r.getChkOutDt());
+		m.put("chkOutTm", r.getChkOutTm());
+		m.put("roomTpCd", r.getRoomTpCd());
+		m.put("perUseLang", r.getPerUseLang());
+		return m;
+	}
+
+	private Map<String, Object> amenityItemToMap(AmenityItem it) {
+		Map<String, Object> m = new LinkedHashMap<>();
+		m.put("itemCd", it.getItemCd());
+		m.put("itemNm", it.getItemNm());
+		m.put("itemNmEng", it.getItemNmEng());
+		m.put("maxQty", it.getMaxQty());
+		return m;
+	}
+
+	private Map<String, Object> amenityRequestToMap(AmenityRequest r) {
+		Map<String, Object> m = new LinkedHashMap<>();
+		m.put("reqNo", r.getReqNo());
+		m.put("rsvNo", r.getRsvNo());
+		m.put("roomNo", r.getRoomNo());
+		List<Map<String, Object>> items = new ArrayList<>();
+		for (AmenityRequestItem it : r.getItems()) {
+			Map<String, Object> im = new HashMap<>();
+			im.put("itemCd", it.getItemCd());
+			im.put("qty", it.getQty());
+			items.add(im);
+		}
+		m.put("itemList", items);
+		m.put("reqMemo", r.getReqMemo());
+		m.put("procStatCd", r.getProcStatCd());
+		m.put("procStatNm", "접수");
+		m.put("reqDt", r.getReqDt());
+		m.put("reqTm", r.getReqTm());
+		return m;
+	}
+
+	private String hkStatNm(String hkStatCd) {
+		if ("MU".equals(hkStatCd)) return "객실정비요청";
+		if ("DND".equals(hkStatCd)) return "방해금지";
+		if ("CLR".equals(hkStatCd)) return "해제";
+		return null;
 	}
 }

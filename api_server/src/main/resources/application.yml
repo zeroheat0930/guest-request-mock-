@@ -6,7 +6,84 @@ server:
 spring:
   application:
     name: concierge-api
+  profiles:
+    default: dev
 
 logging:
   level:
     com.daol.concierge: DEBUG
+
+anthropic:
+  api-key: ${ANTHROPIC_API_KEY:}
+  model: claude-haiku-4-5-20251001
+  endpoint: https://api.anthropic.com/v1/messages
+  version: '2023-06-01'
+
+jwt:
+  # 개발용 고정 시크릿. 프로덕션에선 반드시 JWT_SECRET 환경변수로 주입.
+  secret: ${JWT_SECRET:dev-only-secret-please-change-in-production-32bytes-min!!}
+  # 발급 후 유효 시간(시간 단위). 실제 만료는 이 값과 예약 체크아웃 일자 중 빠른 쪽.
+  hours-valid: 72
+
+---
+# ───────── dev (기본) ─────────
+# H2 파일 모드 + JPA 자동 스키마 생성 + 시드 데이터는 SeedDataRunner 가 주입
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:h2:file:./data/concierge-dev;AUTO_SERVER=TRUE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+---
+# ───────── prod (PostgreSQL) ─────────
+# 실제 운영 시 SPRING_PROFILES_ACTIVE=prod 로 기동, 접속정보는 환경변수로
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/concierge}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USER:concierge}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+---
+# ───────── test (H2 인메모리) ─────────
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:concierge-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect

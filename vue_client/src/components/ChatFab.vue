@@ -15,9 +15,9 @@
 					<small v-if="llmEnabled">· LLM</small>
 					<small v-else>· Rule</small>
 				</div>
-				<select v-model="rsvNo" class="rsv-select" @change="loadRsv">
-					<option v-for="r in rsvList" :key="r.rsvNo" :value="r.rsvNo">
-						{{ r.roomNo }} · {{ r.perNm }} ({{ r.perUseLang }})
+				<select v-model="rsvNo" class="rsv-select" @change="switchGuest">
+					<option v-for="r in demoReservations" :key="r.rsvNo" :value="r.rsvNo">
+						{{ r.label }}
 					</option>
 				</select>
 				<button class="close-btn" @click="toggle">×</button>
@@ -52,15 +52,18 @@
 <script setup>
 import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import { t } from '../i18n/messages.js';
-import { parseIntent, llmEnabled } from '../chat/intent.js';
+import { parseIntent, checkLlmStatus } from '../chat/intent.js';
 import {
 	fetchReservation,
-	fetchReservationList,
 	requestAmenity,
 	updateHousekeeping,
 	checkLateCheckout,
 	requestLateCheckout
 } from '../api/client.js';
+import { DEMO_RESERVATIONS, authenticateGuest, clearToken } from '../auth/authBootstrap.js';
+
+const llmEnabled = ref(false);
+const demoReservations = DEMO_RESERVATIONS;
 
 const open = ref(false);
 const draft = ref('');
@@ -69,8 +72,7 @@ const messages = ref([]);
 const logRef = ref(null);
 const inputRef = ref(null);
 
-const rsvList = ref([]);
-const rsvNo = ref('R2026041300001');
+const rsvNo = ref(DEMO_RESERVATIONS[0].rsvNo);
 const rsv = ref(null);
 const pendingLate = ref(null); // 레이트 체크아웃 확인 단계 보관
 
@@ -80,16 +82,30 @@ const HK_NAME_KEY = { MU: 'hkMu', DND: 'hkDnd', CLR: 'hkClr' };
 
 onMounted(async () => {
 	try {
-		const list = await fetchReservationList();
-		rsvList.value = list.map?.list || [];
-		if (rsvList.value.length > 0) {
-			rsvNo.value = rsvList.value[0].rsvNo;
-			await loadRsv();
-		}
+		// 1) LLM 배지 (공개 엔드포인트라 인증 전에 가능)
+		llmEnabled.value = await checkLlmStatus();
 	} catch (e) {
-		console.warn('[chat] 예약 목록 로드 실패', e);
+		console.warn('[chat] LLM 상태 조회 실패', e);
 	}
+	// 2) 첫 번째 데모 게스트로 인증 후 예약 로드
+	await switchGuest();
 });
+
+/**
+ * 드롭다운에서 다른 데모 게스트를 고르면 재인증부터 다시.
+ * 기존 토큰을 지우고 새 토큰을 받아 loadRsv().
+ */
+async function switchGuest() {
+	try {
+		clearToken();
+		await authenticateGuest(rsvNo.value);
+	} catch (e) {
+		console.warn('[chat] 인증 실패', e);
+		messages.value = [{ role: 'assistant', text: `${t(lang.value, 'failPrefix')}: ${e.message || e}` }];
+		return;
+	}
+	await loadRsv();
+}
 
 async function loadRsv() {
 	try {
