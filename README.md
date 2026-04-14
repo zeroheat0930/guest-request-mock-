@@ -290,13 +290,15 @@ cp vue_client/.env.local.example vue_client/.env.local
 
 | # | 항목 | 예상 | 상태 |
 |---|---|---|---|
-| 1 | **LLM 호출을 Spring Boot 프록시로 이동** (키 숨기기) | 40분 | ⏳ 예정 |
-| 2 | **API baseURL/CORS 정리 + 폰 동작 확인** | 15분 | ⏳ 예정 |
-| 3 | **DB 도입** (JPA + H2 → PostgreSQL 마이그레이션 경로) | 반나절 | ⏳ 예정 |
-| 4 | **게스트 토큰 인증 레이어** (예약번호+체크인일자+생년월일 → JWT) | 1일 | ⏳ 예정 |
-| 5 | **`propCd` 멀티프로퍼티 스키마** (체인 격리) | 반나절 | ⏳ 예정 |
-| 6 | **Docker + CI/CD + 환경 분리** (dev/stage/prod 프로파일) | 1일 | ⏳ 예정 |
-| 7 | **Capacitor 랩핑** (앱스토어 존재감 필요 시 선택) | 반나절 | ⏳ 선택 |
+| 1 | **LLM 호출을 Spring Boot 프록시로 이동** (키 숨기기) | 40분 | ✅ 완료 |
+| 2 | **API baseURL/CORS 정리 + 폰 동작 확인** | 15분 | ✅ 완료 |
+| 3 | **DB 도입** (JPA + H2 → PostgreSQL 마이그레이션 경로) | 반나절 | ✅ 완료 |
+| 4 | **게스트 토큰 인증 레이어** (예약번호+체크인일자+생년월일 → JWT) | 1일 | ✅ 완료 |
+| 5 | **`propCd` 멀티프로퍼티 스키마** (체인 격리) | 반나절 | ✅ 완료 |
+| 6 | **Docker + CI/CD + 환경 분리** (dev/stage/prod 프로파일) | 1일 | ✅ 완료 |
+| 7 | **Capacitor 랩핑** (앱스토어 존재감 필요 시 선택) | 반나절 | ✅ 완료 |
+
+검증: `bash api_server/smoke-test.sh` — 27개 체크 (unauth 401 → 토큰 발급 → 자기 예약 조회 → 타인 예약 9102 → 멀티 프로퍼티 격리 → AI 프록시 한/영 → 401 가드) 전부 PASS.
 
 ### 핵심 아키텍처 결정사항
 
@@ -330,13 +332,20 @@ cp vue_client/.env.local.example vue_client/.env.local
 ### 2026-04-14 (윈도우 세션)
 - ✅ 윈도우 PC에 **포터블 JDK 17 + Maven 3.9.14** 격리 설치 (`C:\tools\...`, 시스템 PATH 무영향)
   — 회사 PMS 개발 환경과 완전 분리
-- ✅ `api_server/run.bat` 추가: 그 셸에서만 `JAVA_HOME`/`PATH` override
+- ✅ `api_server/run.bat` 추가: 그 셸에서만 `JAVA_HOME`/`PATH` override, `env.local.bat` (gitignore) 자동 로드
 - ✅ Spring Boot 백엔드 라이브 검증 완료 (`localhost:8080`, 1.3초 기동)
-- ✅ 예약 조회 API smoke test 통과 (`R2026041300001` → 홍길동/1205호)
 - ✅ Vue 프론트 `localhost:5173` 기동, 챗봇 end-to-end 동작 확인
 - ✅ **Claude Haiku 4.5 LLM 모드 활성화**: Anthropic 크레딧 충전 + 키 세팅
   — *"어떤 기능이 있니?"*, 일본어 `タオルを2枚ください`, 레이트 체크아웃 2단계 플로우 전부 동작 확인
-- 📋 **상용화 로드맵 7단계 확정** (위 섹션 참고), 다음 세션부터 순차 진행
+- ✅ **상용화 로드맵 7단계 전부 구현**:
+    1. Spring Boot `/api/ai/chat` 프록시로 LLM 키 서버 측 은닉
+    2. 런타임 baseURL + LAN/ngrok CORS 패턴 → 폰 브라우저 대응 완료
+    3. JPA + H2(파일 모드) + PostgreSQL prod 프로파일, `SeedDataRunner` 자동 시드
+    4. `POST /api/auth/guest-token` + jjwt HS256, `JwtAuthFilter`, `SecurityContextUtil`
+    5. `GrService` 전 조회/삽입이 JWT 의 `propCd` 로 격리 (JJU 제주 프로퍼티로 교차 접근 차단 검증)
+    6. 멀티스테이지 Dockerfile(api/web) + `docker-compose.yml` + GitHub Actions CI (api build → vue build → 이미지 빌드 캐시)
+    7. Capacitor 8 설치, `android/` 플랫폼 scaffold, `npm run cap:android` 원샷 스크립트
+- ✅ `smoke-test.sh` 27개 체크 통과 (비인증 401 가드 + 멀티 프로퍼티 격리 포함)
 
 ### 2026-04-13 (맥북 세션)
 - ✅ `feat/ai-chat-concierge` 브랜치에 AI 챗봇 + 대시보드 + PWA 풀구현 커밋
