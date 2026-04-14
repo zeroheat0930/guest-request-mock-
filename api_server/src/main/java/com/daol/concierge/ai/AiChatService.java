@@ -61,6 +61,9 @@ public class AiChatService {
 
 	@SuppressWarnings("unchecked")
 	public Map<String, Object> parseIntent(Map<String, Object> params) {
+		// defense-in-depth: SecurityConfig 의 filter chain 이 이미 인증을 강제하지만,
+		// 이후 누군가 /api/ai/chat 을 실수로 permitAll 로 풀어도 서비스 레이어에서 한 번 더 막는다.
+		SecurityContextUtil.requirePrincipal();
 		if (!isConfigured()) {
 			throw new BizException("9501", "LLM API key not configured");
 		}

@@ -30,7 +30,8 @@ import java.util.Optional;
  * 투숙객 요청 서비스 (JPA 기반)
  *
  * US-003 에서 인메모리 Map/List → Spring Data JPA 로 전환.
- * propCd 는 단일 프로퍼티 환경에서 "HQ" 기본값을 사용하며, US-005 에서 SecurityContext 주입으로 확장 예정.
+ * US-004/005 이후: 모든 쿼리/삽입이 SecurityContext 의 게스트 principal 에서 rsvNo + propCd 를 꺼내
+ *   "본인 것만" 보이도록 강제. 체인 단위 격리는 principalPropCd() 헬퍼로 관리.
  * 응답 Map 의 key 이름은 PMS 스타일(camelCase 약어) 그대로 유지 → 프론트 호환성 확보.
  */
 @Service

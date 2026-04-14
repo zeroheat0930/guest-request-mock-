@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -15,6 +16,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
 
 import java.io.IOException;
 import java.util.List;
@@ -39,21 +42,34 @@ public class SecurityConfig {
 	@Autowired
 	private JwtAuthFilter jwtAuthFilter;
 
+	@Autowired
+	private Environment env;
+
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+		boolean devLike = Arrays.asList(env.getActiveProfiles()).contains("dev")
+				|| env.getActiveProfiles().length == 0;
+
 		http
 				.cors(Customizer.withDefaults())
 				.csrf(csrf -> csrf.disable())
 				.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.authorizeHttpRequests(authz -> authz
-						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-						.requestMatchers("/api/auth/**").permitAll()
-						.requestMatchers(HttpMethod.GET, "/api/ai/status").permitAll()
-						.requestMatchers("/h2-console/**").permitAll()
-						.requestMatchers("/", "/error").permitAll()
-						.requestMatchers("/api/**").authenticated()
-						.anyRequest().permitAll()
-				)
+				.authorizeHttpRequests(authz -> {
+					authz
+							.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+							// 토큰 발급 엔드포인트만 공개 (미래에 /api/auth/* 하위 엔드포인트가 늘어도 자동 공개되지 않도록 구체화)
+							.requestMatchers(HttpMethod.POST, "/api/auth/guest-token").permitAll()
+							.requestMatchers(HttpMethod.GET, "/api/ai/status").permitAll()
+							.requestMatchers("/", "/error").permitAll();
+					// H2 console 은 dev 프로파일에서만 공개 — prod 엔 절대 노출 금지
+					if (devLike) {
+						authz.requestMatchers("/h2-console/**").permitAll();
+					}
+					authz
+							.requestMatchers("/api/**").authenticated()
+							// /api/** 외에 매칭 안 되는 요청은 기본 차단 (안전한 디폴트)
+							.anyRequest().denyAll();
+				})
 				.headers(h -> h.frameOptions(f -> f.sameOrigin()))
 				.exceptionHandling(ex -> ex
 						.authenticationEntryPoint(this::writeUnauthorized)
