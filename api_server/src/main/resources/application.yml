@@ -27,13 +27,14 @@ jwt:
 
 ---
 # ───────── dev (기본) ─────────
-# H2 파일 모드 + JPA 자동 스키마 생성 + 시드 데이터는 SeedDataRunner 가 주입
+# H2 파일 모드 + MySQL/MariaDB 호환 모드 + JPA 자동 스키마 생성 + 시드 데이터는 SeedDataRunner 가 주입
+# 실제 운영 DB 는 MariaDB(회사 PMS 스택) 라 H2 MODE=MYSQL 로 SQL 문법 차이를 최소화.
 spring:
   config:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:h2:file:./data/concierge-dev;AUTO_SERVER=TRUE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    url: jdbc:h2:file:./data/concierge-dev;AUTO_SERVER=TRUE;MODE=MYSQL;DATABASE_TO_LOWER=TRUE
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -43,7 +44,6 @@ spring:
     show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
   h2:
     console:
@@ -51,39 +51,38 @@ spring:
       path: /h2-console
 
 ---
-# ───────── prod (PostgreSQL) ─────────
-# 실제 운영 시 SPRING_PROFILES_ACTIVE=prod 로 기동, 접속정보는 환경변수로
+# ───────── prod (MariaDB) ─────────
+# 회사 PMS 와 동일한 MariaDB 사용. SPRING_PROFILES_ACTIVE=prod 로 기동, 접속정보는 환경변수로.
 spring:
   config:
     activate:
       on-profile: prod
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/concierge}
-    driver-class-name: org.postgresql.Driver
+    url: ${DB_URL:jdbc:mariadb://localhost:3306/concierge?useUnicode=true&characterEncoding=utf8}
+    driver-class-name: org.mariadb.jdbc.Driver
     username: ${DB_USER:concierge}
     password: ${DB_PASSWORD:}
   jpa:
     hibernate:
+      # 상용화 전에는 Flyway/Liquibase 마이그레이션으로 교체 권장 (PMS 규칙: DDL 파일 금지라
+      # 실제 회사 이식 시엔 사내 DDL 변경 절차 경유).
       ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.MariaDBDialect
 
 ---
-# ───────── test (H2 인메모리) ─────────
+# ───────── test (H2 인메모리, MariaDB/MySQL 호환 모드) ─────────
 spring:
   config:
     activate:
       on-profile: test
   datasource:
-    url: jdbc:h2:mem:concierge-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    url: jdbc:h2:mem:concierge-test;MODE=MYSQL;DATABASE_TO_LOWER=TRUE
     driver-class-name: org.h2.Driver
     username: sa
     password:
   jpa:
     hibernate:
       ddl-auto: create-drop
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.H2Dialect

@@ -292,7 +292,7 @@ cp vue_client/.env.local.example vue_client/.env.local
 |---|---|---|---|
 | 1 | **LLM 호출을 Spring Boot 프록시로 이동** (키 숨기기) | 40분 | ✅ 완료 |
 | 2 | **API baseURL/CORS 정리 + 폰 동작 확인** | 15분 | ✅ 완료 |
-| 3 | **DB 도입** (JPA + H2 → PostgreSQL 마이그레이션 경로) | 반나절 | ✅ 완료 |
+| 3 | **DB 도입** (JPA + H2 MYSQL 호환 → MariaDB 운영 경로) | 반나절 | ✅ 완료 |
 | 4 | **게스트 토큰 인증 레이어** (예약번호+체크인일자+생년월일 → JWT) | 1일 | ✅ 완료 |
 | 5 | **`propCd` 멀티프로퍼티 스키마** (체인 격리) | 반나절 | ✅ 완료 |
 | 6 | **Docker + CI/CD + 환경 분리** (dev/stage/prod 프로파일) | 1일 | ✅ 완료 |
@@ -340,7 +340,7 @@ cp vue_client/.env.local.example vue_client/.env.local
 - ✅ **상용화 로드맵 7단계 전부 구현**:
     1. Spring Boot `/api/ai/chat` 프록시로 LLM 키 서버 측 은닉
     2. 런타임 baseURL + LAN/ngrok CORS 패턴 → 폰 브라우저 대응 완료
-    3. JPA + H2(파일 모드) + PostgreSQL prod 프로파일, `SeedDataRunner` 자동 시드
+    3. JPA + H2(파일 모드, MYSQL 호환) + MariaDB prod 프로파일(회사 PMS 스택 일치), `SeedDataRunner` 자동 시드
     4. `POST /api/auth/guest-token` + jjwt HS256, `JwtAuthFilter`, `SecurityContextUtil`
     5. `GrService` 전 조회/삽입이 JWT 의 `propCd` 로 격리 (JJU 제주 프로퍼티로 교차 접근 차단 검증)
     6. 멀티스테이지 Dockerfile(api/web) + `docker-compose.yml` + GitHub Actions CI (api build → vue build → 이미지 빌드 캐시)

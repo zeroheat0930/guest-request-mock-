@@ -1,31 +1,36 @@
 services:
-  postgres:
-    image: postgres:16-alpine
+  mariadb:
+    # 회사 PMS 스택과 동일한 MariaDB 사용
+    image: mariadb:11
     restart: unless-stopped
     environment:
-      POSTGRES_DB: concierge
-      POSTGRES_USER: concierge
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-concierge-dev-pw}
+      MARIADB_DATABASE: concierge
+      MARIADB_USER: concierge
+      MARIADB_PASSWORD: ${DB_PASSWORD:-concierge-dev-pw}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-concierge-root-dev-pw}
     volumes:
-      - pgdata:/var/lib/postgresql/data
-    # 호스트로 5432 를 노출하지 않는다 — compose 내부 DNS(postgres:5432) 로만 접근하면 충분하고
+      - mariadbdata:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    # 호스트로 3306 을 노출하지 않는다 — compose 내부 DNS(mariadb:3306) 로만 접근하면 충분하고
     # 실수로 공용 네트워크에 DB 를 여는 사고 차단.
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U concierge -d concierge"]
+      test: ["CMD-SHELL", "healthcheck.sh --su-mysql --connect --innodb_initialized"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   api:
     build:
       context: ./api_server
       dockerfile: Dockerfile
     depends_on:
-      postgres:
+      mariadb:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DB_URL: jdbc:postgresql://postgres:5432/concierge
+      DB_URL: jdbc:mariadb://mariadb:3306/concierge?useUnicode=true&characterEncoding=utf8
       DB_USER: concierge
       DB_PASSWORD: ${DB_PASSWORD:-concierge-dev-pw}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
@@ -45,4 +50,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  pgdata:
+  mariadbdata:

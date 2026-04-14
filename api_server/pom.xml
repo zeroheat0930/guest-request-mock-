@@ -55,17 +55,18 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- 개발/로컬: H2 파일 모드 (재시작해도 데이터 유지) -->
+		<!-- 개발/로컬: H2 파일 모드 (재시작해도 데이터 유지, MariaDB/MySQL 호환 모드) -->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- 프로덕션: PostgreSQL 드라이버 (SPRING_PROFILES_ACTIVE=prod 일 때 사용) -->
+		<!-- 프로덕션: MariaDB 드라이버 — 회사 PMS 가 MariaDB 를 쓰므로 스택 일치
+		     (SPRING_PROFILES_ACTIVE=prod 일 때 사용) -->
 		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
+			<groupId>org.mariadb.jdbc</groupId>
+			<artifactId>mariadb-java-client</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 
