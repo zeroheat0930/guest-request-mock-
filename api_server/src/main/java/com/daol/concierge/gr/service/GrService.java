@@ -7,11 +7,13 @@ import com.daol.concierge.gr.domain.AmenityRequest;
 import com.daol.concierge.gr.domain.AmenityRequestItem;
 import com.daol.concierge.gr.domain.HousekeepingRequest;
 import com.daol.concierge.gr.domain.LateCheckoutRequest;
+import com.daol.concierge.gr.domain.ParkingRegistration;
 import com.daol.concierge.gr.domain.Reservation;
 import com.daol.concierge.gr.repo.AmenityItemRepository;
 import com.daol.concierge.gr.repo.AmenityRequestRepository;
 import com.daol.concierge.gr.repo.HousekeepingRequestRepository;
 import com.daol.concierge.gr.repo.LateCheckoutRequestRepository;
+import com.daol.concierge.gr.repo.ParkingRegistrationRepository;
 import com.daol.concierge.gr.repo.ReservationRepository;
 import com.daol.concierge.dispatcher.RequestDispatcher;
 import com.daol.concierge.dispatcher.RequestEvent;
@@ -51,6 +53,7 @@ public class GrService {
 	@Autowired private AmenityRequestRepository amenityRequestRepo;
 	@Autowired private HousekeepingRequestRepository housekeepingRepo;
 	@Autowired private LateCheckoutRequestRepository lateCheckoutRepo;
+	@Autowired private ParkingRegistrationRepository parkingRepo;
 	@Autowired private RequestDispatcher requestDispatcher;
 
 	// ==================== 예약 ====================
@@ -340,6 +343,77 @@ public class GrService {
 		return res;
 	}
 
+	// ==================== 주차 ====================
+
+	@Transactional(readOnly = true)
+	public List<Map<String, Object>> getParkingList(String rsvNo) {
+		var principal = SecurityContextUtil.requirePrincipal();
+		String target = (rsvNo == null || rsvNo.isEmpty()) ? principal.rsvNo() : rsvNo;
+		SecurityContextUtil.assertOwnsRsv(target);
+		List<ParkingRegistration> rows =
+				parkingRepo.findByPropCdAndRsvNoOrderByReqDtDescReqTmDesc(principalPropCd(), target);
+		List<Map<String, Object>> out = new ArrayList<>();
+		for (ParkingRegistration r : rows) {
+			out.add(parkingRegistrationToMap(r));
+		}
+		return out;
+	}
+
+	@Transactional
+	public Map<String, Object> insertParkingReq(Map<String, Object> params) {
+		String rsvNo = (String) params.get("rsvNo");
+		String roomNo = (String) params.get("roomNo");
+		String carNo = (String) params.get("carNo");
+		String carTp = (String) params.getOrDefault("carTp", "");
+		String reqMemo = (String) params.getOrDefault("reqMemo", "");
+
+		if (carNo == null || carNo.trim().isEmpty()) {
+			throw new BizException("9001", "차량번호 누락");
+		}
+		carNo = carNo.trim();
+		if (carNo.length() < 4 || carNo.length() > 20) {
+			throw new BizException("9002", "차량번호 형식 오류");
+		}
+		if (rsvNo == null || roomNo == null) {
+			throw new BizException("9001", "필수값 누락");
+		}
+		SecurityContextUtil.assertOwnsRsv(rsvNo);
+		if (reservationRepo.findById(rsvNo).isEmpty()) {
+			throw new BizException("9404", "예약 없음");
+		}
+
+		LocalDateTime now = LocalDateTime.now();
+		String reqNo = "PK" + System.currentTimeMillis();
+
+		ParkingRegistration pk = new ParkingRegistration();
+		pk.setReqNo(reqNo);
+		pk.setPropCd(principalPropCd());
+		pk.setRsvNo(rsvNo);
+		pk.setRoomNo(roomNo);
+		pk.setCarNo(carNo);
+		pk.setCarTp(carTp);
+		pk.setReqMemo(reqMemo);
+		pk.setProcStatCd("REQ");
+		pk.setReqDt(now.format(FMT_DT));
+		pk.setReqTm(now.format(FMT_TM));
+		parkingRepo.save(pk);
+
+		requestDispatcher.dispatch(new RequestEvent(
+				principalPropCd(),
+				"PARKING",
+				"[" + roomNo + "] 차량 등록 " + carNo + " (" + reqNo + ")",
+				roomNo,
+				reqNo,
+				reqMemo
+		));
+
+		Map<String, Object> res = new LinkedHashMap<>();
+		res.put("reqNo", reqNo);
+		res.put("procStatCd", "REQ");
+		res.put("carNo", carNo);
+		return res;
+	}
+
 	// ==================== 헬퍼 ====================
 
 	private Map<String, Object> reservationToMap(Reservation r) {
@@ -383,6 +457,28 @@ public class GrService {
 		m.put("reqDt", r.getReqDt());
 		m.put("reqTm", r.getReqTm());
 		return m;
+	}
+
+	private Map<String, Object> parkingRegistrationToMap(ParkingRegistration r) {
+		Map<String, Object> m = new LinkedHashMap<>();
+		m.put("reqNo", r.getReqNo());
+		m.put("rsvNo", r.getRsvNo());
+		m.put("roomNo", r.getRoomNo());
+		m.put("carNo", r.getCarNo());
+		m.put("carTp", r.getCarTp());
+		m.put("reqMemo", r.getReqMemo());
+		m.put("procStatCd", r.getProcStatCd());
+		m.put("procStatNm", procStatNm(r.getProcStatCd()));
+		m.put("reqDt", r.getReqDt());
+		m.put("reqTm", r.getReqTm());
+		return m;
+	}
+
+	private String procStatNm(String cd) {
+		if ("REQ".equals(cd)) return "접수";
+		if ("APR".equals(cd)) return "승인";
+		if ("CXL".equals(cd)) return "취소";
+		return "접수";
 	}
 
 	private String hkStatNm(String hkStatCd) {

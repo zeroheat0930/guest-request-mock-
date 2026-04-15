@@ -98,4 +98,20 @@ public class GrController {
 	public ApiResponse insertLateCheckoutReq(@RequestBody Map<String, Object> params) {
 		return Responses.MapResponse.of(grService.insertLateCheckoutReq(params));
 	}
+
+	/**
+	 * 주차 차량 등록 목록 조회
+	 */
+	@RequestMapping(value = "/parking/list", method = RequestMethod.GET, produces = APPLICATION_JSON)
+	public Responses.ListResponse getParkingList(@RequestParam(required = false) String rsvNo) {
+		return Responses.ListResponse.of(grService.getParkingList(rsvNo));
+	}
+
+	/**
+	 * 주차 차량 등록
+	 */
+	@RequestMapping(value = "/parking", method = RequestMethod.POST, produces = APPLICATION_JSON)
+	public ApiResponse insertParkingReq(@RequestBody Map<String, Object> params) {
+		return Responses.MapResponse.of(grService.insertParkingReq(params));
+	}
 }

@@ -467,6 +467,34 @@ admin:
 - `mvn -o compile` BUILD SUCCESS
 - `npm run build` OK (99 modules, 1.28s)
 
+---
+
+**(저녁) PARKING 기능 MVP + 랜딩페이지 업데이트**
+
+**PARKING** — 차량번호 등록 MVP (하드웨어 연동은 스코프 밖)
+- 새 엔티티 `ParkingRegistration` (`gr_parking_registration`) — reqNo PK, propCd, rsvNo, roomNo, **carNo (필수)**, carTp, reqMemo, procStatCd(REQ/APR/CXL), reqDt/reqTm
+- `GrService` 에 3개 메서드 추가: `getParkingList`, `insertParkingReq`, `parkingRegistrationToMap`
+  - carNo 필수 + 4~20자 길이 검증 (`9001`/`9002` BizException)
+  - 저장 성공 시 `RequestDispatcher.dispatch(new RequestEvent(propCd, "PARKING", "[room] 차량 등록 carNo (reqNo)", ...))` 로 PMS 프론트데스크 알림
+- `GrController` 에 `GET /api/gr/parking/list` + `POST /api/gr/parking` 두 엔드포인트
+- `ParkingView.vue` — 등록 폼(차량번호/차종 select/메모) + 등록 이력 카드 리스트(차량번호 monospace 크게 표시, 차종 뱃지, 등록시간, 상태)
+- `api/client.js` — `fetchParkingList(rsvNo)` / `requestParking(body)` 추가
+- `SeedDataRunner` — PARKING 기능 플래그 Y 로 전환
+- `V4__parking_registration.sql` — 프로덕션 MariaDB 마이그레이션 플레이스홀더
+
+**랜딩페이지 업데이트** (`landing/index.html`)
+- "주요 기능" 섹션 4개 → **6개** (NEARBY / PARKING 추가, AI 챗봇 + 주변 안내를 `.hi` 강조)
+- **신규 "아키텍처 포인트" 섹션** 추가 — 심사위원용 기술 차별점 어필:
+  - 디스패처 추상화 (사내 PMS / 타사 REST / standalone 3종)
+  - 기능 플래그 (어드민 UI)
+  - 게스트 토큰 인증 (JWT · 멀티 프로퍼티)
+  - PMS 실시간 연동 (KOK_EVENT → Redis → 팝업)
+- CRLF/들여쓰기 이슈로 Edit 도구가 번거로웠음 — 향후 landing/ 수정은 LF 통일 추천
+
+**빌드 검증 (저녁)**
+- `mvn -o compile` BUILD SUCCESS (52 sources)
+- `npm run build` OK (99 modules, 167 KB, 931ms)
+
 ### 2026-04-14 (윈도우 세션)
 - ✅ 윈도우 PC에 **포터블 JDK 17 + Maven 3.9.14** 격리 설치 (`C:\tools\...`, 시스템 PATH 무영향)
   — 회사 PMS 개발 환경과 완전 분리

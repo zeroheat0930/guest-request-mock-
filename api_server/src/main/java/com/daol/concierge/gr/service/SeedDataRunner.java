@@ -66,7 +66,7 @@ public class SeedDataRunner implements CommandLineRunner {
 				{"LATE_CO", "Y", 30},
 				{"CHAT",    "Y", 40},
 				{"NEARBY",  "Y", 50},
-				{"PARKING", "N", 60}
+				{"PARKING", "Y", 60}
 		};
 		int inserted = 0;
 		for (Object[] row : rows) {

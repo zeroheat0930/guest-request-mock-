@@ -103,6 +103,10 @@ export const updateHousekeeping = (body)  => client.post('/housekeeping', body);
 export const checkLateCheckout   = (rsvNo, reqOutTm) => client.get('/late-checkout', { params: { rsvNo, reqOutTm } });
 export const requestLateCheckout = (body)            => client.post('/late-checkout', body);
 
+// 주차
+export const fetchParkingList = (rsvNo) => client.get('/parking/list', { params: { rsvNo } });
+export const requestParking   = (body)  => client.post('/parking', body);
+
 // AI (LLM 프록시 — Spring Boot가 Anthropic 키를 보관/호출)
 export const postAiChat  = (body) => aiClient.post('/chat', body);
 export const getAiStatus = ()     => aiClient.get('/status');
