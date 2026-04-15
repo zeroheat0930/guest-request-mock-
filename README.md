@@ -330,6 +330,104 @@ cp vue_client/.env.local.example vue_client/.env.local
 
 ## 🗓️ 진행 로그
 
+### 2026-04-15 (윈도우 세션 — 컨시어지 독립 제품화 + 배포 시도)
+
+오늘의 핵심은 **"컨시어지를 DAOL PMS 종속 제품이 아니라, 타 PMS 로 이식 가능한 독립 제품으로 재설계"** 다.
+
+**1. PMS 키오스크 이벤트 브릿지 (실제 연동 길 확보)**
+- PMS(`C:\DAOL\PMS`) 를 read-only 로 탐색 → 키오스크 요청이 프론트데스크 팝업으로 뜨는 경로 전체 파악:
+  - 인바운드: `POST /api/mkiosk/event` → `CcService.setKokEvent()` → `KOK_EVENT` 테이블 insert
+  - 푸시: Redis publish → STOMP `/topic/{propCd}/{cmpxCd}` → 프론트데스크 `frame.js:WS_MSG()` 에서 `axToast.push()` / `window.open('/jsp/cc/kok-chat.jsp')`
+  - 즉, 우리는 **`/api/mkiosk/event` POST 한 방**만 날리면 PMS 기존 팝업 파이프라인이 그대로 동작함
+- 처음엔 `/kiosk/login` 토큰 경로로 가려 했으나, `setKokEvent()` 가 `SessionUtils.getCurrentUser()` 에 강제 의존해서 세션 없으면 NPE → 우회 불가
+- **PMS 소스 3줄 수정** (사내 PMS 리포, 미커밋):
+  1. `SecurityConfig.java` `ignorePagesPost` 에 `/api/mkiosk/event` 추가
+  2. `CcService.setKokEvent()` 에 `SessionUser` null 체크 + `userId` param fallback (`"CONCIERGE"`)
+  - 기존 호출자 3곳(KokMngtController, MkioskKokMngtController, MkioskApiController)은 항상 세션 컨텍스트라 영향 0 — 오히려 NPE 방어가 추가됨
+
+**2. 독립 제품 아키텍처 + 디스패처 추상화 (가장 큰 구조 변경)**
+
+> *"컨시어지를 단독으로 팔면 어드민 설정/DB 를 PMS 안에 둘 수 없다. 확장성 생각하면 자체 DB + 자체 어드민 UI 가 주인이고, PMS 는 여러 백엔드 중 하나여야 한다."* — 오늘 세션의 결론
+
+- **새 패키지 `com.daol.concierge.dispatcher`** — `RequestDispatcher` 인터페이스 + 구현체 3종
+  - `DaolKokEventDispatcher` — 사내 PMS `/api/mkiosk/event` 브릿지 (기존 `PmsKokEventClient` 로직 이관)
+  - `ExternalApiDispatcher` — 타 PMS REST stub (future)
+  - `InternalOnlyDispatcher` — no-op, **기본값** (`matchIfMissing=true`) → dev/test/standalone 에서 환경변수 없이 그대로 돌아감
+  - `@ConditionalOnProperty(concierge.dispatcher)` 로 기동 시 하나만 활성화
+- `PmsKokEventClient.java` **삭제** (`DaolKokEventDispatcher` 로 흡수)
+- `GrService` 의 3개 훅(어메니티/하우스키핑/레이트체크아웃)이 `RequestDispatcher.dispatch(RequestEvent)` 로 통일 호출
+
+**3. 기능 플래그 시스템 (`com.daol.concierge.feature`)**
+
+- 새 엔티티 2종:
+  - `ConciergeFeature` (`CONCIERGE_FEATURE` 테이블, PK=`(propCd, featureCd)`, 컬럼: `useYn`, `sortOrd`, `configJson`, `updUser`, `updDt`)
+  - `ConciergeProperty` (`CONCIERGE_PROPERTY` 테이블, propCd PK + 이름/타임존/기본언어)
+- 기능 코드 6종: `AMENITY` / `HK` / `LATE_CO` / `CHAT` / `NEARBY` / `PARKING`
+- **게스트 API** `GET /api/concierge/features` — JWT 에서 propCd 뽑아 `useYn='Y'` 인 기능만 반환
+- **어드민 API** `GET/PUT /api/concierge/admin/features?propCd=` — `X-Admin-Token` 헤더 검증 (`CONCIERGE_ADMIN_PW` 환경변수, 비어있으면 503)
+- `AdminAuthInterceptor` + `AdminWebMvcConfig` 로 어드민 경로만 게이트
+- `SeedDataRunner` 가 기동 시 `propCd=HQ` 에 6개 feature 시드 (idempotent, `existsById` 체크)
+- `V2__concierge_feature.sql` — Flyway 대비 DDL 플레이스홀더 (프로덕션 MariaDB `ddl-auto=validate` 용)
+
+**4. 프론트: 동적 LNB + 어드민 화면**
+
+- `vue_client/src/features/featureStore.js` — 앱 마운트 시 `/api/concierge/features` 1회 호출, 반응형 `features` Map + `enabledSortedFeatures()` 컴퓨티드
+- `App.vue` LNB: 하드코딩 4탭 → **`v-for` 동적 렌더** (`FEATURE_META` 에 아이콘/라우트 매핑)
+- `router/index.js` `beforeEach` 가드 — 비활성 기능 라우트 직접 접근 시 첫 활성 탭으로 리다이렉트
+- 신규 뷰 3개: `AdminFeaturesView.vue` (어드민 토글 테이블, `sessionStorage` 에 `X-Admin-Token` 저장), `NearbyView.vue` / `ParkingView.vue` (placeholder "준비 중")
+
+**5. application.yml 새 블록**
+```yaml
+concierge:
+  dispatcher: ${CONCIERGE_DISPATCHER:internal}   # internal | daol | external
+pms:
+  base-url / prop-cd / cmpx-cd / kok-cd   # dispatcher=daol 일 때만 사용
+admin:
+  password: ${CONCIERGE_ADMIN_PW:}        # 비어있으면 /api/concierge/admin/** = 503
+```
+
+**6. 빌드 검증**
+- `mvn -o compile` BUILD SUCCESS (45 sources)
+- `vue_client` `npm run build` OK (97 modules, 152 KB)
+- 기존 dev 프로파일(H2 파일) 로 변경 없이 그대로 기동 가능 — dispatcher 기본 `internal` 덕분
+
+**7. 배포 시도 — OCI Ampere A1 Out of capacity (미해결)**
+- Oracle Cloud Always Free (춘천 리전) 가입 → `VM.Standard.A1.Flex` 2 OCPU / 12 GB 생성 시도
+- **Capacity 고갈** — 한국 주간 시간대엔 거의 항상 품절
+- 임시 대체로 `VM.Standard.E2.1.Micro` (1C/1GB) 생성 → `dnf update` 가 OOM 으로 뻗음 → 인스턴스 응답 없음 → terminate
+- Cloud Shell 에서 A1.Flex 재시도 루프 스크립트를 짜려 했으나, 복붙 과정에서 `\` 연속행/heredoc 이 모두 깨지는 경험
+- **결론**: 배포는 다음 세션으로 미루고, Ampere 재고 풀릴 때(새벽/저녁) 재시도하거나, 사내/집 상시구동 PC + Cloudflare Tunnel 로 우회 검토
+
+**남은 할 일 (다음 세션)**
+- [ ] Docker 이미지화 + `docker-compose.yml` (api + mariadb) — 인스턴스 잡히면 1분 안에 배포
+- [ ] Cloudflare Tunnel 또는 duckdns 무료 도메인 연결
+- [ ] `/admin/features` 화면 폴리싱 (현재는 프롬프트로 토큰 입력)
+- [ ] NEARBY / PARKING placeholder → 실제 기능 구현
+- [ ] 어드민 인증 PW → 복수 계정 + 감사로그
+- [ ] `featureStore` 가 `JJU` 프로퍼티 게스트용 feature 시드 확장
+
+**파일 변경 요약**
+
+신규:
+- `api_server/src/main/java/com/daol/concierge/feature/` — 엔티티 2 / 레포 2 / FeatureService / FeatureController / FeatureAdminController / AdminAuthInterceptor / AdminWebMvcConfig / ConciergeFeatureId
+- `api_server/src/main/java/com/daol/concierge/dispatcher/` — RequestDispatcher 인터페이스 / RequestEvent / DaolKokEventDispatcher / ExternalApiDispatcher / InternalOnlyDispatcher
+- `api_server/src/main/resources/db/migration/V2__concierge_feature.sql`
+- `vue_client/src/features/featureStore.js`
+- `vue_client/src/views/AdminFeaturesView.vue` / `NearbyView.vue` / `ParkingView.vue` / `ChatView.vue`
+
+수정:
+- `gr/service/GrService.java` — `RequestDispatcher` 주입, 3개 훅 교체
+- `gr/service/SeedDataRunner.java` — 기능 플래그 6건 시드 추가
+- `core/config/SecurityConfig.java` — `/api/concierge/admin/**` 허용
+- `application.yml` — concierge / pms / admin 블록
+- `App.vue` — LNB 동적 렌더
+- `router/index.js` — feature 가드 + placeholder 라우트
+
+삭제:
+- `api_server/.../pms/PmsKokEventClient.java` (→ DaolKokEventDispatcher 로 흡수)
+- `vue_client/src/components/ChatFab.vue`
+- `vue_client/src/views/DashboardView.vue` / `HomeView.vue`
+
 ### 2026-04-14 (윈도우 세션)
 - ✅ 윈도우 PC에 **포터블 JDK 17 + Maven 3.9.14** 격리 설치 (`C:\tools\...`, 시스템 PATH 무영향)
   — 회사 PMS 개발 환경과 완전 분리

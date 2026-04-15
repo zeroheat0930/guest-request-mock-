@@ -60,6 +60,8 @@ public class SecurityConfig {
 							// 토큰 발급 엔드포인트만 공개 (미래에 /api/auth/* 하위 엔드포인트가 늘어도 자동 공개되지 않도록 구체화)
 							.requestMatchers(HttpMethod.POST, "/api/auth/guest-token").permitAll()
 							.requestMatchers(HttpMethod.GET, "/api/ai/status").permitAll()
+							// 관리자 API 는 자체 헤더 인증(AdminAuthInterceptor) 을 쓰므로 JWT 필터에서는 통과시킨다.
+							.requestMatchers("/api/concierge/admin/**").permitAll()
 							.requestMatchers("/", "/error").permitAll();
 					// H2 console 은 dev 프로파일에서만 공개 — prod 엔 절대 노출 금지
 					if (devLike) {

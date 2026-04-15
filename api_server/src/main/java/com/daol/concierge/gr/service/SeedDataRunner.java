@@ -1,5 +1,10 @@
 package com.daol.concierge.gr.service;
 
+import com.daol.concierge.feature.ConciergeFeature;
+import com.daol.concierge.feature.ConciergeFeatureId;
+import com.daol.concierge.feature.ConciergeFeatureRepository;
+import com.daol.concierge.feature.ConciergeProperty;
+import com.daol.concierge.feature.ConciergePropertyRepository;
 import com.daol.concierge.gr.domain.AmenityItem;
 import com.daol.concierge.gr.domain.Reservation;
 import com.daol.concierge.gr.repo.AmenityItemRepository;
@@ -26,12 +31,42 @@ public class SeedDataRunner implements CommandLineRunner {
 
 	@Autowired private ReservationRepository reservationRepo;
 	@Autowired private AmenityItemRepository amenityItemRepo;
+	@Autowired private ConciergePropertyRepository propertyRepo;
+	@Autowired private ConciergeFeatureRepository featureRepo;
 
 	@Override
 	@Transactional
 	public void run(String... args) {
 		seedReservations();
 		seedAmenityItems();
+		seedPropertyAndFeatures();
+	}
+
+	private void seedPropertyAndFeatures() {
+		if (!propertyRepo.existsById(DEFAULT_PROP_CD)) {
+			ConciergeProperty p = new ConciergeProperty(DEFAULT_PROP_CD, "DAOL 본점");
+			p.setPropNmEng("DAOL HQ");
+			p.setTimezone("Asia/Seoul");
+			p.setDefaultLang("ko_KR");
+			propertyRepo.save(p);
+			log.info("Seeded property {}", DEFAULT_PROP_CD);
+		}
+		Object[][] rows = {
+				{"AMENITY", "Y", 10},
+				{"HK",      "Y", 20},
+				{"LATE_CO", "Y", 30},
+				{"CHAT",    "Y", 40},
+				{"NEARBY",  "N", 50},
+				{"PARKING", "N", 60}
+		};
+		int inserted = 0;
+		for (Object[] row : rows) {
+			String featureCd = (String) row[0];
+			if (featureRepo.existsById(new ConciergeFeatureId(DEFAULT_PROP_CD, featureCd))) continue;
+			featureRepo.save(new ConciergeFeature(DEFAULT_PROP_CD, featureCd, (String) row[1], (Integer) row[2]));
+			inserted++;
+		}
+		if (inserted > 0) log.info("Seeded {} features for {}", inserted, DEFAULT_PROP_CD);
 	}
 
 	private void seedReservations() {

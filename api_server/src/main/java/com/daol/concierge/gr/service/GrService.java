@@ -13,6 +13,8 @@ import com.daol.concierge.gr.repo.AmenityRequestRepository;
 import com.daol.concierge.gr.repo.HousekeepingRequestRepository;
 import com.daol.concierge.gr.repo.LateCheckoutRequestRepository;
 import com.daol.concierge.gr.repo.ReservationRepository;
+import com.daol.concierge.dispatcher.RequestDispatcher;
+import com.daol.concierge.dispatcher.RequestEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +51,7 @@ public class GrService {
 	@Autowired private AmenityRequestRepository amenityRequestRepo;
 	@Autowired private HousekeepingRequestRepository housekeepingRepo;
 	@Autowired private LateCheckoutRequestRepository lateCheckoutRepo;
+	@Autowired private RequestDispatcher requestDispatcher;
 
 	// ==================== 예약 ====================
 
@@ -153,6 +156,15 @@ public class GrService {
 		req.setReqTm(now.format(FMT_TM));
 		amenityRequestRepo.save(req);
 
+		requestDispatcher.dispatch(new RequestEvent(
+				principalPropCd(),
+				"AMENITY",
+				"[" + roomNo + "] 어메니티 요청 " + req.getItems().size() + "건 (" + reqNo + ")",
+				roomNo,
+				reqNo,
+				reqMemo
+		));
+
 		Map<String, Object> res = new LinkedHashMap<>();
 		res.put("reqNo", reqNo);
 		res.put("procStatCd", "REQ");
@@ -220,6 +232,15 @@ public class GrService {
 		hk.setReqDt(now.format(FMT_DT));
 		hk.setReqTm(now.format(FMT_TM));
 		housekeepingRepo.save(hk);
+
+		requestDispatcher.dispatch(new RequestEvent(
+				principalPropCd(),
+				"HK_" + hkStatCd,
+				"[" + rsv.getRoomNo() + "] 객실정비 " + nm + " (" + reqNo + ")",
+				rsv.getRoomNo(),
+				reqNo,
+				reqMemo
+		));
 
 		Map<String, Object> res = new LinkedHashMap<>();
 		res.put("reqNo", reqNo);
@@ -302,6 +323,15 @@ public class GrService {
 		lc.setReqDt(now.format(FMT_DT));
 		lc.setReqTm(now.format(FMT_TM));
 		lateCheckoutRepo.save(lc);
+
+		requestDispatcher.dispatch(new RequestEvent(
+				principalPropCd(),
+				"LATE_CO",
+				"[" + rsv.getRoomNo() + "] 레이트체크아웃 " + reqOutTm + " +" + addAmt + "원 (" + reqNo + ")",
+				rsv.getRoomNo(),
+				reqNo,
+				null
+		));
 
 		Map<String, Object> res = new LinkedHashMap<>();
 		res.put("reqNo", reqNo);

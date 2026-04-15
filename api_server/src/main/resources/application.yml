@@ -19,6 +19,22 @@ anthropic:
   endpoint: https://api.anthropic.com/v1/messages
   version: '2023-06-01'
 
+concierge:
+  # 요청 디스패처 선택: internal(no-op, 기본) | daol(사내 PMS KOK 이벤트) | external(외부 REST, stub)
+  dispatcher: ${CONCIERGE_DISPATCHER:internal}
+
+pms:
+  # 회사 PMS 키오스크 이벤트 브릿지 설정. dispatcher=daol 일 때만 사용.
+  # PMS 측: SecurityConfig.ignorePagesPost 에 /api/mkiosk/event 추가 + CcService.setKokEvent userId fallback 필요.
+  base-url: ${PMS_BASE_URL:http://localhost:8090}
+  prop-cd: ${PMS_PROP_CD:}
+  cmpx-cd: ${PMS_CMPX_CD:}
+  kok-cd: ${PMS_KOK_CD:CONCIERGE}
+
+admin:
+  # 관리자 API (X-Admin-Token) 패스워드. 비어 있으면 /api/concierge/admin/** 는 503.
+  password: ${CONCIERGE_ADMIN_PW:}
+
 jwt:
   # 개발용 고정 시크릿. 프로덕션에선 반드시 JWT_SECRET 환경변수로 주입.
   secret: ${JWT_SECRET:dev-only-secret-please-change-in-production-32bytes-min!!}
