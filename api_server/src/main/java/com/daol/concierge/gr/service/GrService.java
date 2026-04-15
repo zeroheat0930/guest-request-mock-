@@ -17,6 +17,7 @@ import com.daol.concierge.gr.repo.ParkingRegistrationRepository;
 import com.daol.concierge.gr.repo.ReservationRepository;
 import com.daol.concierge.dispatcher.RequestDispatcher;
 import com.daol.concierge.dispatcher.RequestEvent;
+import com.daol.concierge.pms.PmsCarRegistryAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,6 +56,7 @@ public class GrService {
 	@Autowired private LateCheckoutRequestRepository lateCheckoutRepo;
 	@Autowired private ParkingRegistrationRepository parkingRepo;
 	@Autowired private RequestDispatcher requestDispatcher;
+	@Autowired(required = false) private PmsCarRegistryAdapter pmsCarRegistryAdapter;
 
 	// ==================== 예약 ====================
 
@@ -397,6 +399,10 @@ public class GrService {
 		pk.setReqDt(now.format(FMT_DT));
 		pk.setReqTm(now.format(FMT_TM));
 		parkingRepo.save(pk);
+
+		if (pmsCarRegistryAdapter != null) {
+			pmsCarRegistryAdapter.register(rsvNo, carNo);
+		}
 
 		requestDispatcher.dispatch(new RequestEvent(
 				principalPropCd(),
