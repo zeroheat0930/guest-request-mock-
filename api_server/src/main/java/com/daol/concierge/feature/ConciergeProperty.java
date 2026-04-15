@@ -28,6 +28,12 @@ public class ConciergeProperty {
 	@Column(name = "default_lang", length = 10)
 	private String defaultLang;
 
+	@Column(name = "lat")
+	private Double lat;
+
+	@Column(name = "lng")
+	private Double lng;
+
 	public ConciergeProperty() {}
 
 	public ConciergeProperty(String propCd, String propNm) {
@@ -49,4 +55,10 @@ public class ConciergeProperty {
 
 	public String getDefaultLang() { return defaultLang; }
 	public void setDefaultLang(String v) { this.defaultLang = v; }
+
+	public Double getLat() { return lat; }
+	public void setLat(Double v) { this.lat = v; }
+
+	public Double getLng() { return lng; }
+	public void setLng(Double v) { this.lng = v; }
 }

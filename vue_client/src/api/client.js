@@ -78,6 +78,14 @@ const aiClient = axios.create({
 aiClient.interceptors.request.use(attachAuthHeader);
 aiClient.interceptors.response.use(unwrapOk, unwrapErr);
 
+// 컨시어지 부가 기능(NEARBY 등) — /api/concierge/** 하위
+const conciergeClient = axios.create({
+	baseURL: `${API_BASE}/concierge`,
+	timeout: 8000
+});
+conciergeClient.interceptors.request.use(attachAuthHeader);
+conciergeClient.interceptors.response.use(unwrapOk, unwrapErr);
+
 // 예약
 export const fetchReservation     = (rsvNo) => client.get('/reservation', { params: { rsvNo } });
 export const fetchReservationList = ()      => client.get('/reservation/list');
@@ -98,3 +106,6 @@ export const requestLateCheckout = (body)            => client.post('/late-check
 // AI (LLM 프록시 — Spring Boot가 Anthropic 키를 보관/호출)
 export const postAiChat  = (body) => aiClient.post('/chat', body);
 export const getAiStatus = ()     => aiClient.get('/status');
+
+// 주변 안내 (NEARBY) — category: food|cafe|conv|tour|pharmacy
+export const fetchNearby = (category) => conciergeClient.get('/nearby', { params: { category } });

@@ -43,20 +43,29 @@ public class SeedDataRunner implements CommandLineRunner {
 	}
 
 	private void seedPropertyAndFeatures() {
-		if (!propertyRepo.existsById(DEFAULT_PROP_CD)) {
+		ConciergeProperty existing = propertyRepo.findById(DEFAULT_PROP_CD).orElse(null);
+		if (existing == null) {
 			ConciergeProperty p = new ConciergeProperty(DEFAULT_PROP_CD, "DAOL 본점");
 			p.setPropNmEng("DAOL HQ");
 			p.setTimezone("Asia/Seoul");
 			p.setDefaultLang("ko_KR");
+			p.setLat(37.5665);
+			p.setLng(126.9780);
 			propertyRepo.save(p);
 			log.info("Seeded property {}", DEFAULT_PROP_CD);
+		} else if (existing.getLat() == null || existing.getLng() == null) {
+			// 기존 행에 좌표만 백필 (NEARBY 기능 추가 이전에 생성된 dev DB 대응)
+			existing.setLat(37.5665);
+			existing.setLng(126.9780);
+			propertyRepo.save(existing);
+			log.info("Backfilled lat/lng for property {}", DEFAULT_PROP_CD);
 		}
 		Object[][] rows = {
 				{"AMENITY", "Y", 10},
 				{"HK",      "Y", 20},
 				{"LATE_CO", "Y", 30},
 				{"CHAT",    "Y", 40},
-				{"NEARBY",  "N", 50},
+				{"NEARBY",  "Y", 50},
 				{"PARKING", "N", 60}
 		};
 		int inserted = 0;

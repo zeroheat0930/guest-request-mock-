@@ -35,6 +35,15 @@ admin:
   # 관리자 API (X-Admin-Token) 패스워드. 비어 있으면 /api/concierge/admin/** 는 503.
   password: ${CONCIERGE_ADMIN_PW:}
 
+nearby:
+  # 주변 정보 제공자: mock(기본, 하드코딩 샘플) | kakao(실제 카카오 로컬 API)
+  provider: ${NEARBY_PROVIDER:mock}
+  default-radius-m: ${NEARBY_RADIUS_M:1000}
+
+kakao:
+  # Kakao Developers REST API 키. nearby.provider=kakao 일 때만 필요.
+  rest-api-key: ${KAKAO_REST_API_KEY:}
+
 jwt:
   # 개발용 고정 시크릿. 프로덕션에선 반드시 JWT_SECRET 환경변수로 주입.
   secret: ${JWT_SECRET:dev-only-secret-please-change-in-production-32bytes-min!!}
