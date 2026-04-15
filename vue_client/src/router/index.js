@@ -1,3 +1,8 @@
+/**
+ * 게스트 번들 전용 라우터.
+ * staff/admin 라우트는 별도 번들(staffRouter.js)로 분리됨 — 여기에 import 하지 않으므로
+ * 게스트 번들에 스태프/관리자 소스가 포함되지 않음(Vite 트리쉐이킹 + 멀티 엔트리).
+ */
 import { createRouter, createWebHashHistory } from 'vue-router';
 import AmenityView from '../views/AmenityView.vue';
 import HousekeepingView from '../views/HousekeepingView.vue';
@@ -5,12 +10,6 @@ import LateCheckoutView from '../views/LateCheckoutView.vue';
 import ChatView from '../views/ChatView.vue';
 import NearbyView from '../views/NearbyView.vue';
 import ParkingView from '../views/ParkingView.vue';
-import AdminFeaturesView from '../views/AdminFeaturesView.vue';
-import AdminLoginView from '../views/AdminLoginView.vue';
-import AdminCcsView from '../views/AdminCcsView.vue';
-import StaffLoginView from '../views/staff/StaffLoginView.vue';
-import StaffDashboardView from '../views/staff/StaffDashboardView.vue';
-import RunnerView from '../views/staff/RunnerView.vue';
 import { featuresLoaded, isFeatureEnabled, firstEnabledPath } from '../features/featureStore.js';
 
 const routes = [
@@ -21,12 +20,8 @@ const routes = [
 	{ path: '/chat',          component: ChatView,         meta: { featureCd: 'CHAT' } },
 	{ path: '/nearby',        component: NearbyView,       meta: { featureCd: 'NEARBY' } },
 	{ path: '/parking',       component: ParkingView,      meta: { featureCd: 'PARKING' } },
-	{ path: '/admin/login',    component: AdminLoginView,    meta: { admin: true, public: true } },
-	{ path: '/admin/features', component: AdminFeaturesView, meta: { admin: true } },
-	{ path: '/admin/ccs',      component: AdminCcsView,      meta: { admin: true } },
-	{ path: '/staff/login',    component: StaffLoginView,    meta: { staff: true, public: true } },
-	{ path: '/staff',          component: StaffDashboardView, meta: { staff: true } },
-	{ path: '/runner',         component: RunnerView,         meta: { staff: true } }
+	// 게스트 번들로 잘못 들어온 스태프/관리자 URL 은 홈으로 돌려보냄
+	{ path: '/:pathMatch(.*)*', redirect: '/' }
 ];
 
 const router = createRouter({
@@ -35,16 +30,6 @@ const router = createRouter({
 });
 
 router.beforeEach((to) => {
-	if (to.meta?.staff) {
-		if (to.meta.public) return true;
-		const t = (() => { try { return sessionStorage.getItem('ccs.token'); } catch { return null; } })();
-		return t ? true : '/staff/login';
-	}
-	if (to.meta?.admin) {
-		if (to.meta.public) return true;
-		const t = (() => { try { return sessionStorage.getItem('concierge.adminToken'); } catch { return null; } })();
-		return t ? true : '/admin/login';
-	}
 	if (!featuresLoaded.value) return true;
 	const cd = to.meta?.featureCd;
 	if (cd && !isFeatureEnabled(cd)) {
