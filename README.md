@@ -279,6 +279,39 @@ Base: `http://localhost:8080/api`
 
 ## 🗓️ 진행 로그
 
+### 2026-04-15 (맥북 밤 세션 — UI 고도화: StaffShell + 디자인 토큰 + 로그인 폴리싱)
+
+**배경**: PMS 연동을 제거하고 나서 스태프/관리자 번들이 뷰별로 자체 상단 헤더만 쓰고 있어 내비게이션 일관성이 떨어졌고, 로그인 화면은 기능 동작 수준에 머물러 있었음. 심사 영상에서 시연 임팩트가 약할 것으로 판단해 전체적인 시각/인터랙션 완성도를 끌어올림.
+
+**핵심 변경**:
+- **디자인 토큰 centralize** — `src/assets/tokens.css` 신규. 브랜드 팔레트/뉴트럴/상태 컬러/radius/shadow/spacing/typography/motion 을 CSS 커스텀 프로퍼티로 일괄 정의해 두 번들이 공유
+- **`StaffShell.vue` 레이아웃 신규** — 스태프/관리자 공용 좌측 LNB
+  - 그라디언트 브랜드 헤더 (`DAOL CCS`, 로고 블록)
+  - 스태프/관리자 그룹별 분리된 내비게이션 (sessionStorage 토큰 기반 조건부 렌더)
+  - 하단 유저 정보(아바타 이니셜 + 이름 + 역할) + SVG 로그아웃 아이콘
+  - 모바일(< 720px) 에서는 상단 가로 바로 자동 재배치
+- **`StaffApp.vue` 전환** — 라우트별 셸 결정:
+  - `/staff`, `/admin/*` → `StaffShell` 로 감싸기
+  - `/runner` → 자체 모바일 PWA 셸 유지(감싸지 않음)
+  - `*/login` → 가운데 정렬된 플레인 셸 + 방사 그라디언트 배경
+- **뷰에서 중복 헤더 제거** — 내비/로그아웃이 셸로 이동해 뷰에는 페이지 타이틀만 남김
+  - `StaffDashboardView.vue` — `.head` 블록 제거, `page-head` 타이틀 + 부제로 단순화
+  - `AdminFeaturesView.vue` — 툴바의 로그아웃 버튼 제거
+- **로그인 화면 재작성** — `StaffLoginView` / `AdminLoginView`
+  - 그라디언트 로고 블록 + 브랜드 타이틀 + tagline
+  - 라이즈 인 애니메이션(`@keyframes rise`)
+  - 로딩 버튼 안에 인라인 스피너
+  - 스태프 로그인: 데모 계정 4종(hk1/fr1/eng1/fb1) 빠른 입력 `<details>` 패널
+  - 관리자 로그인: `CONCIERGE_ADMIN_PW` 환경변수 안내 힌트
+- **페이지 전환** — 게스트/스태프 App 양쪽에 `<transition name="page">` + `out-in` 모드 적용, 8px 이동 + opacity 페이드
+- **글로벌 스타일** — `main.css` 에 `@import tokens.css`, 브랜드 focus ring, 선택 색상, 스크롤바 폴리싱
+
+**빌드 결과**:
+- `npm run build` — 115 modules, 0 errors
+- 게스트: `main-*.js` 22.8 KB / `main-*.css` 13.7 KB
+- 스태프: `staff-*.js` 22.5 KB / `staff-*.css` 23.0 KB
+- shared: `_plugin-vue_export-helper-*.js` 140.2 KB
+
 ### 2026-04-15 (맥북 저녁 세션 — 게스트/스태프 경계 정리 + PMS 연동 제거)
 
 **배경**: 스태프 로그인 후에도 게스트 LNB(어메니티/HK/레이트/챗/주차)가 왼쪽에 계속 보이고, 단일 JS 번들이 스태프/관리자 코드를 게스트 태블릿까지 내려보내고 있던 문제. 추가로 CCS 가 완성된 이상 PMS KOK_EVENT 브릿지는 이중 경로라 CCS 단일 경로로 재정리.

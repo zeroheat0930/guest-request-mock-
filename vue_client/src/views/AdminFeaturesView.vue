@@ -8,7 +8,6 @@
 				</label>
 				<button @click="load" :disabled="busy">새로고침</button>
 				<button class="primary" @click="save" :disabled="busy || hasJsonErrors">저장</button>
-				<button class="ghost" @click="logout">로그아웃</button>
 			</div>
 		</div>
 
@@ -102,10 +101,6 @@ function getToken() {
 function gotoLogin() {
 	try { sessionStorage.removeItem(TOKEN_KEY); } catch {}
 	router.replace('/admin/login');
-}
-
-function logout() {
-	gotoLogin();
 }
 
 function toggleAdv(cd) {

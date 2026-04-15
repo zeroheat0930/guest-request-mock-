@@ -27,13 +27,21 @@
 			</div>
 		</aside>
 		<main class="app-body">
-			<router-view />
+			<router-view v-slot="{ Component }">
+				<transition name="page" mode="out-in">
+					<component :is="Component" />
+				</transition>
+			</router-view>
 		</main>
 	</div>
 
-	<!-- 스태프/관리자/로그인 영역: 사이드바 없이 순수 본문만. 각 뷰가 자체 헤더/로그아웃을 가짐 -->
+	<!-- 스태프/관리자/로그인 영역(안전 폴백): 게스트 번들에는 어차피 해당 라우트가 없지만 혹시 모를 진입을 위해 -->
 	<div v-else class="plain-shell">
-		<router-view />
+		<router-view v-slot="{ Component }">
+			<transition name="page" mode="out-in">
+				<component :is="Component" />
+			</transition>
+		</router-view>
 	</div>
 </template>
 

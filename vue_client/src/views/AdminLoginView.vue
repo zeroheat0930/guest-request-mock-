@@ -1,22 +1,33 @@
 <template>
-	<div class="login-wrap">
-		<form class="card" @submit.prevent="submit">
-			<h2>🔐 관리자 로그인</h2>
-			<p class="sub">컨시어지 기능 관리 콘솔</p>
-			<label>비밀번호
-				<input
-					ref="pwInput"
-					type="password"
-					v-model="pw"
-					autocomplete="current-password"
-					:disabled="busy"
-				/>
-			</label>
-			<button class="primary" type="submit" :disabled="busy || !pw">
-				{{ busy ? '확인 중…' : '로그인' }}
-			</button>
-			<div v-if="err" class="err">{{ err }}</div>
-		</form>
+	<div class="login-shell">
+		<div class="card">
+			<header class="brand">
+				<div class="logo">🔐</div>
+				<h1>Admin Console</h1>
+				<p class="tag">Concierge Management</p>
+			</header>
+			<form @submit.prevent="submit" novalidate>
+				<label>
+					<span class="lb">관리자 패스워드</span>
+					<input
+						ref="pwInput"
+						type="password"
+						v-model="pw"
+						autocomplete="current-password"
+						:disabled="busy"
+						placeholder="••••••••"
+					/>
+				</label>
+				<button class="primary" type="submit" :disabled="busy || !pw">
+					<span v-if="busy" class="spinner" />
+					{{ busy ? '확인 중' : '로그인' }}
+				</button>
+				<div v-if="err" class="err">{{ err }}</div>
+			</form>
+			<p class="hint">
+				환경변수 <code>CONCIERGE_ADMIN_PW</code> 가 서버에 설정돼야 접속 가능합니다.
+			</p>
+		</div>
 	</div>
 </template>
 
@@ -68,74 +79,131 @@ async function submit() {
 </script>
 
 <style scoped>
-.login-wrap {
-	min-height: 70vh;
+.login-shell { width: 100%; display: flex; justify-content: center; }
+
+.card {
+	background: var(--c-surface);
+	padding: var(--sp-8) var(--sp-8) var(--sp-6);
+	border-radius: var(--r-xl);
+	width: 100%;
+	max-width: 400px;
+	box-shadow: var(--sh-xl);
+	border: 1px solid var(--c-border);
+	animation: rise var(--t-slow) var(--ease-out) both;
+}
+@keyframes rise {
+	from { opacity: 0; transform: translateY(16px) scale(0.98); }
+	to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.brand { text-align: center; margin-bottom: var(--sp-6); }
+.brand .logo {
+	width: 64px;
+	height: 64px;
+	margin: 0 auto var(--sp-3);
+	background: linear-gradient(135deg, #6b46c1, #805ad5);
+	border-radius: var(--r-lg);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 24px;
+	font-size: 30px;
+	box-shadow: 0 6px 18px rgba(107, 70, 193, 0.32);
 }
-.card {
-	background: #fff;
-	padding: 32px 28px;
-	border-radius: 12px;
-	width: 100%;
-	max-width: 360px;
-	box-shadow: 0 4px 16px rgba(26, 58, 110, 0.08);
-}
-.card h2 {
+.brand h1 {
+	font-size: 22px;
 	margin: 0 0 4px;
-	color: #1a3a6e;
-	font-size: 20px;
+	color: var(--c-brand-900);
+	letter-spacing: 0.3px;
+	font-weight: 800;
 }
-.sub {
-	margin: 0 0 20px;
-	font-size: 13px;
-	color: #8492a6;
+.brand .tag {
+	margin: 0;
+	font-size: var(--fs-xs);
+	color: var(--c-text-dim);
+	letter-spacing: 1px;
+	text-transform: uppercase;
 }
-label {
+
+label { display: block; margin-bottom: var(--sp-4); }
+.lb {
 	display: block;
-	font-size: 13px;
-	color: #4a5568;
-	font-weight: 600;
-	margin-bottom: 16px;
+	font-size: var(--fs-xs);
+	color: var(--c-text-soft);
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.8px;
+	margin-bottom: 6px;
 }
 label input {
 	display: block;
 	width: 100%;
-	margin-top: 6px;
-	padding: 10px 12px;
-	border: 1px solid #cbd5e0;
-	border-radius: 6px;
-	font-size: 16px;
-	box-sizing: border-box;
+	padding: 12px 14px;
+	border: 1px solid var(--c-border-strong);
+	border-radius: var(--r-sm);
+	font-size: 15px;
+	background: var(--c-bg);
+	transition: border-color var(--t-fast), box-shadow var(--t-fast);
 }
 label input:focus {
 	outline: none;
-	border-color: #1a3a6e;
-	box-shadow: 0 0 0 3px rgba(26, 58, 110, 0.12);
+	border-color: #805ad5;
+	background: var(--c-surface);
+	box-shadow: 0 0 0 3px rgba(107, 70, 193, 0.18);
 }
+
 .primary {
 	width: 100%;
-	padding: 12px;
-	background: #1a3a6e;
+	padding: 13px;
+	background: linear-gradient(135deg, #6b46c1, #805ad5);
 	color: #fff;
 	border: none;
-	border-radius: 8px;
+	border-radius: var(--r-md);
 	font-size: 15px;
-	font-weight: 700;
+	font-weight: 800;
+	letter-spacing: 0.3px;
 	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--sp-2);
+	box-shadow: 0 6px 18px rgba(107, 70, 193, 0.32);
+	transition: transform var(--t-fast), opacity var(--t-fast);
 }
-.primary:disabled {
-	opacity: 0.5;
-	cursor: not-allowed;
+.primary:hover:not(:disabled) { transform: translateY(-1px); }
+.primary:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+
+.spinner {
+	width: 14px;
+	height: 14px;
+	border: 2px solid rgba(255, 255, 255, 0.35);
+	border-top-color: #fff;
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
 }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 .err {
-	margin-top: 16px;
-	padding: 10px 12px;
-	background: #fff5f5;
-	color: #c53030;
-	border-radius: 6px;
-	font-size: 13px;
+	margin-top: var(--sp-4);
+	padding: 10px 14px;
+	background: var(--c-err-50);
+	color: var(--c-err-600);
+	border: 1px solid rgba(197, 48, 48, 0.2);
+	border-radius: var(--r-sm);
+	font-size: var(--fs-sm);
+}
+
+.hint {
+	margin: var(--sp-6) 0 0;
+	font-size: var(--fs-xs);
+	color: var(--c-text-dim);
+	text-align: center;
+	line-height: 1.6;
+}
+.hint code {
+	background: var(--c-bg-soft);
+	padding: 2px 6px;
+	border-radius: 4px;
+	font-family: ui-monospace, "SF Mono", Menlo, monospace;
+	color: #6b46c1;
 }
 </style>

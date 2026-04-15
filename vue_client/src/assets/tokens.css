@@ -1,0 +1,93 @@
+/* ═══════════════════════════════════════════════════════════════════
+ * 다올 컨시어지 디자인 토큰 — 두 번들(index.html, staff.html)이 공유.
+ * 변경 시 전체 컬러/간격이 일괄 반영되도록 CSS 변수로 centralize.
+ * ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+	/* ── Brand Palette ── */
+	--c-brand-900: #0f2748;
+	--c-brand-800: #16345e;
+	--c-brand-700: #1a3a6e;
+	--c-brand-600: #2456a0;
+	--c-brand-500: #2563eb;
+	--c-brand-400: #3b82f6;
+	--c-brand-300: #60a5fa;
+	--c-brand-50:  #eff6ff;
+
+	--c-accent-500: #3b5bdb;
+	--c-accent-400: #5c7cfa;
+
+	/* ── Neutrals ── */
+	--c-bg:        #f5f7fa;
+	--c-bg-soft:   #eef2f7;
+	--c-surface:   #ffffff;
+	--c-border:    #e2e8f0;
+	--c-border-strong: #cbd5e0;
+	--c-muted:     #a0aec0;
+	--c-text-dim:  #8492a6;
+	--c-text:      #1a202c;
+	--c-text-soft: #4a5568;
+
+	/* ── Status ── */
+	--c-ok-500:   #22c55e;
+	--c-ok-50:    #f0fff4;
+	--c-warn-500: #eab308;
+	--c-warn-50:  #fefce8;
+	--c-err-500:  #e53e3e;
+	--c-err-600:  #c53030;
+	--c-err-50:   #fff5f5;
+
+	/* ── Radii ── */
+	--r-sm: 6px;
+	--r-md: 10px;
+	--r-lg: 14px;
+	--r-xl: 20px;
+	--r-pill: 999px;
+
+	/* ── Shadows ── */
+	--sh-sm: 0 1px 2px rgba(15, 39, 72, 0.06);
+	--sh-md: 0 2px 8px rgba(15, 39, 72, 0.08);
+	--sh-lg: 0 8px 24px rgba(15, 39, 72, 0.12);
+	--sh-xl: 0 20px 60px rgba(15, 39, 72, 0.16);
+	--sh-brand: 0 6px 18px rgba(37, 99, 235, 0.32);
+
+	/* ── Spacing (8px grid) ── */
+	--sp-1: 4px;
+	--sp-2: 8px;
+	--sp-3: 12px;
+	--sp-4: 16px;
+	--sp-5: 20px;
+	--sp-6: 24px;
+	--sp-8: 32px;
+	--sp-10: 40px;
+
+	/* ── Typography ── */
+	--fs-xs:  11px;
+	--fs-sm:  13px;
+	--fs-md:  14px;
+	--fs-lg:  16px;
+	--fs-xl:  20px;
+	--fs-2xl: 24px;
+	--fs-3xl: 30px;
+
+	/* ── Motion ── */
+	--ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+	--t-fast: 120ms;
+	--t-norm: 200ms;
+	--t-slow: 320ms;
+}
+
+/* ── Dark-friendly glass (재활용용) ── */
+.glass-dark {
+	background: rgba(15, 39, 72, 0.92);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+}
+
+/* ── 공통 페이지 전환 ── */
+.page-enter-active,
+.page-leave-active {
+	transition: opacity var(--t-norm) var(--ease-out), transform var(--t-norm) var(--ease-out);
+}
+.page-enter-from { opacity: 0; transform: translateY(8px); }
+.page-leave-to   { opacity: 0; transform: translateY(-4px); }

@@ -1,15 +1,12 @@
 <template>
 	<div class="staff">
-		<div class="head">
-			<div class="who">
-				<h2>🛎️ CCS 대시보드</h2>
-				<div class="sub">
-					<strong>{{ staff.staffNm || '—' }}</strong>
-					<span class="dept">{{ staff.deptCd || '-' }}</span>
-				</div>
-			</div>
-			<button class="ghost" @click="logout">로그아웃</button>
-		</div>
+		<header class="page-head">
+			<h2>🛎️ CCS 대시보드</h2>
+			<p class="page-sub">
+				<strong>{{ staff.staffNm || '—' }}</strong> ·
+				<span class="dept">{{ staff.deptCd || '-' }} 부서</span>
+			</p>
+		</header>
 
 		<div class="tabs">
 			<button
@@ -106,8 +103,6 @@ function gotoLogin() {
 	router.replace('/staff/login');
 }
 
-function logout() { gotoLogin(); }
-
 function countByTab(key) {
 	const conf = TABS.find(t => t.key === key);
 	if (!conf) return 0;
@@ -190,35 +185,25 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.staff { max-width: 760px; }
+.staff { max-width: 860px; }
 
-.head {
-	display: flex;
-	justify-content: space-between;
-	align-items: flex-start;
-	margin-bottom: 16px;
-	gap: 12px;
+.page-head {
+	margin-bottom: var(--sp-6, 20px);
 }
-.who h2 { margin: 0 0 4px; color: #1a3a6e; font-size: 20px; }
-.who .sub { font-size: 13px; color: #4a5568; }
-.who .sub strong { color: #1a3a6e; margin-right: 8px; }
-.dept {
-	display: inline-block;
-	padding: 2px 8px;
-	background: #edf2f7;
-	border-radius: 999px;
-	font-size: 11px;
-	color: #4a5568;
+.page-head h2 {
+	margin: 0 0 6px;
+	color: var(--c-brand-700, #1a3a6e);
+	font-size: 24px;
+	font-weight: 800;
+	letter-spacing: -0.3px;
 }
-.ghost {
-	padding: 8px 14px;
-	border: 1px solid #cbd5e0;
-	background: transparent;
-	color: #4a5568;
-	border-radius: 6px;
-	cursor: pointer;
+.page-sub {
+	margin: 0;
 	font-size: 13px;
+	color: var(--c-text-soft, #4a5568);
 }
+.page-sub strong { color: var(--c-brand-700, #1a3a6e); font-weight: 700; }
+.page-sub .dept { color: var(--c-text-dim, #8492a6); }
 
 .tabs {
 	display: flex;
