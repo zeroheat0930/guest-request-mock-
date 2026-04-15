@@ -6,6 +6,7 @@ import ChatView from '../views/ChatView.vue';
 import NearbyView from '../views/NearbyView.vue';
 import ParkingView from '../views/ParkingView.vue';
 import AdminFeaturesView from '../views/AdminFeaturesView.vue';
+import AdminLoginView from '../views/AdminLoginView.vue';
 import { featuresLoaded, isFeatureEnabled, firstEnabledPath } from '../features/featureStore.js';
 
 const routes = [
@@ -16,6 +17,7 @@ const routes = [
 	{ path: '/chat',          component: ChatView,         meta: { featureCd: 'CHAT' } },
 	{ path: '/nearby',        component: NearbyView,       meta: { featureCd: 'NEARBY' } },
 	{ path: '/parking',       component: ParkingView,      meta: { featureCd: 'PARKING' } },
+	{ path: '/admin/login',    component: AdminLoginView,    meta: { admin: true, public: true } },
 	{ path: '/admin/features', component: AdminFeaturesView, meta: { admin: true } }
 ];
 
@@ -25,7 +27,11 @@ const router = createRouter({
 });
 
 router.beforeEach((to) => {
-	if (to.meta?.admin) return true;
+	if (to.meta?.admin) {
+		if (to.meta.public) return true;
+		const t = (() => { try { return sessionStorage.getItem('concierge.adminToken'); } catch { return null; } })();
+		return t ? true : '/admin/login';
+	}
 	if (!featuresLoaded.value) return true;
 	const cd = to.meta?.featureCd;
 	if (cd && !isFeatureEnabled(cd)) {

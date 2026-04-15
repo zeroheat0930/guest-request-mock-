@@ -428,6 +428,45 @@ admin:
 - `vue_client/src/components/ChatFab.vue`
 - `vue_client/src/views/DashboardView.vue` / `HomeView.vue`
 
+---
+
+**(오후 이어서) NEARBY 기능 + 어드민 UI 폴리싱**
+
+**NEARBY (주변 안내)** — Provider 추상화 + 카테고리 탭 UI
+- 호텔 좌표 기준 반경 1km 안의 음식점/카페/편의점/관광지/약국 5개 카테고리
+- `com.daol.concierge.nearby` 패키지:
+  - `NearbyPlace` (Java record DTO), `NearbyProvider` 인터페이스
+  - `MockNearbyProvider` (`@ConditionalOnProperty matchIfMissing=true`) — 서울시청 인근 실제 상호 기반 하드코딩(무교동 북어국집, 프릳츠커피, GS25 서울시청점, 덕수궁, 온누리약국 시청점 등)
+  - `KakaoNearbyProvider` (`havingValue="kakao"`) — `dapi.kakao.com/v2/local/search/category.json` 호출, 5s 타임아웃, 키 미설정/실패 시 empty list (폴백)
+  - `NearbyController` — `GET /api/concierge/nearby?category=food|cafe|conv|tour|pharmacy`
+- `ConciergeProperty` 에 `lat`/`lng` 컬럼 추가, `SeedDataRunner` 가 HQ 를 `37.5665, 126.9780` (서울시청) 으로 시드 + NEARBY 플래그 Y 로 전환
+- `application.yml` 새 블록: `nearby.provider` / `nearby.default-radius-m` / `kakao.rest-api-key`
+- 프론트 `NearbyView.vue` — 5개 카테고리 탭 + 카드 리스트(도보 N분 / tel 링크 / 카카오맵 열기) + 카테고리별 캐싱으로 탭 전환 즉시
+- `api/client.js` — `conciergeClient` axios 인스턴스 + `fetchNearby(category)` 추가
+- `V3__property_latlng.sql` — 프로덕션 MariaDB 마이그레이션 플레이스홀더
+- **카카오 REST API 키 전환 방법**: `KAKAO_REST_API_KEY=...` + `NEARBY_PROVIDER=kakao` 환경변수 두 줄로 mock → 실제 데이터
+
+**어드민 UI 폴리싱** — prompt() 제거 + 로그인 화면 + iOS 스위치
+- **신규 `AdminLoginView.vue`** — 가운데 카드, 패스워드 autofocus, Enter 제출, 401/503/기타 에러 메시지 분기. 성공하면 sessionStorage 에 `concierge.adminToken` 저장 후 `/admin/features` 이동
+- **`router/index.js`** — `/admin/login` 라우트 추가, `beforeEach` 가드에서 admin 라우트 접근 시 토큰 체크 → 없으면 자동 리다이렉트 (게스트 기능 플래그 가드와 분리)
+- **`AdminFeaturesView.vue` 전면 재작성**:
+  - `window.prompt` 완전 제거. 토큰은 sessionStorage 에서만 읽음. 없으면 즉시 로그인 리다이렉트
+  - 테이블 → **카드 레이아웃** 전환 (아이콘, 한/영 이름, 사용 토글, 순서 입력, `▼ 고급 설정` 아코디언)
+  - **iOS 스타일 토글 스위치** — 순수 CSS, 44×24px 트랙, 20×20 thumb, `#cbd5e0 → #1a3a6e` 전환, `cubic-bezier(0.4, 0, 0.2, 1)` 0.25s
+  - **`configJson` 편집기** — 모노스페이스 textarea, blur 시 JSON 검증, 오류 있으면 저장 차단
+  - 저장 성공 시 **fade-out 토스트** "저장 완료" (2초 후 자동 소멸, 외부 라이브러리 없음)
+  - 로그아웃 버튼 / 401 응답 시 자동 로그인 리다이렉트
+  - `sortOrd` 로 정렬 표시 (편집 중엔 재정렬 안 해서 튀지 않음)
+
+**배포 시도 (계속)**
+- Cloud Shell 에서 `oracle_macro.sh` 루프를 `nohup` 으로 백그라운드 실행 (180초 간격)
+- Ampere A1.Flex 용량은 한국 낮 시간대 여전히 고갈. 새벽 시간대 재시도 예정
+- 코드는 원격에 푸시되어 있어 인스턴스 잡히는 시점에 바로 배포 가능
+
+**빌드 검증 (오후)**
+- `mvn -o compile` BUILD SUCCESS
+- `npm run build` OK (99 modules, 1.28s)
+
 ### 2026-04-14 (윈도우 세션)
 - ✅ 윈도우 PC에 **포터블 JDK 17 + Maven 3.9.14** 격리 설치 (`C:\tools\...`, 시스템 PATH 무영향)
   — 회사 PMS 개발 환경과 완전 분리
