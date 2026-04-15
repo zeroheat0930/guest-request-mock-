@@ -249,11 +249,36 @@ Base: `http://localhost:8080/api`
 
 ---
 
-## 📋 남은 것
+## 📋 남은 것 (2026-04-16 세션 우선순위)
 
-- [ ] **배포** — OCI Ampere 재고 풀리면 Docker 이미지 + `docker-compose` + duckdns 무료 도메인 + Caddy Let's Encrypt
-- [ ] **카카오 REST API 키** 발급 후 `NEARBY_PROVIDER=kakao` 로 전환
-- [ ] **시연 영상** 촬영 → 랜딩페이지 비디오 섹션 교체
-- [ ] `configJson` 활용 확장 (레이트CO 요금표·어메니티 품목을 플래그 기반 오버라이드)
-- [ ] 어드민 인증 복수 계정 + 감사 로그
-- [ ] 게스트 언어에 맞춘 NEARBY 결과 번역 (Papago/DeepL)
+### A. 기반 리팩토링 (오전)
+1. **cmpxCd 전면 도입** — 실제 다올 PMS 는 `(PROP_CD varchar(10), CMPX_CD varchar(5))` 복합 PK. 우리 엔티티 6개(ConciergeProperty/ConciergeFeature/Reservation/Amenity*/Housekeeping*/LateCheckout*/Parking*) + JWT + SecurityContextUtil + SeedDataRunner 전부 cmpxCd 추가. 시드는 `('0000000010', '00001')` 로.
+2. **AI → PMS 실연동 스모크** — `env.local.bat` 에 `CONCIERGE_DISPATCHER=daol` + `PMS_BASE_URL` + `PMS_PROP_CD` + `PMS_CMPX_CD` 추가 → 챗봇 "수건 2개" → PMS axToast 확인
+
+### B. 심사 영상 풀 스토리 (오후, 최우선 ⭐)
+
+> 시연 영상에서 **PMS 체크인 → QR 자동 발급 → 게스트 앱 활성화 → 요청 → 체크아웃 → 앱 종료** 의 전체 라이프사이클을 "진짜 돌아가는 시스템"으로 보여주기로 확정.
+
+3. **체크인 감지 → 세션 자동 발급** — PMS 체크인 플로우에 `POST /api/concierge/session/open` 호출 hook 추가. 또는 PMS_RESERVATION 주기 폴링(5~10s)으로 신규 체크인 감지.
+4. **QR 생성 엔드포인트** — `GET /api/concierge/session/qr?rsvNo=` → PNG 응답. 프론트데스크 인쇄 or 객실 태블릿 주입.
+5. **객실 태블릿 room-based auth** — roomNo 기반 장기 디바이스 토큰, 체크인 감지 시 WebSocket/SSE 푸시로 태블릿 자동 전환 (같은 방 새 게스트).
+6. **체크아웃 → 세션 블랙리스트** — `session_blacklist` 테이블 또는 Redis set, `JwtAuthFilter` 매 요청 확인. PMS 체크아웃 이벤트 hook 으로 블랙리스트 추가.
+7. **`CheckedOutView.vue`** — 401/expired 시 "체크아웃 되었습니다" 안내 화면.
+
+### C. UI 폴리싱 (저녁)
+8. **어드민 UI 리디자인** — 현재 `/admin/features` "개구림" 피드백. 레퍼런스 미정 (Linear/Vercel/Notion/Shadcn 중 취향 확인 필요).
+9. **LNB 푸터 동적화** — 하드코딩 `ROOM 1205 / HONG GILDONG` → authBootstrap 의 현재 예약 roomNo/perNm 실시간 바인딩.
+10. **rsv-select 데모 토글** — 게스트 전환 셀렉트박스에 `import.meta.env.DEV` 가드 추가, prod 숨김.
+
+### D. 장기 과제
+11. **`PmsComplexSyncJob`** — `PMS_COMPLEX` 에서 `USE_YN='Y'` 프로퍼티 필터링 → `CONCIERGE_PROPERTY` 에 주기 upsert. 여러 호텔 자동 등록용.
+12. **OCI 배포** — Ampere A1 재고 풀리면 Docker compose + duckdns. 안 풀리면 Hetzner CX22 (€4.50/월) 로 갈아타기.
+13. **카카오 REST API 키** 발급 후 `NEARBY_PROVIDER=kakao` 전환.
+14. **시연 영상 촬영** → 랜딩페이지 비디오 섹션 교체.
+
+### 시연 스토리보드 (5단계)
+1. 프론트데스크 체크인 완료 → 우리 백엔드 세션 자동 생성 + QR 출력
+2. 게스트가 QR 스캔 → 본인 이름/방번호로 앱 자동 진입
+3. "수건 2개 주세요" 자연어 → PMS 프론트데스크에 실시간 팝업
+4. 주차 차량 등록 → PMS 차량 관리 모달에 자동 표시
+5. 체크아웃 → 게스트 앱 자동 종료 화면
