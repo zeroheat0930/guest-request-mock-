@@ -249,36 +249,63 @@ Base: `http://localhost:8080/api`
 
 ---
 
-## 📋 남은 것 (2026-04-16 세션 우선순위)
+## 📋 남은 것 (2026-04-16 ~ 05-20 심사, 5주 일정)
 
-### A. 기반 리팩토링 (오전)
-1. **cmpxCd 전면 도입** — 실제 다올 PMS 는 `(PROP_CD varchar(10), CMPX_CD varchar(5))` 복합 PK. 우리 엔티티 6개(ConciergeProperty/ConciergeFeature/Reservation/Amenity*/Housekeeping*/LateCheckout*/Parking*) + JWT + SecurityContextUtil + SeedDataRunner 전부 cmpxCd 추가. 시드는 `('0000000010', '00001')` 로.
-2. **AI → PMS 실연동 스모크** — `env.local.bat` 에 `CONCIERGE_DISPATCHER=daol` + `PMS_BASE_URL` + `PMS_PROP_CD` + `PMS_CMPX_CD` 추가 → 챗봇 "수건 2개" → PMS axToast 확인
+> **결정 (2026-04-15 막바지)**: AI 경연대회가 본질, 상용화는 나중 문제.
+> 개발2팀 직원호출앱과 역할 겹침을 인지하고도 **CCS-lite 를 직접 구축**하기로 확정.
+> "더 잘 만들면 그쪽이 API 연동한다" 입장. 심사 영상은 **게스트 앱 + 스태프 CCS-lite 풀 스토리**로 촬영.
 
-### B. 심사 영상 풀 스토리 (오후, 최우선 ⭐)
+### W1 (4/16~4/22) — 기반 리팩토링 + 체크인/체크아웃 풀 플로우
+1. **cmpxCd 전면 도입** — 엔티티 6개 + 복합 PK + JWT + SecurityContextUtil + Seed `('0000000010','00001')` + V5 마이그레이션
+2. **AI → PMS 실연동 스모크** — `env.local.bat` 에 `CONCIERGE_DISPATCHER=daol` + PMS_* 추가, 챗봇 "수건 2개" → PMS axToast 확인
+3. **체크인 감지 → 세션 자동 발급** — PMS 체크인 hook 또는 PMS_RESERVATION 주기 폴링
+4. **QR 생성 엔드포인트** — `GET /api/concierge/session/qr?rsvNo=` → PNG
+5. **객실 태블릿 room-based auth** — roomNo 기반 장기 토큰, WebSocket 푸시로 자동 전환
+6. **체크아웃 → 세션 블랙리스트** + `CheckedOutView.vue`
 
-> 시연 영상에서 **PMS 체크인 → QR 자동 발급 → 게스트 앱 활성화 → 요청 → 체크아웃 → 앱 종료** 의 전체 라이프사이클을 "진짜 돌아가는 시스템"으로 보여주기로 확정.
+### W2~W3 (4/23~5/6) — CCS-lite 풀타임 2주 ⭐
+7. **Staff / Department 엔티티** — 자체 DB, PMS SY 유저 재사용 X
+8. **Task 테이블 + 상태 머신** — `REQ → ASSIGNED → IN_PROGRESS → DONE/CANCELED`
+9. **라우팅 규칙** — 요청 타입 → 부서 매핑 (`AMENITY→HK`, `LATE_CO→FR`, `PARKING→ENG`). configJson 편집 가능
+10. **Staff 로그인 + JWT** — 게스트 JWT 와 별도 인증 모델
+11. **WebSocket 실시간 푸시** — 부서별 토픽 `/topic/staff/{deptCd}`
+12. **`/staff` 웹 대시보드** — 요청 피드 / 필터 / 할당 / 완료
+13. **`/runner` 러너 PWA** — 모바일, 스와이프 완료, 브라우저 푸시알림
+14. **부서장 화면** — 부서원 로드 + 수동 재배정
+15. **통계 위젯** — 접수/완료/평균 처리 시간
+16. **어드민 UI "부서/라우팅 규칙" 탭 추가**
+17. **E2E 테스트** — 게스트→스태프 풀 시나리오
 
-3. **체크인 감지 → 세션 자동 발급** — PMS 체크인 플로우에 `POST /api/concierge/session/open` 호출 hook 추가. 또는 PMS_RESERVATION 주기 폴링(5~10s)으로 신규 체크인 감지.
-4. **QR 생성 엔드포인트** — `GET /api/concierge/session/qr?rsvNo=` → PNG 응답. 프론트데스크 인쇄 or 객실 태블릿 주입.
-5. **객실 태블릿 room-based auth** — roomNo 기반 장기 디바이스 토큰, 체크인 감지 시 WebSocket/SSE 푸시로 태블릿 자동 전환 (같은 방 새 게스트).
-6. **체크아웃 → 세션 블랙리스트** — `session_blacklist` 테이블 또는 Redis set, `JwtAuthFilter` 매 요청 확인. PMS 체크아웃 이벤트 hook 으로 블랙리스트 추가.
-7. **`CheckedOutView.vue`** — 401/expired 시 "체크아웃 되었습니다" 안내 화면.
+### W4 (5/7~5/13) — UI 리디자인 + 시연 준비
+18. **어드민 UI 리디자인** — 레퍼런스 확인 필요 (Linear/Vercel/Notion/Shadcn)
+19. **LNB 푸터 동적화** — 하드코딩 → authBootstrap 바인딩
+20. **rsv-select 데모 토글** — `import.meta.env.DEV` 가드
+21. **랜딩페이지 폴리싱** — GitHub Pages 배포 + 시연 영상 iframe
+22. **시연 영상 촬영** — 7단계 풀 스토리
+23. **카카오 REST API 키** 발급 → `NEARBY_PROVIDER=kakao`
 
-### C. UI 폴리싱 (저녁)
-8. **어드민 UI 리디자인** — 현재 `/admin/features` "개구림" 피드백. 레퍼런스 미정 (Linear/Vercel/Notion/Shadcn 중 취향 확인 필요).
-9. **LNB 푸터 동적화** — 하드코딩 `ROOM 1205 / HONG GILDONG` → authBootstrap 의 현재 예약 roomNo/perNm 실시간 바인딩.
-10. **rsv-select 데모 토글** — 게스트 전환 셀렉트박스에 `import.meta.env.DEV` 가드 추가, prod 숨김.
+### W5 (5/14~5/20) — 배포 안정화 + 리허설
+24. **배포** — OCI Ampere 잡히면 / 아니면 Hetzner CX22 (€4.50/월) + Docker compose + duckdns
+25. **버그픽스 + 리허설** — 실제 심사 환경 시뮬레이션
 
-### D. 장기 과제
-11. **`PmsComplexSyncJob`** — `PMS_COMPLEX` 에서 `USE_YN='Y'` 프로퍼티 필터링 → `CONCIERGE_PROPERTY` 에 주기 upsert. 여러 호텔 자동 등록용.
-12. **OCI 배포** — Ampere A1 재고 풀리면 Docker compose + duckdns. 안 풀리면 Hetzner CX22 (€4.50/월) 로 갈아타기.
-13. **카카오 REST API 키** 발급 후 `NEARBY_PROVIDER=kakao` 전환.
-14. **시연 영상 촬영** → 랜딩페이지 비디오 섹션 교체.
+### 스코프 아웃 (의식적으로 안 만듦)
+- ❌ SLA 타이머 + 자동 에스컬레이션
+- ❌ 직원간 채팅 (개발2팀 영역)
+- ❌ 음성/무전 연동
+- ❌ 유료 결제 PG
+- ❌ 고급 분석 대시보드
 
-### 시연 스토리보드 (5단계)
+### 시연 영상 스토리보드 (7단계 확정)
 1. 프론트데스크 체크인 완료 → 우리 백엔드 세션 자동 생성 + QR 출력
-2. 게스트가 QR 스캔 → 본인 이름/방번호로 앱 자동 진입
-3. "수건 2개 주세요" 자연어 → PMS 프론트데스크에 실시간 팝업
-4. 주차 차량 등록 → PMS 차량 관리 모달에 자동 표시
-5. 체크아웃 → 게스트 앱 자동 종료 화면
+2. 게스트가 QR 스캔 → 본인 이름/방번호로 앱 자동 진입 (다국어 자동 선택)
+3. 게스트가 "수건 2개 주세요" 자연어 입력 → AI 의도 파싱
+4. **요청이 하우스키핑 부서에 다이렉트 라우팅** → 러너 PWA 에 푸시 알림
+5. 러너가 스와이프 완료 → 스태프 대시보드 상태 업데이트 → 게스트 앱에도 "처리 완료" 알림
+6. 주차 차량 등록 → 엔지니어링 부서로 라우팅 (부서별 라우팅 강조)
+7. 체크아웃 → 게스트 앱 자동 종료 화면
+
+### 장기 과제 (심사 후)
+- `PmsComplexSyncJob` — 여러 호텔 자동 등록
+- 직원간 채팅 (개발2팀 영역이면 연동만)
+- SLA + 에스컬레이션
+- 유료 결제 PG
