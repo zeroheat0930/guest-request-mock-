@@ -1,7 +1,7 @@
 # 🏨 다올 컨시어지 (Guest Request)
 
-호텔 투숙객이 QR/태블릿으로 요청을 보내면 **회사 PMS 로 실시간 전달**되는 독립 제품 프로젝트.
-공모전 Mock 에서 시작해, 디스패처 추상화·기능 플래그 시스템을 갖춘 **타 PMS 이식 가능한 상용 수준**으로 진화.
+호텔 투숙객이 QR/태블릿으로 요청을 보내면 **부서별로 자동 라우팅되어 스태프(CCS)에게 실시간 전달**되는 독립 제품 프로젝트.
+공모전 Mock 에서 출발해, 디스패처 추상화·기능 플래그·게스트/스태프 번들 분리까지 갖춘 **자체 완결 호텔 운영 시스템**.
 
 ---
 
@@ -10,9 +10,8 @@
 ```
 guest-request-mock/
  ├ api_server/    ← Spring Boot 3.2 / Java 17 / JPA (H2 dev, MariaDB prod)
- ├ vue_client/    ← Vue 3 + Vite + Vue Router (태블릿/폰 겸용)
- ├ landing/       ← QR 랜딩 페이지 (순수 HTML, 심사 제출용)
- └ scripts/       ← PMS dev DB 탐색 유틸 (PmsProbe*.java)
+ ├ vue_client/    ← Vue 3 + Vite 멀티 엔트리 (index.html 게스트 / staff.html 스태프·관리자)
+ └ landing/       ← QR 랜딩 페이지 (순수 HTML, 심사 제출용)
 ```
 
 ### 기술 스택
@@ -47,14 +46,15 @@ npm run dev
 
 ### 환경변수 (`api_server/env.local.bat` 또는 셸에서 export)
 ```
-ANTHROPIC_API_KEY=...           # AI 챗봇 활성화 (비어있으면 룰 기반 폴백)
-CONCIERGE_DISPATCHER=internal   # internal(기본) | daol | external
-PMS_BASE_URL=http://localhost:8090
-PMS_PROP_CD=...
-PMS_CMPX_CD=...
-CONCIERGE_ADMIN_PW=...          # 어드민 UI 패스워드 (미설정 시 /admin/** = 503)
-KAKAO_REST_API_KEY=...          # NEARBY 실제 데이터 (미설정 시 mock)
-NEARBY_PROVIDER=mock            # mock(기본) | kakao
+ANTHROPIC_API_KEY=...               # AI 챗봇 활성화 (비어있으면 룰 기반 폴백)
+CONCIERGE_DISPATCHER_CCS=true       # 게스트 요청 → CCS 부서 라우팅 (기본 ON, 끄면 요청 삼켜짐)
+CONCIERGE_DISPATCHER_EXTERNAL=false # 외부 REST 훅(옵션, 커스텀 연동)
+CONCIERGE_TENANT_PROP_CD=0000000010 # 멀티 테넌시 — 호텔 프로퍼티 코드
+CONCIERGE_TENANT_CMPX_CD=00001      # 멀티 테넌시 — 부속건물 코드
+CONCIERGE_ADMIN_PW=...              # 어드민 UI 패스워드 (미설정 시 /admin/** = 503)
+JWT_SECRET=...                      # 32바이트 이상 랜덤 시크릿 (prod 필수)
+NEARBY_PROVIDER=mock                # mock(기본) | kakao
+KAKAO_REST_API_KEY=...              # NEARBY 실제 데이터 (provider=kakao 일 때만)
 ```
 
 ---
@@ -81,10 +81,11 @@ NEARBY_PROVIDER=mock            # mock(기본) | kakao
 - 저장 완료 토스트 (2s fade)
 
 **아키텍처**
-- **디스패처 추상화** — `RequestDispatcher` 인터페이스 + 3 구현체(`daol` / `external` / `internal`, `@ConditionalOnProperty`)
+- **디스패처 추상화** — `RequestDispatcher` 인터페이스 + 2 구현체(`CcsDispatcher` 기본 ON / `ExternalApiDispatcher` 옵션)
+- **게스트/스태프 번들 완전 분리** — Vite 멀티 엔트리로 `index.html`(게스트)와 `staff.html`(스태프·관리자)를 **서로 다른 JS 번들**로 빌드. 게스트 태블릿은 스태프 코드를 단 한 줄도 다운로드하지 않음
 - **기능 플래그** — `CONCIERGE_FEATURE` 테이블, 프로퍼티별 메뉴 on/off, 어드민에서 실시간 토글
 - **게스트 JWT 인증** — `SecurityContextUtil.requirePrincipal()` 로 propCd/rsvNo 격리, 본인 데이터만 접근
-- **PMS 실시간 연동** — 디스패처=daol 일 때 `KOK_EVENT` 발행 + (주차는) `PMS_CAR_NO` 등록까지 이중 연동
+- **요청→부서 자동 라우팅** — AMENITY/HK→하우스키핑, LATE_CO→프론트, PARKING→엔지니어링. `CcsTask` 생성 + WebSocket `/topic/ccs/dept/{deptCd}` 푸시
 
 ---
 
@@ -162,9 +163,8 @@ WebSocket 연결: `ws://localhost:8080/ws-ccs` (STOMP)
 
 | 환경변수 | 기본값 | 설명 |
 |---|---|---|
-| `CONCIERGE_DISPATCHER_CCS` | `true` | CCS 태스크 라우팅 활성화 |
-| `CONCIERGE_DISPATCHER_DAOL` | `false` | PMS KOK_EVENT 연동 |
-| `CONCIERGE_DISPATCHER_EXTERNAL` | `false` | 외부 API 전달 |
+| `CONCIERGE_DISPATCHER_CCS` | `true` | 게스트 요청 → CCS 부서 태스크 라우팅 (유일한 기본 경로) |
+| `CONCIERGE_DISPATCHER_EXTERNAL` | `false` | 커스텀 외부 REST 훅(옵션, 타사 호텔 시스템 연동용 stub) |
 
 ---
 
@@ -242,42 +242,6 @@ Base: `http://localhost:8080/api`
 
 ---
 
-## 🔧 사내 PMS 수정 기록 ⚠️
-
-> **중요**: 아래는 회사 PMS 리포(`C:\DAOL\PMS`)에 반영한 수정사항이다.
-> 이 리포에는 포함되지 않지만 **사내 배포 시 동일한 패치를 적용**해야 컨시어지가 정상 동작한다.
-> 전부 **기존 로직 영향 0** — 새 엔드포인트 추가 + null 안전 분기만 있음.
-
-### 수정 1 — KOK_EVENT 브릿지 (2026-04-15)
-**목적**: 컨시어지 요청을 프론트데스크 팝업(`axToast`/`kok-chat.jsp`)으로 실시간 전달.
-
-| 파일 | 변경 |
-|---|---|
-| `com/daol/pms/SecurityConfig.java` | `ignorePagesPost` 배열에 `"/api/mkiosk/event"` 추가 (permitAll 1줄) |
-| `com/daol/pms/cc/service/CcService.java` | `setKokEvent()` 의 `SessionUtils.getCurrentUser()` 에 null 체크 + `userId` param fallback (`"CONCIERGE"`) |
-
-**영향**: 기존 호출자 3곳(`KokMngtController`, `MkioskKokMngtController`, `MkioskApiController`)은 전부 로그인 세션이 있어 `user != null` 분기로 들어감 → 동작 100% 동일. 오히려 NPE 방어 추가.
-
-### 수정 2 — PMS_CAR_NO 차량 등록 엔드포인트 (2026-04-15)
-**목적**: 컨시어지에서 등록한 차량이 프론트데스크 차량 관리 모달에 그대로 나타나게.
-
-| 파일 | 변경 |
-|---|---|
-| `com/daol/pms/SecurityConfig.java` | `ignorePagesPost` 에 `"/api/ko/client/registerConciergeCar"` 추가 |
-| `com/daol/pms/ko/ClientController.java` | `POST /registerConciergeCar` 엔드포인트 신규 (6줄) |
-| `com/daol/pms/ko/service/KoService.java` | `registerConciergeCar(Map)` 메서드 신규 — `carTp=RM`, `reprCarYn=N`, `procTp=I`, `userId=CONCIERGE` 기본값 채우고 기존 `ko.setKokCehckInCarNo` 매퍼 재사용 (12줄) |
-
-**영향**: 완전 신규 메서드/엔드포인트. 기존 `setKokCehckInCarNo` 매퍼 재사용만 함. 기존 호출 경로 건드리지 않음.
-
-### 배포 체크리스트
-- [ ] 위 4개 파일 패치
-- [ ] PMS 재빌드/재배포
-- [ ] 우리 `application.yml` 에 `CONCIERGE_DISPATCHER=daol` + `PMS_BASE_URL` + `PMS_PROP_CD` + `PMS_CMPX_CD` 설정
-- [ ] 스모크: 우리 컨시어지에서 어메니티 요청 → PMS 프론트데스크 `axToast` 확인
-- [ ] 스모크: 주차 등록 → PMS 차량 관리 모달 조회 → 등록된 차량 확인
-
----
-
 ## 🎨 PMS 스타일 일치 포인트
 
 사내 이식 시 일관성을 위해 아래 규칙을 따름:
@@ -301,17 +265,47 @@ Base: `http://localhost:8080/api`
 1. **언어 장벽 제거** — 해외 관광객 대응, 메뉴 번역 유지보수 불필요
 2. **롱테일 요청 커버** — "베개 하나 더", "방이 너무 추워요" 도 AI 가 적절한 티켓으로 라우팅
 3. **자연스러운 UX** — 노인/비IT층도 말만 하면 됨, 레이트CO 전환율 상승 기대
-4. **이식성** — 디스패처 어댑터 1개만 갈아끼우면 타사 PMS 연동 가능
+4. **이식성** — 디스패처가 추상화돼 있어 호텔 운영 시스템이 바뀌어도 어댑터 1개만 추가하면 됨
+5. **번들 격리** — 게스트 QR 태블릿에 스태프 코드가 내려가지 않음(Vite 멀티 엔트리), 역할 기반 정보 노출 최소화
 
 ### 핵심 결정
 - 플랫폼: **Vue 3 + PWA** (게스트 1~2박 특성상 앱 설치 저항 = 전환율 사망 → QR 웹앱이 정답)
-- DB: **MariaDB** (회사 PMS 스택 일치) + H2 파일 모드(dev)
+- DB: **MariaDB** + H2 파일 모드(dev)
 - 인증: 게스트 JWT, 모든 엔티티 `propCd` 컬럼 격리 (멀티 테넌시)
-- 아키텍처: 컨시어지가 **자체 DB + 자체 어드민 UI 의 주인**, PMS 는 어댑터 대상일 뿐
+- 아키텍처: 컨시어지가 **자체 DB + 자체 어드민 UI + 자체 스태프 시스템(CCS) 의 주인**. 게스트 요청은 `CcsDispatcher` 를 통해 부서별 태스크로 라우팅되어 `/staff` 대시보드와 `/runner` PWA 에 실시간 푸시됨. 외부 PMS 브릿지 없음
+- 배포 분리: `hotel.com/` 게스트 / `hotel.com/staff.html` 스태프·관리자 — 두 개의 독립된 JS 번들
 
 ---
 
 ## 🗓️ 진행 로그
+
+### 2026-04-15 (맥북 저녁 세션 — 게스트/스태프 경계 정리 + PMS 연동 제거)
+
+**배경**: 스태프 로그인 후에도 게스트 LNB(어메니티/HK/레이트/챗/주차)가 왼쪽에 계속 보이고, 단일 JS 번들이 스태프/관리자 코드를 게스트 태블릿까지 내려보내고 있던 문제. 추가로 CCS 가 완성된 이상 PMS KOK_EVENT 브릿지는 이중 경로라 CCS 단일 경로로 재정리.
+
+**커밋**:
+- `6d18a46` fix(ui): 스태프/관리자 라우트에서 게스트 LNB 제거 — `App.vue` 를 `isGuestRoute` 플래그로 조건부 셸 분기, 게스트 부트(`authenticateGuest`+`loadFeatures`) 도 게스트 경로일 때만 실행
+- `dd934b7` feat(build): Vite 멀티 엔트리로 게스트/스태프 번들 완전 분리 — `index.html` → `main.js` → 게스트 라우트만, `staff.html` → `main-staff.js` → 스태프+관리자 라우트만. 트리쉐이킹으로 상대편 코드가 번들에 포함되지 않음
+- (이번 커밋) feat(dispatcher): PMS KOK_EVENT 브릿지 + `PmsCarRegistryAdapter` 완전 제거 — CCS 를 게스트 요청의 유일한 전달 경로로 확정
+
+**변경 내역**:
+- `api_server/src/main/java/com/daol/concierge/dispatcher/DaolKokEventDispatcher.java` — 삭제
+- `api_server/src/main/java/com/daol/concierge/pms/PmsCarRegistryAdapter.java` + `pms/` 패키지 디렉토리 — 삭제
+- `api_server/src/main/java/com/daol/concierge/gr/service/GrService.java` — `PmsCarRegistryAdapter` import/필드/호출 블록 3 곳 제거, 디스패처 파이프라인만 남김
+- `api_server/src/main/java/com/daol/concierge/ccs/routing/CcsDispatcher.java` — 멀티 테넌시 설정을 `pms.*` → `concierge.tenant.*` 로 rename (PMS 의미 분리)
+- `api_server/src/main/resources/application.yml` — `pms:` 블록 + `concierge.dispatcher.daol` 플래그 제거, `concierge.tenant:` 블록 신규
+- `scripts/PmsProbe*.java` — 삭제 (사내 PMS dev DB 탐색 유틸, 이제 불필요)
+- `README.md` — "사내 PMS 수정 기록" 섹션 통째 제거, 환경변수/디스패처 플래그 표 정리, 아키텍처 설명을 CCS 중심으로 재작성, 진행 로그 갱신
+
+**결과**:
+- 게스트 요청은 `CcsDispatcher` 로만 전달 → `CcsTask` 생성 → 부서별 라우팅 → WebSocket 푸시. PMS 호출 경로 0
+- 게스트 번들(`main-*.js` 22.6 KB / CSS 11.6 KB) 안에 스태프·관리자 뷰 코드 포함 0
+- 스태프 번들(`staff-*.js` 18.1 KB / CSS 12.9 KB) 는 `/staff.html` 진입 시에만 다운로드
+- 공용 청크(`_plugin-vue_export-helper-*.js` 139.7 KB) 는 한 번만 다운로드
+
+**검증**:
+- `npm run build` — 113 modules transformed, 0 errors, 두 엔트리(`index.html` + `staff.html`) 정상 출력
+- Java 변경분은 정적 검증(이 맥북엔 JDK/Maven 미설치) — 삭제/수정 후 `grep -r` 로 PMS 참조 0 확인, 남은 `CcsDispatcher` 의 `@Value` 는 신규 `concierge.tenant.*` 키와 일치
 
 ### 2026-04-15 (Ralph 세션 — CCS 다올버전 풀 구축)
 
@@ -392,6 +386,10 @@ Base: `http://localhost:8080/api`
 1. **카카오 REST API 키** 발급 → `NEARBY_PROVIDER=kakao` (실제 주변 데이터)
 2. **배포** — OCI Ampere 또는 Hetzner CX22 (€4.50/월) + Docker compose + duckdns
 3. **시연 영상 촬영** — 게스트 → CCS 풀 스토리 7단계
+4. **시연 스토리보드 1단계 QR 출력** — 체크인 시점 게스트 JWT 가 박힌 QR 이미지 엔드포인트/화면 (현재 미구현, 영상 촬영 전 필수)
+5. **`staff.html` PWA 메타 보강** — `runner-manifest.json` link, apple-touch-icon, apple-mobile-web-app 메타 (러너 PWA 홈화면 설치 가능해야 함)
+6. **smoke-test.sh 회귀 보강** — CCS/Nearby/Parking/Admin 엔드포인트 케이스 추가
+7. **nginx 배포 가드** — `/staff.html` 경로에 사내 IP 화이트리스트 또는 BasicAuth/Cloudflare Access
 
 ### 시연 영상 스토리보드 (7단계)
 1. 프론트데스크 체크인 완료 → 세션 자동 생성 + QR 출력
@@ -410,7 +408,8 @@ Base: `http://localhost:8080/api`
 - ❌ 고급 분석 대시보드
 
 ### 장기 과제 (심사 후)
-- `PmsComplexSyncJob` — 여러 호텔 자동 등록
-- 직원간 채팅 (개발2팀 영역이면 연동만)
+- 멀티 프로퍼티 온보딩 플로우 (여러 호텔 자동 등록)
+- 외부 운영 시스템 REST 훅 어댑터 (`CONCIERGE_DISPATCHER_EXTERNAL=true` 경로 활용)
+- 직원간 채팅
 - SLA + 에스컬레이션
 - 유료 결제 PG

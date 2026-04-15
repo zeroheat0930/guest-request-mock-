@@ -21,22 +21,18 @@ anthropic:
 
 concierge:
   # 요청 디스패처 활성화 플래그 (각각 독립적으로 조합 가능)
-  # CCS: 인프로세스 작업 큐 (기본 ON), DAOL: 사내 PMS KOK 이벤트, EXTERNAL: 외부 REST stub
+  # CCS: 인프로세스 작업 큐(기본 ON), EXTERNAL: 외부 REST stub(기본 OFF)
   dispatcher:
     ccs:
       enabled: ${CONCIERGE_DISPATCHER_CCS:true}
-    daol:
-      enabled: ${CONCIERGE_DISPATCHER_DAOL:false}
     external:
       enabled: ${CONCIERGE_DISPATCHER_EXTERNAL:false}
 
-pms:
-  # 회사 PMS 키오스크 이벤트 브릿지 설정. dispatcher=daol 일 때만 사용.
-  # PMS 측: SecurityConfig.ignorePagesPost 에 /api/mkiosk/event 추가 + CcService.setKokEvent userId fallback 필요.
-  base-url: ${PMS_BASE_URL:http://localhost:8090}
-  prop-cd: ${PMS_PROP_CD:}
-  cmpx-cd: ${PMS_CMPX_CD:}
-  kok-cd: ${PMS_KOK_CD:CONCIERGE}
+  # 멀티 테넌시 식별자 — 호텔 체인 내에서 물리 호텔과 부속건물을 구분.
+  # 운영 시 호텔별로 주입(인증/태스크/기능플래그가 이 값으로 스코핑됨).
+  tenant:
+    prop-cd: ${CONCIERGE_TENANT_PROP_CD:0000000010}
+    cmpx-cd: ${CONCIERGE_TENANT_CMPX_CD:00001}
 
 admin:
   # 관리자 API (X-Admin-Token) 패스워드. 비어 있으면 /api/concierge/admin/** 는 503.
