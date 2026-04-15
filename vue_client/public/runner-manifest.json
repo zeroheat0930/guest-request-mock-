@@ -1,0 +1,11 @@
+{
+  "name": "다올 컨시어지 러너",
+  "short_name": "Runner",
+  "start_url": "/#/runner",
+  "display": "standalone",
+  "background_color": "#0f2748",
+  "theme_color": "#1a3a6e",
+  "icons": [
+    {"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}
+  ]
+}

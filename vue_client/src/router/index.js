@@ -7,6 +7,10 @@ import NearbyView from '../views/NearbyView.vue';
 import ParkingView from '../views/ParkingView.vue';
 import AdminFeaturesView from '../views/AdminFeaturesView.vue';
 import AdminLoginView from '../views/AdminLoginView.vue';
+import AdminCcsView from '../views/AdminCcsView.vue';
+import StaffLoginView from '../views/staff/StaffLoginView.vue';
+import StaffDashboardView from '../views/staff/StaffDashboardView.vue';
+import RunnerView from '../views/staff/RunnerView.vue';
 import { featuresLoaded, isFeatureEnabled, firstEnabledPath } from '../features/featureStore.js';
 
 const routes = [
@@ -18,7 +22,11 @@ const routes = [
 	{ path: '/nearby',        component: NearbyView,       meta: { featureCd: 'NEARBY' } },
 	{ path: '/parking',       component: ParkingView,      meta: { featureCd: 'PARKING' } },
 	{ path: '/admin/login',    component: AdminLoginView,    meta: { admin: true, public: true } },
-	{ path: '/admin/features', component: AdminFeaturesView, meta: { admin: true } }
+	{ path: '/admin/features', component: AdminFeaturesView, meta: { admin: true } },
+	{ path: '/admin/ccs',      component: AdminCcsView,      meta: { admin: true } },
+	{ path: '/staff/login',    component: StaffLoginView,    meta: { staff: true, public: true } },
+	{ path: '/staff',          component: StaffDashboardView, meta: { staff: true } },
+	{ path: '/runner',         component: RunnerView,         meta: { staff: true } }
 ];
 
 const router = createRouter({
@@ -27,6 +35,11 @@ const router = createRouter({
 });
 
 router.beforeEach((to) => {
+	if (to.meta?.staff) {
+		if (to.meta.public) return true;
+		const t = (() => { try { return sessionStorage.getItem('ccs.token'); } catch { return null; } })();
+		return t ? true : '/staff/login';
+	}
 	if (to.meta?.admin) {
 		if (to.meta.public) return true;
 		const t = (() => { try { return sessionStorage.getItem('concierge.adminToken'); } catch { return null; } })();

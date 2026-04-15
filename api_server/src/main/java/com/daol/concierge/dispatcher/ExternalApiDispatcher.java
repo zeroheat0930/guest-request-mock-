@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
  * TODO: 실제 외부 PMS 연동 시 REST shape 결정 후 구현 (auth, retry, outbox 등).
  */
 @Component
-@ConditionalOnProperty(name = "concierge.dispatcher", havingValue = "external")
+@ConditionalOnProperty(name = "concierge.dispatcher.external.enabled", havingValue = "true")
 public class ExternalApiDispatcher implements RequestDispatcher {
 
 	private static final Logger log = LoggerFactory.getLogger(ExternalApiDispatcher.class);

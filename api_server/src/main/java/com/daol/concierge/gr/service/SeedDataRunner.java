@@ -1,5 +1,10 @@
 package com.daol.concierge.gr.service;
 
+import com.daol.concierge.ccs.domain.CcsDepartment;
+import com.daol.concierge.ccs.domain.CcsDepartmentId;
+import com.daol.concierge.ccs.domain.CcsStaff;
+import com.daol.concierge.ccs.repo.CcsDepartmentRepository;
+import com.daol.concierge.ccs.repo.CcsStaffRepository;
 import com.daol.concierge.feature.ConciergeFeature;
 import com.daol.concierge.feature.ConciergeFeatureId;
 import com.daol.concierge.feature.ConciergeFeatureRepository;
@@ -13,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +39,9 @@ public class SeedDataRunner implements CommandLineRunner {
 	@Autowired private AmenityItemRepository amenityItemRepo;
 	@Autowired private ConciergePropertyRepository propertyRepo;
 	@Autowired private ConciergeFeatureRepository featureRepo;
+	@Autowired private CcsDepartmentRepository ccsDepartmentRepo;
+	@Autowired private CcsStaffRepository ccsStaffRepo;
+	@Autowired(required = false) private BCryptPasswordEncoder passwordEncoder;
 
 	@Override
 	@Transactional
@@ -40,6 +49,7 @@ public class SeedDataRunner implements CommandLineRunner {
 		seedReservations();
 		seedAmenityItems();
 		seedPropertyAndFeatures();
+		seedCcsDepartmentsAndStaff();
 	}
 
 	private void seedPropertyAndFeatures() {
@@ -129,5 +139,61 @@ public class SeedDataRunner implements CommandLineRunner {
 			amenityItemRepo.save(it);
 		}
 		log.info("Seeded {} amenity items", rows.length);
+	}
+
+	private void seedCcsDepartmentsAndStaff() {
+		final String propCd = "0000000010";
+		final String cmpxCd = "00001";
+
+		// Departments: {deptCd, deptNm, sortOrd}
+		Object[][] depts = {
+				{"HK",  "하우스키핑", 10},
+				{"FR",  "프론트",     20},
+				{"ENG", "엔지니어링", 30},
+				{"FB",  "식음료",     40}
+		};
+		int deptCount = 0;
+		for (Object[] row : depts) {
+			String deptCd = (String) row[0];
+			if (ccsDepartmentRepo.existsById(new CcsDepartmentId(propCd, cmpxCd, deptCd))) continue;
+			CcsDepartment dept = new CcsDepartment(propCd, cmpxCd, deptCd, (String) row[1]);
+			dept.setSortOrd((Integer) row[2]);
+			ccsDepartmentRepo.save(dept);
+			deptCount++;
+		}
+
+		BCryptPasswordEncoder encoder = (passwordEncoder != null)
+				? passwordEncoder
+				: new BCryptPasswordEncoder(11);
+		String hash = encoder.encode("test1234");
+
+		// Staff: {loginId, deptCd, staffNm, positionCd}
+		Object[][] staff = {
+				{"hk1",  "HK",  "김청소",  "LEAD"},
+				{"hk2",  "HK",  "이정비",  "MEMBER"},
+				{"fr1",  "FR",  "박프론트", "LEAD"},
+				{"fr2",  "FR",  "최안내",  "MEMBER"},
+				{"eng1", "ENG", "정수리",  "LEAD"},
+				{"eng2", "ENG", "강교체",  "MEMBER"},
+				{"fb1",  "FB",  "송음료",  "LEAD"},
+				{"fb2",  "FB",  "윤접시",  "MEMBER"}
+		};
+		int staffCount = 0;
+		for (Object[] row : staff) {
+			String loginId = (String) row[0];
+			if (ccsStaffRepo.existsByLoginIdAndPropCdAndCmpxCd(loginId, propCd, cmpxCd)) continue;
+			CcsStaff s = new CcsStaff();
+			s.setPropCd(propCd);
+			s.setCmpxCd(cmpxCd);
+			s.setDeptCd((String) row[1]);
+			s.setLoginId(loginId);
+			s.setPasswordHash(hash);
+			s.setStaffNm((String) row[2]);
+			s.setPositionCd((String) row[3]);
+			ccsStaffRepo.save(s);
+			staffCount++;
+		}
+
+		log.info("Seeded {} departments / {} staff for {}/{}", deptCount, staffCount, propCd, cmpxCd);
 	}
 }

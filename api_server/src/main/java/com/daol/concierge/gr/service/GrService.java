@@ -55,7 +55,7 @@ public class GrService {
 	@Autowired private HousekeepingRequestRepository housekeepingRepo;
 	@Autowired private LateCheckoutRequestRepository lateCheckoutRepo;
 	@Autowired private ParkingRegistrationRepository parkingRepo;
-	@Autowired private RequestDispatcher requestDispatcher;
+	@Autowired private List<RequestDispatcher> requestDispatchers;
 	@Autowired(required = false) private PmsCarRegistryAdapter pmsCarRegistryAdapter;
 
 	// ==================== 예약 ====================
@@ -161,14 +161,15 @@ public class GrService {
 		req.setReqTm(now.format(FMT_TM));
 		amenityRequestRepo.save(req);
 
-		requestDispatcher.dispatch(new RequestEvent(
+		RequestEvent amenityEvent = new RequestEvent(
 				principalPropCd(),
 				"AMENITY",
 				"[" + roomNo + "] 어메니티 요청 " + req.getItems().size() + "건 (" + reqNo + ")",
 				roomNo,
 				reqNo,
 				reqMemo
-		));
+		);
+		requestDispatchers.forEach(d -> d.dispatch(amenityEvent));
 
 		Map<String, Object> res = new LinkedHashMap<>();
 		res.put("reqNo", reqNo);
@@ -238,14 +239,15 @@ public class GrService {
 		hk.setReqTm(now.format(FMT_TM));
 		housekeepingRepo.save(hk);
 
-		requestDispatcher.dispatch(new RequestEvent(
+		RequestEvent hkEvent = new RequestEvent(
 				principalPropCd(),
 				"HK_" + hkStatCd,
 				"[" + rsv.getRoomNo() + "] 객실정비 " + nm + " (" + reqNo + ")",
 				rsv.getRoomNo(),
 				reqNo,
 				reqMemo
-		));
+		);
+		requestDispatchers.forEach(d -> d.dispatch(hkEvent));
 
 		Map<String, Object> res = new LinkedHashMap<>();
 		res.put("reqNo", reqNo);
@@ -329,14 +331,15 @@ public class GrService {
 		lc.setReqTm(now.format(FMT_TM));
 		lateCheckoutRepo.save(lc);
 
-		requestDispatcher.dispatch(new RequestEvent(
+		RequestEvent lateCoEvent = new RequestEvent(
 				principalPropCd(),
 				"LATE_CO",
 				"[" + rsv.getRoomNo() + "] 레이트체크아웃 " + reqOutTm + " +" + addAmt + "원 (" + reqNo + ")",
 				rsv.getRoomNo(),
 				reqNo,
 				null
-		));
+		);
+		requestDispatchers.forEach(d -> d.dispatch(lateCoEvent));
 
 		Map<String, Object> res = new LinkedHashMap<>();
 		res.put("reqNo", reqNo);
@@ -404,14 +407,15 @@ public class GrService {
 			pmsCarRegistryAdapter.register(rsvNo, carNo);
 		}
 
-		requestDispatcher.dispatch(new RequestEvent(
+		RequestEvent parkingEvent = new RequestEvent(
 				principalPropCd(),
 				"PARKING",
 				"[" + roomNo + "] 차량 등록 " + carNo + " (" + reqNo + ")",
 				roomNo,
 				reqNo,
 				reqMemo
-		));
+		);
+		requestDispatchers.forEach(d -> d.dispatch(parkingEvent));
 
 		Map<String, Object> res = new LinkedHashMap<>();
 		res.put("reqNo", reqNo);

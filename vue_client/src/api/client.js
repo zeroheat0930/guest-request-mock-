@@ -113,3 +113,43 @@ export const getAiStatus = ()     => aiClient.get('/status');
 
 // 주변 안내 (NEARBY) — category: food|cafe|conv|tour|pharmacy
 export const fetchNearby = (category) => conciergeClient.get('/nearby', { params: { category } });
+
+// ─────────────────────────────────────────────
+// CCS (스태프 콘솔) — /api/ccs/**
+// ─────────────────────────────────────────────
+// 게스트 토큰(concierge.jwt)과 완전히 분리된 세션키(ccs.token)를 사용한다.
+function attachCcsAuthHeader(config) {
+	try {
+		const token = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ccs.token');
+		if (token) {
+			config.headers = config.headers || {};
+			config.headers.Authorization = `Bearer ${token}`;
+		}
+	} catch {}
+	return config;
+}
+
+const ccsClient = axios.create({
+	baseURL: `${API_BASE}/ccs`,
+	timeout: 8000
+});
+ccsClient.interceptors.request.use(attachCcsAuthHeader);
+ccsClient.interceptors.response.use(unwrapOk, unwrapErr);
+
+export const postCcsLogin = ({ loginId, password, propCd, cmpxCd }) =>
+	ccsClient.post('/auth/login', { loginId, password, propCd, cmpxCd });
+
+export const fetchCcsTasks = (statusCd) =>
+	ccsClient.get('/tasks', { params: statusCd ? { statusCd } : {} });
+
+export const assignCcsTask = (taskId, assigneeId) =>
+	ccsClient.put(`/tasks/${encodeURIComponent(taskId)}/assign`, { assigneeId });
+
+export const transitionCcsTask = (taskId, statusCd) =>
+	ccsClient.put(`/tasks/${encodeURIComponent(taskId)}/status`, { statusCd });
+
+export const createCcsTask = (body) => ccsClient.post('/tasks', body);
+
+export const fetchCcsDeptLoad = (deptCd) => ccsClient.get(`/dept/${encodeURIComponent(deptCd)}/load`);
+
+export const fetchCcsStatsToday = (deptCd) => ccsClient.get('/stats/today', { params: { deptCd } });

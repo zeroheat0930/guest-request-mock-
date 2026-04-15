@@ -1,6 +1,7 @@
 package com.daol.concierge.core.config;
 
 import com.daol.concierge.auth.JwtAuthFilter;
+import com.daol.concierge.ccs.auth.CcsJwtFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -43,6 +44,9 @@ public class SecurityConfig {
 	private JwtAuthFilter jwtAuthFilter;
 
 	@Autowired
+	private CcsJwtFilter ccsJwtFilter;
+
+	@Autowired
 	private Environment env;
 
 	@Bean
@@ -59,6 +63,7 @@ public class SecurityConfig {
 							.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 							// 토큰 발급 엔드포인트만 공개 (미래에 /api/auth/* 하위 엔드포인트가 늘어도 자동 공개되지 않도록 구체화)
 							.requestMatchers(HttpMethod.POST, "/api/auth/guest-token").permitAll()
+							.requestMatchers(HttpMethod.POST, "/api/ccs/auth/login").permitAll()
 							.requestMatchers(HttpMethod.GET, "/api/ai/status").permitAll()
 							// 관리자 API 는 자체 헤더 인증(AdminAuthInterceptor) 을 쓰므로 JWT 필터에서는 통과시킨다.
 							.requestMatchers("/api/concierge/admin/**").permitAll()
@@ -77,7 +82,8 @@ public class SecurityConfig {
 						.authenticationEntryPoint(this::writeUnauthorized)
 						.accessDeniedHandler((req, res, e) -> writeUnauthorized(req, res, null))
 				)
-				.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+				.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+				.addFilterAfter(ccsJwtFilter, JwtAuthFilter.class);
 		return http.build();
 	}
 

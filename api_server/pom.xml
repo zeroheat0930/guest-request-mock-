@@ -36,6 +36,12 @@
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 
+		<!-- WebSocket (CCS 실시간 푸시) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
+		</dependency>
+
 		<!-- JWT (게스트 토큰) -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>

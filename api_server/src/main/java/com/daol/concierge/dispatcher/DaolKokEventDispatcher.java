@@ -23,7 +23,7 @@ import java.util.Map;
  * 실패는 로그만 남기고 삼킨다 — 게스트 접수 성공/실패와 무관하게 설계.
  */
 @Component
-@ConditionalOnProperty(name = "concierge.dispatcher", havingValue = "daol")
+@ConditionalOnProperty(name = "concierge.dispatcher.daol.enabled", havingValue = "true")
 public class DaolKokEventDispatcher implements RequestDispatcher {
 
 	private static final Logger log = LoggerFactory.getLogger(DaolKokEventDispatcher.class);

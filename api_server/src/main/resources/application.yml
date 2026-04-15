@@ -20,8 +20,15 @@ anthropic:
   version: '2023-06-01'
 
 concierge:
-  # 요청 디스패처 선택: internal(no-op, 기본) | daol(사내 PMS KOK 이벤트) | external(외부 REST, stub)
-  dispatcher: ${CONCIERGE_DISPATCHER:internal}
+  # 요청 디스패처 활성화 플래그 (각각 독립적으로 조합 가능)
+  # CCS: 인프로세스 작업 큐 (기본 ON), DAOL: 사내 PMS KOK 이벤트, EXTERNAL: 외부 REST stub
+  dispatcher:
+    ccs:
+      enabled: ${CONCIERGE_DISPATCHER_CCS:true}
+    daol:
+      enabled: ${CONCIERGE_DISPATCHER_DAOL:false}
+    external:
+      enabled: ${CONCIERGE_DISPATCHER_EXTERNAL:false}
 
 pms:
   # 회사 PMS 키오스크 이벤트 브릿지 설정. dispatcher=daol 일 때만 사용.
