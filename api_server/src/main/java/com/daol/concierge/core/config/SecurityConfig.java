@@ -72,6 +72,7 @@ public class SecurityConfig {
 							// 관리자 API 는 자체 헤더 인증(AdminAuthInterceptor) 을 쓰므로 JWT 필터에서는 통과시킨다.
 							.requestMatchers("/api/concierge/admin/**").permitAll()
 							.requestMatchers("/actuator/health").permitAll()
+							.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
 							.requestMatchers("/", "/error").permitAll();
 					// H2 console 은 dev 프로파일에서만 공개 — prod 엔 절대 노출 금지
 					if (devLike) {

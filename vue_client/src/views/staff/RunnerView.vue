@@ -56,6 +56,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchCcsTasks, transitionCcsTask } from '../../api/client.js';
+import { connectStomp, disconnectStomp } from '../../api/websocket.js';
 
 const router = useRouter();
 const tasks = ref([]);
@@ -127,12 +128,29 @@ async function transition(t, statusCd) {
 
 onMounted(() => {
 	loadStaff();
-	load();
-	pollTimer = setInterval(load, 5000);
+	load().then(() => {
+		const token = sessionStorage.getItem('ccs.token');
+		if (token) {
+			connectStomp(token, (client) => {
+				if (staff.value?.staffId) {
+					client.subscribe('/topic/ccs/staff/' + staff.value.staffId, () => {
+						load();
+					});
+				}
+				if (staff.value?.deptCd) {
+					client.subscribe('/topic/ccs/dept/' + staff.value.deptCd, () => {
+						load();
+					});
+				}
+			});
+		}
+	});
+	pollTimer = setInterval(load, 30000);
 });
 
 onUnmounted(() => {
 	if (pollTimer) clearInterval(pollTimer);
+	disconnectStomp();
 });
 </script>
 

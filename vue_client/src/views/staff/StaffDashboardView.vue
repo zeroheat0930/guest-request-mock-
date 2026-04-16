@@ -88,6 +88,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchCcsTasks, assignCcsTask, transitionCcsTask } from '../../api/client.js';
+import { connectStomp, disconnectStomp } from '../../api/websocket.js';
 import StatsWidget from './StatsWidget.vue';
 import DeptLoadPanel from './DeptLoadPanel.vue';
 import StaffRequestModal from './StaffRequestModal.vue';
@@ -197,12 +198,22 @@ async function changeStatus(t, statusCd) {
 
 onMounted(() => {
 	loadStaff();
-	load();
-	pollTimer = setInterval(load, 10000);
+	load().then(() => {
+		const token = sessionStorage.getItem('ccs.token');
+		if (token && staff.value?.deptCd) {
+			connectStomp(token, (client) => {
+				client.subscribe('/topic/ccs/dept/' + staff.value.deptCd, () => {
+					load();
+				});
+			});
+		}
+	});
+	pollTimer = setInterval(load, 30000);
 });
 
 onUnmounted(() => {
 	if (pollTimer) clearInterval(pollTimer);
+	disconnectStomp();
 });
 </script>
 

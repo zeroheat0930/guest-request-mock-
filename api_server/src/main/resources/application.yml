@@ -67,6 +67,14 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
 ---
 # ───────── dev (사내 MariaDB 직결) ─────────
 # 회사 PMS DB 에 직접 붙는다. 신규 테이블은 INV 스키마, 기존 예약/유저는 PMS 스키마 cross-schema read.
