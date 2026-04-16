@@ -108,11 +108,11 @@ async function submit() {
 		sessionStorage.setItem('ccs.staff', JSON.stringify(map));
 		router.replace('/staff');
 	} catch (e) {
-		// unwrapErr 는 {resCd, resMsg, map} 을 던지므로 status 가 직접 오지 않음.
-		// 401 / 404 는 resCd 로 구분 (CcsAuthController: 9404=계정없음, 9102=비번/비활성)
-		const code = e?.resCd;
-		if (code === '9404') err.value = '계정이 없습니다';
-		else if (code === '9102' || code === '9400') err.value = '로그인 실패';
+		// unwrapErr 는 {status, message, map} 을 던짐.
+		// status 로 구분 (CcsAuthController: 404=계정없음, -30=비번/비활성, 401=BAD_REQUEST)
+		const code = e?.status;
+		if (code === 404) err.value = '계정이 없습니다';
+		else if (code === -30 || code === 401) err.value = '로그인 실패';
 		else err.value = '서버 오류';
 		password.value = '';
 	} finally {

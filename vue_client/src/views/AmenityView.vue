@@ -19,8 +19,8 @@
 				<textarea v-model="reqMemo" rows="2" placeholder="예: 밤 10시 이후 가져다 주세요" />
 			</label>
 			<button class="submit" @click="submit">요청 등록</button>
-			<div v-if="result" class="result" :class="{ ok: result.resCd === '0000' }">
-				[{{ result.resCd }}] {{ result.resMsg }}
+			<div v-if="result" class="result" :class="{ ok: result.status === 0 }">
+				[{{ result.status }}] {{ result.message }}
 				<template v-if="result.map && result.map.reqNo"> / 요청번호: {{ result.map.reqNo }}</template>
 			</div>
 		</div>
@@ -44,7 +44,7 @@ const roomNoMap = {
 
 onMounted(async () => {
 	const res = await fetchAmenityItems();
-	items.value = res.map.list || [];
+	items.value = res.list || [];
 	items.value.forEach(it => { qtyMap[it.itemCd] = 0; });
 });
 
@@ -54,7 +54,7 @@ async function submit() {
 		.map(it => ({ itemCd: it.itemCd, qty: qtyMap[it.itemCd] }));
 
 	if (itemList.length === 0) {
-		result.value = { resCd: '9001', resMsg: '품목 수량을 입력하세요', map: {} };
+		result.value = { status: 401, message: '품목 수량을 입력하세요', map: {} };
 		return;
 	}
 

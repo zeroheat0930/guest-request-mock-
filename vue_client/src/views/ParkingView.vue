@@ -69,7 +69,7 @@ function fmtTime(d, t) {
 async function loadList() {
 	try {
 		const r = await fetchParkingList(rsvNo.value);
-		list.value = r.map?.list || [];
+		list.value = r.list || [];
 	} catch (e) {
 		list.value = [];
 	}
@@ -98,16 +98,16 @@ async function submit() {
 			carTp: carTp.value,
 			reqMemo: reqMemo.value
 		});
-		if (res.resCd === '0000') {
+		if (res.status === 0) {
 			showToast('차량 등록 완료 — 프론트데스크에 전달되었습니다', true);
 			carNo.value = '';
 			reqMemo.value = '';
 			await loadList();
 		} else {
-			showToast(`[${res.resCd}] ${res.resMsg}`, false);
+			showToast(`[${res.status}] ${res.message}`, false);
 		}
 	} catch (err) {
-		showToast(`[${err.resCd}] ${err.resMsg}`, false);
+		showToast(`[${err.status}] ${err.message}`, false);
 	}
 }
 

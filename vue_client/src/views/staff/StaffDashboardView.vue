@@ -138,10 +138,10 @@ async function load() {
 	busy.value = true;
 	try {
 		const res = await fetchCcsTasks();
-		tasks.value = res?.map?.list || [];
+		tasks.value = res?.list || [];
 	} catch (e) {
-		if (e?.resCd === '9102') { gotoLogin(); return; }
-		err.value = `조회 실패: ${e?.resMsg || '서버 오류'}`;
+		if (e?.status === -30) { gotoLogin(); return; }
+		err.value = `조회 실패: ${e?.message || '서버 오류'}`;
 	} finally {
 		busy.value = false;
 	}
@@ -155,7 +155,7 @@ async function take(t) {
 		await assignCcsTask(t.taskId, me);
 		await load();
 	} catch (e) {
-		err.value = `작업 배정 실패: ${e?.resMsg || '서버 오류'}`;
+		err.value = `작업 배정 실패: ${e?.message || '서버 오류'}`;
 	} finally {
 		busyId.value = '';
 	}
@@ -167,7 +167,7 @@ async function changeStatus(t, statusCd) {
 		await transitionCcsTask(t.taskId, statusCd);
 		await load();
 	} catch (e) {
-		err.value = `상태 변경 실패: ${e?.resMsg || '서버 오류'}`;
+		err.value = `상태 변경 실패: ${e?.message || '서버 오류'}`;
 	} finally {
 		busyId.value = '';
 	}

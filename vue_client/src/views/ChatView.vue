@@ -126,7 +126,7 @@ async function send() {
 	} catch (e) {
 		messages.value.push({
 			role: 'assistant',
-			text: `${t(lang.value, 'failPrefix')}: ${e.message || e.resMsg || 'unknown'}`
+			text: `${t(lang.value, 'failPrefix')}: ${e.message || 'unknown'}`
 		});
 	} finally {
 		busy.value = false;
@@ -149,10 +149,10 @@ async function handleIntent(parsed) {
 			itemList: payload.itemList || [],
 			reqMemo: payload.reqMemo || ''
 		});
-		if (res.resCd === '0000') {
+		if (res.status === 0) {
 			messages.value.push({ role: 'assistant', text: t(lang.value, 'amenitySuccess', { reqNo: res.map?.reqNo }) });
 		} else {
-			messages.value.push({ role: 'assistant', text: `${t(lang.value, 'failPrefix')} [${res.resCd}] ${res.resMsg}` });
+			messages.value.push({ role: 'assistant', text: `${t(lang.value, 'failPrefix')} [${res.status}] ${res.message}` });
 		}
 		return;
 	}
@@ -163,14 +163,14 @@ async function handleIntent(parsed) {
 			hkStatCd: payload.hkStatCd,
 			reqMemo: payload.reqMemo || ''
 		});
-		if (res.resCd === '0000') {
+		if (res.status === 0) {
 			const statKey = HK_NAME_KEY[payload.hkStatCd] || 'hkMu';
 			messages.value.push({
 				role: 'assistant',
 				text: t(lang.value, 'hkSuccess', { stat: t(lang.value, statKey), reqNo: res.map?.reqNo })
 			});
 		} else {
-			messages.value.push({ role: 'assistant', text: `${t(lang.value, 'failPrefix')} [${res.resCd}] ${res.resMsg}` });
+			messages.value.push({ role: 'assistant', text: `${t(lang.value, 'failPrefix')} [${res.status}] ${res.message}` });
 		}
 		return;
 	}
@@ -194,13 +194,13 @@ async function confirmLateCheckout() {
 	const { reqOutTm, addAmt } = pendingLate.value;
 	pendingLate.value = null;
 	const res = await requestLateCheckout({ rsvNo: rsv.value.rsvNo, reqOutTm, addAmt });
-	if (res.resCd === '0000') {
+	if (res.status === 0) {
 		messages.value.push({
 			role: 'assistant',
 			text: t(lang.value, 'lateSuccess', { amt: addAmt.toLocaleString(), reqNo: res.map?.reqNo })
 		});
 	} else {
-		messages.value.push({ role: 'assistant', text: `${t(lang.value, 'failPrefix')} [${res.resCd}] ${res.resMsg}` });
+		messages.value.push({ role: 'assistant', text: `${t(lang.value, 'failPrefix')} [${res.status}] ${res.message}` });
 	}
 }
 

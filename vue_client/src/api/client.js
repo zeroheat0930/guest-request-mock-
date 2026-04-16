@@ -55,9 +55,9 @@ function unwrapOk(r) {
 function unwrapErr(e) {
 	const data = e.response?.data;
 	if (e.response?.status === 401) {
-		return Promise.reject({ resCd: '9102', resMsg: '인증 필요', map: {} });
+		return Promise.reject({ status: -30, message: '인증 필요', map: {} });
 	}
-	return Promise.reject(data || { resCd: '9999', resMsg: e.message, map: {} });
+	return Promise.reject(data || { status: -500, message: e.message, map: {} });
 }
 
 // ─────────────────────────────────────────────

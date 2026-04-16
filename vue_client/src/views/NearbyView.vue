@@ -85,7 +85,7 @@ async function load(cat) {
 		cache[cat] = list;
 		places.value = list;
 	} catch (e) {
-		error.value = (e && e.resMsg) || '네트워크 오류';
+		error.value = (e && e.message) || '네트워크 오류';
 		places.value = [];
 	} finally {
 		loading.value = false;

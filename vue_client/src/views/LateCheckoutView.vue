@@ -25,8 +25,8 @@
 				<div>추가 요금: <strong>{{ Number(info.addAmt).toLocaleString() }} {{ info.curCd }}</strong></div>
 				<button v-if="info.availYn === 'Y'" class="btn-req" @click="apply">신청하기</button>
 			</div>
-			<div v-if="result" class="result" :class="{ ok: result.resCd === '0000' }">
-				[{{ result.resCd }}] {{ result.resMsg }}
+			<div v-if="result" class="result" :class="{ ok: result.status === 0 }">
+				[{{ result.status }}] {{ result.message }}
 				<template v-if="result.map && result.map.reqNo"> / 요청번호: {{ result.map.reqNo }}</template>
 			</div>
 		</div>

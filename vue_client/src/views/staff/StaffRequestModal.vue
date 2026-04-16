@@ -97,7 +97,7 @@ async function submit() {
     props.onClose();
     Object.assign(form, { toDeptCd: '', toAssigneeId: '', title: '', memo: '', roomNo: '' });
   } catch (err) {
-    errorMsg.value = err?.resMsg || '요청 전송에 실패했습니다.';
+    errorMsg.value = err?.message || '요청 전송에 실패했습니다.';
   } finally {
     loading.value = false;
   }

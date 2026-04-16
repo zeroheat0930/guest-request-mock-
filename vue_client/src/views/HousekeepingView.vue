@@ -14,8 +14,8 @@
 				<button @click="change('DND')" class="btn btn-dnd">🚫 방해 금지</button>
 				<button @click="change('CLR')" class="btn btn-clr">✓ 해제</button>
 			</div>
-			<div v-if="result" class="result" :class="{ ok: result.resCd === '0000' }">
-				[{{ result.resCd }}] {{ result.resMsg }}
+			<div v-if="result" class="result" :class="{ ok: result.status === 0 }">
+				[{{ result.status }}] {{ result.message }}
 			</div>
 		</div>
 	</div>

@@ -70,8 +70,8 @@ export async function authenticateGuest(rsvNo) {
 		birthDt: creds.birthDt
 	}, { timeout: 10000 });
 	const data = res.data;
-	if (!data || data.resCd !== '0000') {
-		throw new Error(`인증 실패 [${data?.resCd}] ${data?.resMsg}`);
+	if (!data || data.status !== 0) {
+		throw new Error(`인증 실패 [${data?.status}] ${data?.message}`);
 	}
 	const token = data.map?.token;
 	if (!token) throw new Error('토큰 없음');

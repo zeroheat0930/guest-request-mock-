@@ -106,10 +106,10 @@ async function load() {
 	err.value = '';
 	try {
 		const res = await fetchCcsTasks();
-		tasks.value = res?.map?.list || [];
+		tasks.value = res?.list || [];
 	} catch (e) {
-		if (e?.resCd === '9102') { gotoLogin(); return; }
-		err.value = `조회 실패: ${e?.resMsg || '서버 오류'}`;
+		if (e?.status === -30) { gotoLogin(); return; }
+		err.value = `조회 실패: ${e?.message || '서버 오류'}`;
 	}
 }
 
@@ -119,7 +119,7 @@ async function transition(t, statusCd) {
 		await transitionCcsTask(t.taskId, statusCd);
 		await load();
 	} catch (e) {
-		err.value = `상태 변경 실패: ${e?.resMsg || '서버 오류'}`;
+		err.value = `상태 변경 실패: ${e?.message || '서버 오류'}`;
 	} finally {
 		busyId.value = '';
 	}

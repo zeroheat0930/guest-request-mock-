@@ -68,7 +68,7 @@ async function submit() {
 		} else if (status === 503) {
 			err.value = '관리자 인증이 설정되지 않았습니다';
 		} else {
-			err.value = `서버 오류: ${e.response?.data?.resMsg || e.message}`;
+			err.value = `서버 오류: ${e.response?.data?.message || e.message}`;
 		}
 		pw.value = '';
 		pwInput.value?.focus();

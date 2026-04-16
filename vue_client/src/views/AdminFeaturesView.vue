@@ -153,10 +153,10 @@ async function load() {
 			headers: { 'X-Admin-Token': t },
 			timeout: 8000
 		});
-		hydrateRows(res.data?.map?.list || []);
+		hydrateRows(res.data?.list || []);
 	} catch (e) {
 		if (e.response?.status === 401) { gotoLogin(); return; }
-		err.value = `조회 실패: ${e.response?.data?.resMsg || e.message}`;
+		err.value = `조회 실패: ${e.response?.data?.message || e.message}`;
 	} finally {
 		busy.value = false;
 	}
@@ -192,11 +192,11 @@ async function save() {
 			headers: { 'X-Admin-Token': t, 'Content-Type': 'application/json' },
 			timeout: 8000
 		});
-		hydrateRows(res.data?.map?.list || payload);
+		hydrateRows(res.data?.list || payload);
 		showToast('저장 완료');
 	} catch (e) {
 		if (e.response?.status === 401) { gotoLogin(); return; }
-		err.value = `저장 실패: ${e.response?.data?.resMsg || e.message}`;
+		err.value = `저장 실패: ${e.response?.data?.message || e.message}`;
 	} finally {
 		busy.value = false;
 	}

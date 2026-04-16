@@ -156,9 +156,9 @@ let llmDisabledForSession = false;
 
 async function parseIntentLLM(text, ctx) {
 	const res = await postAiChat({ text, ctx });
-	if (res.resCd !== '0000') {
-		const err = new Error(`[${res.resCd}] ${res.resMsg}`);
-		err.resCd = res.resCd;
+	if (res.status !== 0) {
+		const err = new Error(`[${res.status}] ${res.message}`);
+		err.status = res.status;
 		throw err;
 	}
 	return res.map;
@@ -169,7 +169,7 @@ export async function parseIntent(text, ctx) {
 		try {
 			return await parseIntentLLM(text, ctx);
 		} catch (e) {
-			if (e.resCd === '9501') {
+			if (e.status === -500) {
 				// 서버에 키가 없음 → 이번 세션 내내 룰로만 동작
 				llmDisabledForSession = true;
 				console.info('[chat] 서버 LLM 키 미설정, 룰 모드로 고정');
