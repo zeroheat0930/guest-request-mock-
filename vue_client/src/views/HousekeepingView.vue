@@ -8,20 +8,20 @@
 				</svg>
 			</div>
 			<div>
-				<h2 class="page-title">객실 정비</h2>
+				<h2 class="page-title">{{ t('hk.title') }}</h2>
 				<p class="page-sub">Housekeeping &amp; DND</p>
 			</div>
 		</div>
 
 		<div class="form-card">
 			<div class="guest-info">
-				<span class="guest-room">{{ roomNo }}호 고객님</span>
-				
+				<span class="guest-room">{{ roomNo }}{{ t('guest.room') }} {{ t('welcome') }}</span>
+
 			</div>
 
 			<div class="status-section">
-				<div class="status-label">현재 객실 상태</div>
-				<LoadingSpinner v-if="loadingStatus" text="상태 확인 중..." />
+				<div class="status-label">{{ t('hk.current') }}</div>
+				<LoadingSpinner v-if="loadingStatus" :text="t('loading')" />
 				<div v-else class="status-display">
 					<span class="status-icon">{{ currentIcon }}</span>
 					<span class="status-name">{{ curStatNm }}</span>
@@ -31,7 +31,7 @@
 			<div class="divider" />
 
 			<div class="actions-section">
-				<div class="field-label">상태 변경</div>
+				<div class="field-label">{{ t('hk.change') }}</div>
 				<div class="action-grid">
 					<button
 						v-for="action in ACTIONS"
@@ -44,7 +44,7 @@
 						<span class="action-icon">{{ action.icon }}</span>
 						<span class="action-name">{{ action.name }}</span>
 						<span class="action-desc">{{ action.desc }}</span>
-						<span v-if="curStatCd === action.cd" class="action-badge">현재</span>
+						<span v-if="curStatCd === action.cd" class="action-badge">{{ t('hk.current.badge') }}</span>
 					</button>
 				</div>
 			</div>
@@ -63,11 +63,12 @@
 import { ref, computed, onMounted } from 'vue';
 import { fetchHousekeeping, updateHousekeeping } from '../api/client';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
+import { t } from '../i18n/ui.js';
 
 const ACTIONS = [
-	{ cd: 'MU',  icon: '🛏️', name: '룸 정비',   desc: '객실 청소를 요청합니다',  theme: 'blue' },
-	{ cd: 'DND', icon: '🚫', name: '방해 금지',  desc: '입실 중 방문을 삼가해 주세요', theme: 'red' },
-	{ cd: 'CLR', icon: '✅', name: '정비 완료',  desc: '현재 상태를 해제합니다',  theme: 'green' },
+	{ cd: 'MU',  icon: '🛏️', name: t('hk.mu'),  desc: t('hk.mu.desc'),  theme: 'blue' },
+	{ cd: 'DND', icon: '🚫', name: t('hk.dnd'), desc: t('hk.dnd.desc'), theme: 'red' },
+	{ cd: 'CLR', icon: '✅', name: t('hk.clr'), desc: t('hk.clr.desc'), theme: 'green' },
 ];
 
 const STAT_ICONS = { MU: '🛏️', DND: '🚫', CLR: '✅' };

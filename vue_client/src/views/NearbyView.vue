@@ -8,7 +8,7 @@
 				</svg>
 			</div>
 			<div>
-				<h2 class="page-title">주변 안내</h2>
+				<h2 class="page-title">{{ t('nearby.title') }}</h2>
 				<p class="page-sub">Nearby Places</p>
 			</div>
 		</div>
@@ -26,18 +26,18 @@
 			</button>
 		</div>
 
-		<LoadingSpinner v-if="loading" text="불러오는 중..." />
+		<LoadingSpinner v-if="loading" :text="t('nearby.loading')" />
 
 		<div v-else-if="error" class="state state--error">
 			<div class="state-icon">⚠️</div>
-			<div class="state-title">잠시 후 다시 시도해주세요</div>
+			<div class="state-title">{{ t('nearby.retry') }}</div>
 			<small class="state-sub">{{ error }}</small>
 		</div>
 
 		<div v-else-if="places.length === 0" class="state">
 			<div class="state-icon">🗺️</div>
-			<div class="state-title">근처에 결과가 없어요</div>
-			<div class="state-sub">다른 카테고리를 선택해 보세요</div>
+			<div class="state-title">{{ t('nearby.noResult') }}</div>
+			<div class="state-sub">{{ t('nearby.noResult.sub') }}</div>
 		</div>
 
 		<ul v-else class="card-list">
@@ -56,7 +56,7 @@
 					<div class="card-badge">
 						<span class="walk-badge">
 							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M13 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM8 17l1-4 2 2 2-4M6 11l1-3a5 5 0 0 1 4-2h2l2 3h3M6 21l2-4"/></svg>
-							도보 {{ walkMin(p.distanceM) }}분
+							{{ t('nearby.walk') }} {{ walkMin(p.distanceM) }}{{ t('nearby.min') }}
 						</span>
 					</div>
 				</div>
@@ -73,7 +73,7 @@
 						rel="noopener noreferrer"
 					>
 						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-						카카오맵
+						{{ t('nearby.map') }}
 					</a>
 				</div>
 			</li>
@@ -85,13 +85,14 @@
 import { ref, reactive, onMounted } from 'vue';
 import { fetchNearby } from '../api/client';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
+import { t } from '../i18n/ui.js';
 
 const TABS = [
-	{ cd: 'food',     label: '음식점', emoji: '🍽️' },
-	{ cd: 'cafe',     label: '카페',   emoji: '☕' },
-	{ cd: 'conv',     label: '편의점', emoji: '🏪' },
-	{ cd: 'tour',     label: '관광지', emoji: '🗺️' },
-	{ cd: 'pharmacy', label: '약국',   emoji: '💊' }
+	{ cd: 'food',     get label() { return t('nearby.food'); },     emoji: '🍽️' },
+	{ cd: 'cafe',     get label() { return t('nearby.cafe'); },     emoji: '☕' },
+	{ cd: 'conv',     get label() { return t('nearby.conv'); },     emoji: '🏪' },
+	{ cd: 'tour',     get label() { return t('nearby.tour'); },     emoji: '🗺️' },
+	{ cd: 'pharmacy', get label() { return t('nearby.pharmacy'); }, emoji: '💊' }
 ];
 
 const category = ref('food');

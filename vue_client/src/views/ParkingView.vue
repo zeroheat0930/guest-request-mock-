@@ -10,24 +10,24 @@
 				</svg>
 			</div>
 			<div>
-				<h2 class="page-title">주차 차량 등록</h2>
+				<h2 class="page-title">{{ t('park.title') }}</h2>
 				<p class="page-sub">Vehicle Registration</p>
 			</div>
 		</div>
 
 		<div class="form-card">
 			<div class="guest-info">
-				<span class="guest-room">{{ roomNo }}호 고객님</span>
-				
+				<span class="guest-room">{{ roomNo }}{{ t('guest.room') }} {{ t('welcome') }}</span>
+
 			</div>
 
 			<div class="form-row">
 				<div class="form-group" style="flex: 1">
-					<label class="field-label">차량번호</label>
-					<input v-model="carNo" type="text" class="field-input" placeholder="예: 12가 3456" maxlength="20" />
+					<label class="field-label">{{ t('park.carNo') }}</label>
+					<input v-model="carNo" type="text" class="field-input" :placeholder="t('park.carNo.placeholder')" maxlength="20" />
 				</div>
 				<div class="form-group" style="flex: 0 0 160px">
-					<label class="field-label">차종</label>
+					<label class="field-label">{{ t('park.carTp') }}</label>
 					<div class="select-wrap">
 						<select v-model="carTp" class="field-input">
 							<option value="SEDAN">세단</option>
@@ -43,13 +43,13 @@
 			</div>
 
 			<div class="form-group">
-				<label class="field-label">메모 <span class="optional">선택사항</span></label>
-				<textarea v-model="reqMemo" class="field-input" rows="2" placeholder="색상이나 특이사항을 입력하세요" />
+				<label class="field-label">{{ t('park.memo') }} <span class="optional">{{ t('park.optional') }}</span></label>
+				<textarea v-model="reqMemo" class="field-input" rows="2" :placeholder="t('park.memo.placeholder')" />
 			</div>
 
 			<button class="submit-btn" @click="submit">
 				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.64 3.35 2 2 0 0 1 3.61 1h3a2 2 0 0 1 2 1.72c.127.96.36 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.96-.96a2 2 0 0 1 2.11-.45c.907.34 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-				차량 등록하기
+				{{ t('park.submit') }}
 			</button>
 
 			<Transition name="toast">
@@ -62,16 +62,16 @@
 
 		<div class="list-section">
 			<div class="list-header">
-				<h3 class="list-title">등록된 차량</h3>
-				<span v-if="!loadingList && list.length > 0" class="list-count">{{ list.length }}대</span>
+				<h3 class="list-title">{{ t('park.list') }}</h3>
+				<span v-if="!loadingList && list.length > 0" class="list-count">{{ list.length }}</span>
 			</div>
 
-			<LoadingSpinner v-if="loadingList" text="차량 목록 불러오는 중..." />
+			<LoadingSpinner v-if="loadingList" :text="t('park.loading')" />
 
 			<div v-else-if="list.length === 0" class="empty-state">
 				<div class="empty-icon">🚗</div>
-				<div class="empty-title">등록된 차량이 없습니다</div>
-				<div class="empty-sub">위 양식으로 차량을 등록해 주세요</div>
+				<div class="empty-title">{{ t('park.empty') }}</div>
+				<div class="empty-sub">{{ t('park.empty.sub') }}</div>
 			</div>
 
 			<div v-else class="cards">
@@ -96,6 +96,7 @@
 import { ref, onMounted } from 'vue';
 import { fetchParkingList, requestParking } from '../api/client';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
+import { t } from '../i18n/ui.js';
 
 const rsvNo = ref(sessionStorage.getItem('concierge.rsvNo') || '');
 const roomNo = ref(sessionStorage.getItem('concierge.roomNo') || '');
@@ -135,11 +136,11 @@ function showToast(msg, ok) {
 async function submit() {
 	const trimmed = (carNo.value || '').trim();
 	if (!trimmed) {
-		showToast('차량번호를 입력하세요', false);
+		showToast(t('park.errEmpty'), false);
 		return;
 	}
 	if (trimmed.length < 4 || trimmed.length > 20) {
-		showToast('차량번호 형식 오류 (4~20자)', false);
+		showToast(t('park.errLen'), false);
 		return;
 	}
 	try {
@@ -151,7 +152,7 @@ async function submit() {
 			reqMemo: reqMemo.value
 		});
 		if (res.status === 0) {
-			showToast('차량 등록 완료 — 프론트데스크에 전달되었습니다', true);
+			showToast(t('park.success'), true);
 			carNo.value = '';
 			reqMemo.value = '';
 			await loadList();
@@ -159,7 +160,7 @@ async function submit() {
 			showToast(res.message, false);
 		}
 	} catch (err) {
-		showToast(err.message || '요청 처리 중 오류가 발생했습니다', false);
+		showToast(err.message || t('error'), false);
 	}
 }
 

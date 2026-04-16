@@ -79,6 +79,7 @@ export async function authenticateGuest(rsvNo) {
 		sessionStorage.setItem(TOKEN_KEY, token);
 		sessionStorage.setItem(RSV_KEY, creds.rsvNo);
 		sessionStorage.setItem('concierge.checkOutTime', data.map.checkOutTime || '1100');
+		sessionStorage.setItem('concierge.perUseLang', data.map.perUseLang || 'ko_KR');
 	} catch {}
 	return data.map;
 }
@@ -103,6 +104,7 @@ export async function authenticateByRoom(rmNo) {
 		sessionStorage.setItem(RSV_KEY, data.map.rsvNo);
 		sessionStorage.setItem('concierge.roomNo', rmNo);
 		sessionStorage.setItem('concierge.checkOutTime', data.map.checkOutTime || '1100');
+		sessionStorage.setItem('concierge.perUseLang', data.map.perUseLang || 'ko_KR');
 	} catch {}
 	return data.map;
 }

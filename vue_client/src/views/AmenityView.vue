@@ -11,30 +11,30 @@
 				</svg>
 			</div>
 			<div>
-				<h2 class="page-title">어메니티 요청</h2>
-				<p class="page-sub">Amenity Request</p>
+				<h2 class="page-title">{{ t('amenity.title') }}</h2>
+				<p class="page-sub">{{ t('amenity.sub') }}</p>
 			</div>
 		</div>
 
 		<div class="form-card">
 			<div class="guest-info">
-				<span class="guest-room">{{ roomNo }}호 고객님</span>
-				
+				<span class="guest-room">{{ roomNo }}{{ t('guest.room') }} {{ t('welcome') }}</span>
+
 			</div>
 
-			<LoadingSpinner v-if="loading" text="품목 불러오는 중..." />
+			<LoadingSpinner v-if="loading" :text="t('amenity.loading')" />
 			<div v-else class="items">
 				<div class="items-header">
-					<span class="items-label">품목 선택</span>
-					<span class="items-hint">원하는 수량을 입력하세요</span>
+					<span class="items-label">{{ t('amenity.select') }}</span>
+					<span class="items-hint">{{ t('amenity.hint') }}</span>
 				</div>
 				<div v-for="item in items" :key="item.itemCd" class="item-card" :class="{ 'item-card--selected': qtyMap[item.itemCd] > 0 }">
 					<div class="item-info">
-						<span class="item-name">{{ item.itemNm }}</span>
-						<span class="item-name-en">{{ item.itemNmEng }}</span>
+						<span class="item-name">{{ getLang() !== 'ko' && item.itemNmEng ? item.itemNmEng : item.itemNm }}</span>
+						<span class="item-name-en">{{ getLang() === 'ko' ? item.itemNmEng : item.itemNm }}</span>
 					</div>
 					<div class="item-controls">
-						<span class="item-max">최대 {{ item.maxQty }}개</span>
+						<span class="item-max">{{ t('amenity.max') }} {{ item.maxQty }}</span>
 						<div class="qty-wrap">
 							<button class="qty-btn" @click="decQty(item)" :disabled="qtyMap[item.itemCd] <= 0" aria-label="감소">
 								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -49,15 +49,15 @@
 			</div>
 
 			<div class="form-group">
-				<label class="field-label">요청 메모 <span class="optional">선택사항</span></label>
-				<textarea v-model="reqMemo" rows="3" placeholder="예: 밤 10시 이후 가져다 주세요" />
+				<label class="field-label">{{ t('amenity.memo') }}</label>
+				<textarea v-model="reqMemo" rows="3" :placeholder="t('amenity.memo')" />
 			</div>
 
 			<button class="submit-btn" @click="submit">
 				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
 				</svg>
-				요청 등록하기
+				{{ t('amenity.submit') }}
 			</button>
 		</div>
 
@@ -77,6 +77,7 @@
 import { ref, onMounted, reactive } from 'vue';
 import { fetchAmenityItems, requestAmenity } from '../api/client';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
+import { t, getLang } from '../i18n/ui.js';
 
 const rsvNo = ref(sessionStorage.getItem('concierge.rsvNo') || '');
 const roomNo = ref(sessionStorage.getItem('concierge.roomNo') || '');
@@ -116,7 +117,7 @@ async function submit() {
 		.map(it => ({ itemCd: it.itemCd, qty: qtyMap[it.itemCd] }));
 
 	if (itemList.length === 0) {
-		showResult({ status: 401, message: '품목 수량을 입력하세요', map: {} });
+		showResult({ status: 401, message: t('amenity.noitem'), map: {} });
 		return;
 	}
 

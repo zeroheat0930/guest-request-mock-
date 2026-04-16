@@ -7,7 +7,7 @@
 					<polyline points="9 22 9 12 15 12 15 22"/>
 				</svg>
 			</div>
-			<h1 class="room-login-title">다올 컨시어지</h1>
+			<h1 class="room-login-title">{{ t('brand.name') }}</h1>
 			<p class="room-login-sub">{{ authError }}</p>
 		</div>
 	</div>
@@ -23,8 +23,8 @@
 					</svg>
 				</div>
 				<div class="brand-text">
-					<div class="brand-name">다올 컨시어지</div>
-					<div class="brand-sub">Guest Services</div>
+					<div class="brand-name">{{ t('brand.name') }}</div>
+					<div class="brand-sub">{{ t('brand.sub') }}</div>
 				</div>
 			</div>
 
@@ -37,17 +37,14 @@
 					:class="{ 'chat-tab': tab.featureCd === 'CHAT' }"
 				>
 					<span class="ic">{{ tab.icon }}</span>
-					<span class="label">
-						{{ tab.label }}
-						<small>{{ tab.labelEn }}</small>
-					</span>
+					<span class="label">{{ tab.label }}</span>
 				</router-link>
 			</nav>
 
 			<div class="lnb-foot">
 				<div class="guest-card">
-					<div class="guest-card__welcome">{{ guestRoomNo }} 고객님</div>
-					<div class="guest-card__sub">환영합니다</div>
+					<div class="guest-card__welcome">{{ guestRoomNo }} {{ t('welcome') }}</div>
+					<div class="guest-card__sub">{{ t('welcome.sub') }}</div>
 				</div>
 			</div>
 		</aside>
@@ -55,7 +52,7 @@
 		<!-- 본문 — 인증 완료 후에만 렌더 -->
 		<main class="app-body">
 			<router-view v-if="ready" />
-			<LoadingSpinner v-else text="인증 중..." />
+			<LoadingSpinner v-else :text="t('auth.loading')" />
 		</main>
 	</div>
 </template>
@@ -66,6 +63,7 @@ import { loadFeatures, enabledSortedFeatures, featuresLoaded } from './features/
 import { getStoredToken, authenticateByRoom } from './auth/authBootstrap.js';
 import LoadingSpinner from './components/LoadingSpinner.vue';
 import { useRouter, useRoute } from 'vue-router';
+import { t } from './i18n/ui.js';
 
 const router = useRouter();
 const route = useRoute();
@@ -108,7 +106,7 @@ onMounted(async () => {
 		}
 	} else {
 		// room 파라미터 없음 — QR 스캔 안내
-		authError.value = 'QR 코드를 스캔하거나 객실 태블릿을 이용해주세요';
+		authError.value = t('auth.scan');
 		return;
 	}
 

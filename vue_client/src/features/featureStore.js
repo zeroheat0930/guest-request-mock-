@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import axios from 'axios';
 import { API_BASE } from '../api/client.js';
+import { getLang } from '../i18n/ui.js';
 
 /**
  * 기능 플래그 스토어
@@ -13,12 +14,12 @@ export const features = ref(new Map());
 export const featuresLoaded = ref(false);
 
 export const FEATURE_META = {
-	AMENITY: { to: '/amenity',       icon: '🛎️', label: '어메니티',       labelEn: 'Amenity' },
-	HK:      { to: '/housekeeping',  icon: '🧹', label: '객실 정비',      labelEn: 'Housekeeping' },
-	LATE_CO: { to: '/late-checkout', icon: '⏰', label: '레이트 체크아웃', labelEn: 'Late Checkout' },
-	CHAT:    { to: '/chat',          icon: '🤖', label: 'AI 컨시어지',    labelEn: 'Multilingual' },
-	NEARBY:  { to: '/nearby',        icon: '📍', label: '주변 안내',      labelEn: 'Nearby' },
-	PARKING: { to: '/parking',       icon: '🚗', label: '주차',           labelEn: 'Parking' }
+	AMENITY: { to: '/amenity',       icon: '🛎️', labels: { ko: '어메니티',       en: 'Amenity',       ja: 'アメニティ',           zh: '客房用品' } },
+	HK:      { to: '/housekeeping',  icon: '🧹', labels: { ko: '객실 정비',      en: 'Housekeeping',  ja: 'ハウスキーピング',     zh: '客房服务' } },
+	LATE_CO: { to: '/late-checkout', icon: '⏰', labels: { ko: '레이트 체크아웃', en: 'Late Checkout', ja: 'レイトチェックアウト', zh: '延迟退房' } },
+	CHAT:    { to: '/chat',          icon: '🤖', labels: { ko: 'AI 컨시어지',    en: 'AI Concierge',  ja: 'AIコンシェルジュ',     zh: 'AI礼宾' } },
+	NEARBY:  { to: '/nearby',        icon: '📍', labels: { ko: '주변 안내',      en: 'Nearby',        ja: '周辺案内',             zh: '周边信息' } },
+	PARKING: { to: '/parking',       icon: '🚗', labels: { ko: '주차',           en: 'Parking',       ja: '駐車',                 zh: '停车' } }
 };
 
 function authHeader() {
@@ -64,11 +65,13 @@ export function isFeatureEnabled(featureCd) {
 
 export function enabledSortedFeatures() {
 	const out = [];
+	const lang = getLang();
 	for (const [cd, f] of features.value.entries()) {
 		if (f.useYn !== 'Y') continue;
 		const meta = FEATURE_META[cd];
 		if (!meta) continue;
-		out.push({ featureCd: cd, sortOrd: f.sortOrd, ...meta });
+		const label = meta.labels[lang] || meta.labels.ko;
+		out.push({ featureCd: cd, sortOrd: f.sortOrd, to: meta.to, icon: meta.icon, label });
 	}
 	out.sort((a, b) => a.sortOrd - b.sortOrd);
 	return out;

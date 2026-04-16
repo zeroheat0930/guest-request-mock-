@@ -8,7 +8,7 @@
 				</svg>
 			</div>
 			<div>
-				<h2 class="page-title">레이트 체크아웃</h2>
+				<h2 class="page-title">{{ t('late.title') }}</h2>
 				<p class="page-sub">Late Checkout</p>
 			</div>
 		</div>
@@ -17,28 +17,28 @@
 		<div class="steps">
 			<div class="step" :class="{ 'step--active': true, 'step--done': !!info }">
 				<div class="step-num">1</div>
-				<span class="step-label">시간 선택</span>
+				<span class="step-label">{{ t('late.step1') }}</span>
 			</div>
 			<div class="step-line" :class="{ 'step-line--done': !!info }" />
 			<div class="step" :class="{ 'step--active': !!info, 'step--done': !!result && result.status === 0 }">
 				<div class="step-num">2</div>
-				<span class="step-label">요금 확인</span>
+				<span class="step-label">{{ t('late.step2') }}</span>
 			</div>
 			<div class="step-line" :class="{ 'step-line--done': !!result && result.status === 0 }" />
 			<div class="step" :class="{ 'step--active': !!result && result.status === 0 }">
 				<div class="step-num">3</div>
-				<span class="step-label">신청 완료</span>
+				<span class="step-label">{{ t('late.step3') }}</span>
 			</div>
 		</div>
 
 		<div class="form-card">
 			<div class="guest-info">
-				<span class="guest-room">{{ roomNo }}호 고객님</span>
-				<span class="guest-checkout">기본 체크아웃: {{ stdCheckOutH.toString().padStart(2,'0') }}:{{ stdCheckOutMm }}</span>
+				<span class="guest-room">{{ roomNo }}{{ t('guest.room') }} {{ t('welcome') }}</span>
+				<span class="guest-checkout">{{ t('late.stdTime') }}: {{ stdCheckOutH.toString().padStart(2,'0') }}:{{ stdCheckOutMm }}</span>
 			</div>
 
 			<div class="form-group">
-				<label class="field-label">요청 체크아웃 시각</label>
+				<label class="field-label">{{ t('late.selectTime') }}</label>
 				<div class="time-grid">
 					<button
 						v-for="t in TIME_OPTIONS"
@@ -55,11 +55,11 @@
 			<button class="check-btn" @click="check" :disabled="checking">
 				<template v-if="checking">
 					<svg class="spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-					확인 중...
+					{{ t('late.checking') }}
 				</template>
 				<template v-else>
 					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-					가능 여부 확인
+					{{ t('late.check') }}
 				</template>
 			</button>
 
@@ -67,12 +67,12 @@
 				<div v-if="info" class="info-card" :class="info.availYn === 'Y' ? 'info-card--avail' : 'info-card--unavail'">
 					<div class="info-header">
 						<span class="avail-badge" :class="info.availYn === 'Y' ? 'avail-badge--ok' : 'avail-badge--no'">
-							{{ info.availYn === 'Y' ? '✓ 가능' : '✗ 불가' }}
+							{{ info.availYn === 'Y' ? t('late.avail') : t('late.unavail') }}
 						</span>
 						<span class="rate-type">{{ info.rateTpNm }}</span>
 					</div>
 					<div class="fee-display">
-						<span class="fee-label">추가 요금</span>
+						<span class="fee-label">{{ t('late.fee') }}</span>
 						<span class="fee-amount">
 							<span class="fee-currency">{{ info.curCd }}</span>
 							{{ Number(info.addAmt).toLocaleString() }}
@@ -80,7 +80,7 @@
 					</div>
 					<button v-if="info.availYn === 'Y'" class="apply-btn" @click="apply">
 						<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-						레이트 체크아웃 신청하기
+						{{ t('late.submit') }}
 					</button>
 				</div>
 			</Transition>
@@ -102,6 +102,7 @@
 import { ref, computed } from 'vue';
 import { checkLateCheckout, requestLateCheckout } from '../api/client';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
+import { t } from '../i18n/ui.js';
 
 const rsvNo = ref(sessionStorage.getItem('concierge.rsvNo') || '');
 const roomNo = ref(sessionStorage.getItem('concierge.roomNo') || '');
