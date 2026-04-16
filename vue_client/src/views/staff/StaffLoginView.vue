@@ -180,10 +180,12 @@ label { display: block; margin-bottom: var(--sp-4); }
 label input {
 	display: block;
 	width: 100%;
-	padding: 12px 14px;
+	box-sizing: border-box;
+	padding: 13px 14px;
 	border: 1px solid var(--c-border-strong);
-	border-radius: var(--r-sm);
+	border-radius: var(--r-md);
 	font-size: 15px;
+	height: 48px;
 	background: var(--c-bg);
 	transition: border-color var(--t-fast), box-shadow var(--t-fast);
 }
@@ -196,7 +198,10 @@ label input:focus {
 
 .primary {
 	width: 100%;
+	box-sizing: border-box;
 	padding: 13px;
+	height: 48px;
+	margin-top: var(--sp-2);
 	background: linear-gradient(135deg, var(--c-brand-500), var(--c-accent-500));
 	color: #fff;
 	border: none;
