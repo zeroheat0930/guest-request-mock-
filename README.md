@@ -282,6 +282,32 @@ Base: `http://localhost:8080/api`
 
 ## 🗓️ 진행 로그
 
+### 2026-04-16 (맥북 야간 세션 2 — 상용화 보안 수정 + 테스트 + UI 완성)
+
+**완료**:
+- **상용화 Critical 보안 6건 수정**:
+  - DB 비밀번호 하드코딩 제거 (환경변수 필수)
+  - 어드민 인증 timing-safe 비교 (`MessageDigest.isEqual()`)
+  - AI 챗 Rate Limiting (`AiRateLimiter`, 20req/min per guest)
+  - WebSocket STOMP 인증 (`CcsStompAuthInterceptor`, CONNECT 시 JWT 검증)
+  - CORS prod 제한 (`concierge.cors.allowed-origins` 환경변수)
+  - 응답 포맷 통일 (SecurityConfig/AdminAuthInterceptor resCd→status)
+- **Vue 프론트 응답 포맷 마이그레이션** — 17개 파일 `resCd/resMsg` → `status/message`
+- **게스트 UI 폴리싱**:
+  - `LoadingSpinner` 공용 컴포넌트 + 전 뷰 적용
+  - 상태 코드 노출 제거, 토스트 3초 자동 소실 통일
+  - 모바일 반응형 수정 (AmenityView 그리드, HK 버튼 스택)
+  - 터치 타겟 min-height 48px, App.vue 게스트 정보 동적화
+- **스태프 대시보드 컴포넌트 완성**:
+  - StatsWidget 렌더 (오늘 접수/완료/평균 처리시간)
+  - DeptLoadPanel 접이식 렌더 (부서원 로드 현황)
+  - StaffRequestModal "새 요청" 버튼 + 모달 트리거
+- **AdminCcsView CRUD 완성** — 부서 추가/수정/삭제 인라인 폼, useYn 토글, 스태프 positionCd/배지
+- **유닛 테스트 26건 신규** (0건→26건):
+  - AiRateLimiter, JwtService, RequestParams, Responses, CcsRoutingRuleDefault
+
+**빌드**: `mvn test` 26건 PASS / `npm run build` 123 modules, 0 errors
+
 ### 2026-04-16 (맥북 야간 세션 — PMS MVC 인프라 이식 + JPA 완전 제거)
 
 **목표**: 회사 개발자가 소스 열었을 때 PMS와 동일한 패턴으로 바로 이해할 수 있도록 MVC 인프라 통일.
@@ -340,14 +366,24 @@ Base: `http://localhost:8080/api`
 - `commons-lang3` 의존성 추가
 
 **남은 것**:
-- ~~기존 JPA 엔티티/Repository 삭제 정리~~ ✅ (2026-04-16 맥북 야간)
-- ~~spring-boot-starter-data-jpa 의존성 제거~~ ✅ (2026-04-16 맥북 야간)
-- ~~PMS MVC 인프라 이식 (BaseController, RequestParams 등)~~ ✅ (2026-04-16 맥북 야간)
+- ~~기존 JPA 엔티티/Repository 삭제 정리~~ ✅
+- ~~spring-boot-starter-data-jpa 의존성 제거~~ ✅
+- ~~PMS MVC 인프라 이식 (BaseController, RequestParams 등)~~ ✅
+- ~~Vue 프론트엔드 응답 포맷 대응 (resCd → status 변경 반영)~~ ✅
+- ~~상용화 보안 Critical 6건 수정~~ ✅
+- ~~유닛 테스트 신규 작성 (26건)~~ ✅
+- ~~AdminCcsView CRUD 완성~~ ✅
+- ~~게스트 UI 폴리싱 (로딩/모바일/토스트/터치)~~ ✅
+- ~~스태프 대시보드 컴포넌트 렌더 (Stats/DeptLoad/RequestModal)~~ ✅
 - SQL 별칭(AS camelCase) 제거 → CommonDAO 경유로 전환
 - @Transactional 제거 → TxAdviceConfig AOP 로 대체
 - AmenityRequest 다건 요청 구조 변경 확인 (1 item per row)
 - 부팅 + 실제 쿼리 동작 검증 (사내망 필요)
-- Vue 프론트엔드 응답 포맷 대응 (resCd → status 변경 반영)
+- 스태프 비밀번호 해싱 (PMS 평문 → 독립 인증 테이블 검토)
+- AdminCcsView 부서 CRUD 백엔드 엔드포인트 추가 (POST/PUT/DELETE)
+- WebSocket 실시간 연결 (현재 폴링 → STOMP 클라이언트)
+- Health Check 엔드포인트 (Spring Actuator)
+- API 문서 (Swagger/OpenAPI)
 
 **접속**: `jdbc:mariadb://211.34.228.191:3336/INV` (dev 프로파일 기본값), `dongjunkorea` 계정. 사내망/VPN 필수.
 
