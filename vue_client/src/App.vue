@@ -1,7 +1,7 @@
 <template>
-	<!-- 게스트 영역: LNB + 본문 -->
-	<div v-if="isGuestRoute" class="app-shell">
-		<aside class="lnb">
+	<div class="app-shell" :class="{ 'no-lnb': !showLnb }">
+		<!-- LNB (좌측 사이드) — 게스트 화면에서만 -->
+		<aside v-if="showLnb" class="lnb">
 			<div class="brand">
 				<div class="logo">🏨</div>
 				<div class="brand-text">
@@ -26,75 +26,43 @@
 				<small class="dim">HONG GILDONG</small>
 			</div>
 		</aside>
-		<main class="app-body">
-			<router-view v-slot="{ Component }">
-				<transition name="page" mode="out-in">
-					<component :is="Component" />
-				</transition>
-			</router-view>
-		</main>
-	</div>
 
-	<!-- 스태프/관리자/로그인 영역(안전 폴백): 게스트 번들에는 어차피 해당 라우트가 없지만 혹시 모를 진입을 위해 -->
-	<div v-else class="plain-shell">
-		<router-view v-slot="{ Component }">
-			<transition name="page" mode="out-in">
-				<component :is="Component" />
-			</transition>
-		</router-view>
+		<!-- 본문 -->
+		<main class="app-body">
+			<router-view />
+		</main>
 	</div>
 </template>
 
 <script setup>
-import { computed, onMounted, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { computed, onMounted } from 'vue';
 import { loadFeatures, enabledSortedFeatures, featuresLoaded } from './features/featureStore.js';
 import { getStoredToken, authenticateGuest, DEMO_RESERVATIONS } from './auth/authBootstrap.js';
+import { useRouter, useRoute } from 'vue-router';
 
 const router = useRouter();
 const route = useRoute();
 const tabs = computed(() => enabledSortedFeatures());
+const showLnb = computed(() => !(route.meta?.admin || route.meta?.staff));
 
-// 게스트 경로 여부: staff/admin meta 가 없으면 게스트.
-// (/staff/*, /admin/*, /staff/login, /admin/login 전부 여기서 걸러짐)
-const isGuestRoute = computed(() => !route.meta?.staff && !route.meta?.admin);
-
-// 게스트 부트: 게스트 경로에 처음 진입했을 때만 자동 인증 + 기능 로드.
-// 스태프/관리자 라우트에서는 게스트 토큰을 발급하지 않음.
-let guestBooted = false;
-async function bootGuestIfNeeded() {
-	if (guestBooted) return;
-	if (!isGuestRoute.value) return;
-	guestBooted = true;
+onMounted(async () => {
+	// 데모 부트: 토큰이 없으면 첫 데모 게스트로 자동 인증 (ChatView 에서도 다시 switchGuest 함)
 	if (!getStoredToken()) {
 		try { await authenticateGuest(DEMO_RESERVATIONS[0].rsvNo); } catch {}
 	}
 	await loadFeatures();
+	// 현재 경로가 비활성 feature 면 첫 활성 탭으로 재배치
 	const cur = router.currentRoute.value;
 	const cd = cur.meta?.featureCd;
 	if (cd && featuresLoaded.value && !tabs.value.some(t => t.featureCd === cd)) {
 		if (tabs.value.length) router.replace(tabs.value[0].to);
 	}
-}
-
-onMounted(bootGuestIfNeeded);
-watch(isGuestRoute, bootGuestIfNeeded);
+});
 </script>
 
 <style scoped>
 .app-shell { display: flex; height: 100%; background: #f5f7fa; }
-
-/* 스태프/관리자/로그인 — 사이드바 없는 순수 컨테이너.
-   각 뷰가 자체 상단 헤더와 로그아웃을 제공함. */
-.plain-shell {
-	min-height: 100%;
-	background: #f5f7fa;
-	padding: 24px 28px;
-	overflow: auto;
-}
-@media (max-width: 720px) {
-	.plain-shell { padding: 16px; }
-}
+.app-shell.no-lnb .app-body { padding: 0; }
 
 /* ═══════════ LNB ═══════════ */
 .lnb {

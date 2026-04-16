@@ -279,6 +279,56 @@ Base: `http://localhost:8080/api`
 
 ## 🗓️ 진행 로그
 
+### 2026-04-16 (회사 세션 — 실제 DAOL DB 직결 + 스키마 확정) 🚧 진행중
+
+**목표**: W1-1 cmpxCd 전면 도입 — 엔티티를 실제 다올 PMS 스키마에 맞춰 재작성.
+
+**결정**: 컨시어지 로컬 `concierge_property`/`gr_*` 테이블 버리고 **실제 다올 DB 직결**로 전환.
+PMS 측 `PMS_RESERVATION`/`PMS_COMPLEX`/`PMS_PROPERTY`/`PMS_USER_MTR`/`PMS_CUST_MGMT` 는 읽기전용 매핑,
+컨시어지 고유 데이터만 `INV` 스키마에 7개 테이블로 신규.
+
+**접속**: `jdbc:mariadb://211.34.228.191:3336/INV` (dev 프로파일 기본값), `dongjunkorea` 계정. 사내망/VPN 필수.
+
+**완료된 것**:
+- `application.yml` dev 프로파일 → 사내 MariaDB 직결 + `ddl-auto=none`
+- `INV` 스키마에 **7개 테이블 수동 DDL 생성**:
+  - `CONCIERGE_PROPERTY_EXT` — (PROP_CD, CMPX_CD) 복합 PK, lat/lng/nearbyRadius (PMS_COMPLEX 에 없는 좌표만)
+  - `CONCIERGE_FEATURE` — (PROP_CD, CMPX_CD, FEATURE_CD) 복합 PK
+  - `CONCIERGE_AMENITY_ITEM` — (PROP_CD, CMPX_CD, ITEM_CD) 복합 PK
+  - `CONCIERGE_AMENITY_REQ` — REQ_NO bigint PK + (PROP_CD, CMPX_CD, RESV_NO) 인덱스
+  - `CONCIERGE_PARKING` — 동일 구조 + CAR_NO / PMS_SYNC_YN
+  - `CONCIERGE_LATE_CO` — 동일 구조 + REQ_OUT_TM / ADD_AMT
+  - `CCS_TASK` — TASK_ID(varchar) PK + 부서/상태/담당자 인덱스
+- `SchemaProbeRunner` 신규 — 부팅 시 PMS/INV 테이블 컬럼 덤프 (엔티티 재매핑용 일회성)
+- **실제 스키마 확정** (probe 결과):
+  - `PMS_RESERVATION` 137컬럼, PK `(PROP_CD, CMPX_CD, RESV_NO)`, RESV_NO varchar(10)
+  - `PMS_COMPLEX` 57컬럼, PK `(PROP_CD, CMPX_CD)`, lat/lng 없음 (→ EXT 테이블 확정)
+  - `PMS_PROPERTY` 22컬럼, PK `PROP_CD`, PROP_FULL_NM
+  - `PMS_USER_MTR` 27컬럼, PK `USER_ID` **단일**(!) — 글로벌 유니크라 스태프 JWT 에 userId 하나로 충분
+  - `PMS_CUST_MGMT` 80컬럼
+
+**다음 작업 (이어서 해야 할 것)**:
+1. PMS 읽기전용 엔티티 3개 신규: `PmsReservation`, `PmsComplex`, `PmsUserMtr` (+ `PmsProperty` 선택)
+2. 기존 `Reservation` / `ConciergeProperty` 엔티티 **삭제** — PMS 쪽으로 대체
+3. 6개 컨시어지 엔티티 재작성 (INV DDL 매핑, 복합 PK `@IdClass`, 감사필드 REG_USER/REG_DT/MOD_USER/MOD_DT)
+   - `AmenityRequest` → table `CONCIERGE_AMENITY_REQ`, reqNo `Long` + `@GeneratedValue(IDENTITY)` 검토
+   - `AmenityItem` → `CONCIERGE_AMENITY_ITEM`, 복합 PK `(propCd, cmpxCd, itemCd)`
+   - `ParkingRegistration` → `CONCIERGE_PARKING`
+   - `LateCheckoutRequest` → `CONCIERGE_LATE_CO`
+   - `ConciergeFeature` → `CONCIERGE_FEATURE`, `ConciergeFeatureId` 에 cmpxCd 추가
+   - `CcsTask` → `CCS_TASK`, cmpxCd 컬럼 이미 있음 (길이만 5 → 10 조정)
+4. 신규 `PropertyExt` 엔티티 — `CONCIERGE_PROPERTY_EXT` (lat/lng/nearbyRadius)
+5. Repository/Service/Controller 전역 시그니처에 `cmpxCd` 파라미터 추가
+6. `JwtService` / `GuestPrincipal` / `SecurityContextUtil` 에 cmpxCd 클레임
+7. `SeedDataRunner` 재작성 — 컨시어지 시드만, PMS 쪽은 건드리지 않음 (`propCd='0000000010'`, `cmpxCd='00001'` 실제 값)
+8. `SchemaProbeRunner` 삭제 (일회성 툴)
+9. `V2`/`V3`/`V4` Flyway 스크립트 아카이브 + `V5__inv_schema.sql` 신규 (실제 DDL과 일치)
+
+**주의**:
+- REQ_NO bigint 채번 전략 미확정 — MariaDB `AUTO_INCREMENT` 로 가는 쪽이 유력
+- `PMS_USER_MTR.USE_YN`, `USER_WK_STAT` 필터링 필요 (재직 스태프만)
+- 현재 `gr_*`/`concierge_*` 로컬 테이블 참조하는 Repository/Service 컴파일 에러 대량 발생 예정 — 한번에 몰아서 수정
+
 ### 2026-04-15 (맥북 밤 세션 — UI 고도화: StaffShell + 디자인 토큰 + 로그인 폴리싱)
 
 **배경**: PMS 연동을 제거하고 나서 스태프/관리자 번들이 뷰별로 자체 상단 헤더만 쓰고 있어 내비게이션 일관성이 떨어졌고, 로그인 화면은 기능 동작 수준에 머물러 있었음. 심사 영상에서 시연 임팩트가 약할 것으로 판단해 전체적인 시각/인터랙션 완성도를 끌어올림.
@@ -339,7 +389,6 @@ Base: `http://localhost:8080/api`
 **검증**:
 - `npm run build` — 113 modules transformed, 0 errors, 두 엔트리(`index.html` + `staff.html`) 정상 출력
 - Java 변경분은 정적 검증(이 맥북엔 JDK/Maven 미설치) — 삭제/수정 후 `grep -r` 로 PMS 참조 0 확인, 남은 `CcsDispatcher` 의 `@Value` 는 신규 `concierge.tenant.*` 키와 일치
-
 ### 2026-04-15 (Ralph 세션 — CCS 다올버전 풀 구축)
 
 **목표**: AI 경연대회 본질 → 상용화 고려 X → CCS-lite 초경량 뷰 확장

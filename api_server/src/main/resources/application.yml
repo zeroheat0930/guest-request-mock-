@@ -54,29 +54,27 @@ jwt:
   hours-valid: 72
 
 ---
-# ───────── dev (기본) ─────────
-# H2 파일 모드 + MySQL/MariaDB 호환 모드 + JPA 자동 스키마 생성 + 시드 데이터는 SeedDataRunner 가 주입
-# 실제 운영 DB 는 MariaDB(회사 PMS 스택) 라 H2 MODE=MYSQL 로 SQL 문법 차이를 최소화.
+# ───────── dev (사내 MariaDB 직결) ─────────
+# 회사 PMS DB 에 직접 붙는다. 신규 테이블은 INV 스키마, 기존 예약/유저는 PMS 스키마 cross-schema read.
+# 접속: VPN 또는 사내망에서만 211.34.228.191:3336 에 접근 가능.
+# ddl-auto=none — 신규 테이블은 사용자가 수동 DDL 로 만들었고 엔티티 매핑 재정비 중이므로 validate 는 보류.
 spring:
   config:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:h2:file:./data/concierge-dev;AUTO_SERVER=TRUE;MODE=MYSQL;DATABASE_TO_LOWER=TRUE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: ${DB_URL:jdbc:mariadb://211.34.228.191:3336/INV?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true}
+    driver-class-name: org.mariadb.jdbc.Driver
+    username: ${DB_USER:dongjunkorea}
+    password: ${DB_PASSWORD:!Ehdwnsdl0930}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.MariaDBDialect
         format_sql: true
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
 
 ---
 # ───────── prod (MariaDB) ─────────

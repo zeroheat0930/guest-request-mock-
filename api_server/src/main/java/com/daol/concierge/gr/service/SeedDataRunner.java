@@ -29,7 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 재시작 후에도 데이터는 H2 파일(`data/concierge-dev.mv.db`)에 유지됨.
  * 프로덕션에선 별도 시드/마이그레이션 스크립트로 대체 예정.
  */
-@Component
+// @Component — 사내 DB 연동 리팩터 중 임시 비활성화. 엔티티 매핑 완료 후 재활성화.
 public class SeedDataRunner implements CommandLineRunner {
 
 	private static final Logger log = LoggerFactory.getLogger(SeedDataRunner.class);
@@ -89,8 +89,23 @@ public class SeedDataRunner implements CommandLineRunner {
 	}
 
 	private void seedReservations() {
+		// 기존 시드가 있어도 chkOutDt 가 과거면 오늘+2 로 밀어준다 (데모 evergreen).
+		// 이유: JwtService 가 예약 chkOutDt 기준으로 토큰 만료를 잡는데,
+		// 시드 날짜(20260415)가 지나면 토큰이 발급 즉시 만료되어 전 기능이 막힘.
 		if (reservationRepo.count() > 0) {
-			log.debug("Reservation seed skipped (count={})", reservationRepo.count());
+			java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd");
+			String today = java.time.LocalDate.now().format(fmt);
+			String future = java.time.LocalDate.now().plusDays(2).format(fmt);
+			int bumped = 0;
+			for (Reservation r : reservationRepo.findAll()) {
+				if (r.getChkOutDt() == null || r.getChkOutDt().compareTo(today) <= 0) {
+					r.setChkOutDt(future);
+					reservationRepo.save(r);
+					bumped++;
+				}
+			}
+			if (bumped > 0) log.info("Bumped {} reservation chkOutDt → {}", bumped, future);
+			else log.debug("Reservation seed skipped (count={})", reservationRepo.count());
 			return;
 		}
 		// {rsvNo, propCd, roomNo, perNm, chkInDt, chkOutDt, chkOutTm, roomTpCd, perUseLang, birthDt}
