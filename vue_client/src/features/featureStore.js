@@ -36,10 +36,11 @@ export async function loadFeatures() {
 			headers: authHeader(),
 			timeout: 8000
 		});
-		const list = res.data?.map?.list || [];
+		const list = res.data?.list || [];
 		const next = new Map();
 		for (const row of list) {
-			next.set(row.featureCd, { useYn: row.useYn, sortOrd: row.sortOrd });
+			// 게스트용 API는 활성화된 것만 반환 — useYn 없으면 'Y'로 간주
+			next.set(row.featureCd, { useYn: row.useYn || 'Y', sortOrd: row.sortOrd });
 		}
 		features.value = next;
 		featuresLoaded.value = true;

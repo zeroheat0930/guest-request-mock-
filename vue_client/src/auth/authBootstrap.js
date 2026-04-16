@@ -12,19 +12,19 @@
 import axios from 'axios';
 import { API_BASE } from '../api/client.js';
 
-/** 데모 자격증명 (백엔드 SeedDataRunner 의 예약과 매칭) */
+/** 데모 자격증명 (PMS DB 실 예약과 매칭) */
 export const DEMO_RESERVATIONS = [
 	{
-		rsvNo: 'R2026041300001',
-		chkInDt: '20260413',
-		birthDt: '19800101',
-		label: '1205 · HONG GILDONG (ko_KR)'
+		rsvNo: '0000014632',
+		chkInDt: '20260520',
+		birthDt: '19920930',
+		label: '정동준'
 	},
 	{
-		rsvNo: 'R2026041300002',
-		chkInDt: '20260413',
-		birthDt: '19750303',
-		label: '0807 · JOHN SMITH (en_US)'
+		rsvNo: '0000014633',
+		chkInDt: '20260422',
+		birthDt: '19920930',
+		label: '테스트 게스트'
 	}
 ];
 
