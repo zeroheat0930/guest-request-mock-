@@ -70,8 +70,8 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:mariadb://211.34.228.191:3336/INV?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true}
     driver-class-name: org.mariadb.jdbc.Driver
-    username: ${DB_USER:dongjunkorea}
-    password: ${DB_PASSWORD:!Ehdwnsdl0930}
+    username: ${DB_USER:}
+    password: ${DB_PASSWORD:}
 
 ---
 # ───────── prod (MariaDB) ─────────

@@ -7,6 +7,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 /**
  * 관리자 API 헤더 인증 인터셉터.
@@ -27,20 +29,22 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
 			return true;
 		}
 		if (adminPassword == null || adminPassword.isBlank()) {
-			writeError(response, 503, "9503", "admin auth not configured");
+			writeError(response, 503, "admin auth not configured");
 			return false;
 		}
 		String tok = request.getHeader("X-Admin-Token");
-		if (tok == null || !adminPassword.equals(tok)) {
-			writeError(response, 401, "9102", "admin auth failed");
+		if (tok == null || !MessageDigest.isEqual(
+				adminPassword.getBytes(StandardCharsets.UTF_8),
+				tok.getBytes(StandardCharsets.UTF_8))) {
+			writeError(response, 401, "admin auth failed");
 			return false;
 		}
 		return true;
 	}
 
-	private void writeError(HttpServletResponse res, int status, String resCd, String msg) throws IOException {
+	private void writeError(HttpServletResponse res, int status, String msg) throws IOException {
 		res.setStatus(status);
 		res.setContentType("application/json;charset=UTF-8");
-		res.getWriter().write("{\"resCd\":\"" + resCd + "\",\"resMsg\":\"" + msg + "\",\"map\":{}}");
+		res.getWriter().write("{\"status\":-30,\"message\":\"\",\"error\":{\"message\":\"" + msg + "\"},\"redirect\":\"\"}");
 	}
 }

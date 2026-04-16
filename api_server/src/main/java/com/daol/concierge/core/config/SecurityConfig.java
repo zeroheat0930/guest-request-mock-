@@ -4,6 +4,7 @@ import com.daol.concierge.auth.JwtAuthFilter;
 import com.daol.concierge.ccs.auth.CcsJwtFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -48,6 +49,9 @@ public class SecurityConfig {
 
 	@Autowired
 	private Environment env;
+
+	@Value("${concierge.cors.allowed-origins:}")
+	private String corsAllowedOrigins;
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -94,27 +98,33 @@ public class SecurityConfig {
 								   org.springframework.security.core.AuthenticationException ex) throws IOException {
 		res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		res.setContentType("application/json;charset=UTF-8");
-		res.getWriter().write("{\"resCd\":\"9102\",\"resMsg\":\"인증 필요\",\"map\":{}}");
+		res.getWriter().write("{\"status\":-30,\"message\":\"\",\"error\":{\"message\":\"인증 필요\"},\"redirect\":\"\"}");
 	}
 
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration c = new CorsConfiguration();
-		c.setAllowedOriginPatterns(List.of(
-				"http://localhost:*",
-				"http://127.0.0.1:*",
-				"http://192.168.*.*:*",
-				"http://10.*.*.*:*",
-				"http://172.16.*.*:*", "http://172.17.*.*:*", "http://172.18.*.*:*",
-				"http://172.19.*.*:*", "http://172.20.*.*:*", "http://172.21.*.*:*",
-				"http://172.22.*.*:*", "http://172.23.*.*:*", "http://172.24.*.*:*",
-				"http://172.25.*.*:*", "http://172.26.*.*:*", "http://172.27.*.*:*",
-				"http://172.28.*.*:*", "http://172.29.*.*:*", "http://172.30.*.*:*",
-				"http://172.31.*.*:*",
-				"https://*.ngrok-free.app",
-				"https://*.ngrok.io",
-				"https://*.trycloudflare.com"
-		));
+		if (corsAllowedOrigins != null && !corsAllowedOrigins.isEmpty()) {
+			// prod: use configured origins only
+			c.setAllowedOriginPatterns(Arrays.asList(corsAllowedOrigins.split(",")));
+		} else {
+			// dev: permissive config for local/tunnel development
+			c.setAllowedOriginPatterns(List.of(
+					"http://localhost:*",
+					"http://127.0.0.1:*",
+					"http://192.168.*.*:*",
+					"http://10.*.*.*:*",
+					"http://172.16.*.*:*", "http://172.17.*.*:*", "http://172.18.*.*:*",
+					"http://172.19.*.*:*", "http://172.20.*.*:*", "http://172.21.*.*:*",
+					"http://172.22.*.*:*", "http://172.23.*.*:*", "http://172.24.*.*:*",
+					"http://172.25.*.*:*", "http://172.26.*.*:*", "http://172.27.*.*:*",
+					"http://172.28.*.*:*", "http://172.29.*.*:*", "http://172.30.*.*:*",
+					"http://172.31.*.*:*",
+					"https://*.ngrok-free.app",
+					"https://*.ngrok.io",
+					"https://*.trycloudflare.com"
+			));
+		}
 		c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		c.setAllowedHeaders(List.of("*"));
 		c.setExposedHeaders(List.of("Authorization"));

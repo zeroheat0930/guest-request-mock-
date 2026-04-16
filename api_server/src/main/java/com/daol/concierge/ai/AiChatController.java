@@ -1,6 +1,9 @@
 package com.daol.concierge.ai;
 
+import com.daol.concierge.auth.SecurityContextUtil;
+import com.daol.concierge.core.api.ApiException;
 import com.daol.concierge.core.api.ApiResponse;
+import com.daol.concierge.core.api.ApiStatus;
 import com.daol.concierge.core.api.Responses;
 import com.daol.concierge.core.controller.BaseController;
 import com.daol.concierge.core.parameter.RequestParams;
@@ -26,6 +29,9 @@ public class AiChatController extends BaseController {
 	@Autowired
 	private AiChatService aiChatService;
 
+	@Autowired
+	private AiRateLimiter rateLimiter;
+
 	/**
 	 * 자연어 의도 파싱
 	 * Request body: { "text": "...", "ctx": { rsvNo, roomNo, chkOutTm, perUseLang } }
@@ -34,6 +40,10 @@ public class AiChatController extends BaseController {
 	@ResponseBody
 	@RequestMapping(value = "/chat", method = RequestMethod.POST, produces = APPLICATION_JSON)
 	public ApiResponse chat(RequestParams requestParams) {
+		String rsvNo = SecurityContextUtil.requirePrincipal().rsvNo();
+		if (!rateLimiter.isAllowed(rsvNo)) {
+			throw new ApiException(ApiStatus.BAD_REQUEST, "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.");
+		}
 		return Responses.MapResponse.of(aiChatService.parseIntent(requestParams.getParams()));
 	}
 
