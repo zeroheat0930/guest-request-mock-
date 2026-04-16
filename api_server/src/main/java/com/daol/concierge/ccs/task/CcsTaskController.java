@@ -12,6 +12,7 @@ import com.daol.concierge.core.parameter.RequestParams;
 import com.daol.concierge.inv.mapper.InvMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -30,10 +31,13 @@ public class CcsTaskController extends BaseController {
 	private void requireOwned(String taskId, CcsPrincipal me) {
 		Map<String, Object> t = invMapper.selectTask(taskId);
 		if (t == null) throw new ApiException(ApiStatus.NOT_FOUND, "태스크 없음");
-		if (!Objects.equals(me.propCd(), str(t.get("propCd")))
-				|| !Objects.equals(me.cmpxCd(), str(t.get("cmpxCd")))
-				|| !Objects.equals(me.deptCd(), str(t.get("deptCd"))))
-			throw new ApiException(ApiStatus.ACCESS_DENIED, "권한 없음");
+		boolean isAdmin = "00000".equals(me.deptCd());
+		if (!isAdmin) {
+			if (!Objects.equals(me.propCd(), str(t.get("propCd")))
+					|| !Objects.equals(me.cmpxCd(), str(t.get("cmpxCd")))
+					|| !Objects.equals(me.deptCd(), str(t.get("deptCd"))))
+				throw new ApiException(ApiStatus.ACCESS_DENIED, "권한 없음");
+		}
 	}
 
 	@ResponseBody
@@ -47,9 +51,8 @@ public class CcsTaskController extends BaseController {
 
 	@ResponseBody
 	@RequestMapping(value = "/{taskId}/assign", method = RequestMethod.PUT, produces = APPLICATION_JSON)
-	public ApiResponse assign(RequestParams requestParams) {
+	public ApiResponse assign(@PathVariable String taskId, RequestParams requestParams) {
 		CcsPrincipal me = CcsSecurityContextUtil.requireCcsPrincipal();
-		String taskId = requestParams.getString("taskId");
 		requireOwned(taskId, me);
 		String assigneeId = requestParams.getString("assigneeId");
 		if (assigneeId == null || assigneeId.isBlank()) throw new ApiException(ApiStatus.BAD_REQUEST, "assigneeId 필수");
@@ -59,9 +62,8 @@ public class CcsTaskController extends BaseController {
 
 	@ResponseBody
 	@RequestMapping(value = "/{taskId}/status", method = RequestMethod.PUT, produces = APPLICATION_JSON)
-	public ApiResponse status(RequestParams requestParams) {
+	public ApiResponse status(@PathVariable String taskId, RequestParams requestParams) {
 		CcsPrincipal me = CcsSecurityContextUtil.requireCcsPrincipal();
-		String taskId = requestParams.getString("taskId");
 		requireOwned(taskId, me);
 		String statusCd = requestParams.getString("statusCd");
 		if (statusCd == null || statusCd.isBlank()) throw new ApiException(ApiStatus.BAD_REQUEST, "statusCd 필수");
