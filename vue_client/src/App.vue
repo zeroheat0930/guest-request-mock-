@@ -52,9 +52,10 @@
 			</div>
 		</aside>
 
-		<!-- 본문 -->
+		<!-- 본문 — 인증 완료 후에만 렌더 -->
 		<main class="app-body">
-			<router-view />
+			<router-view v-if="ready" />
+			<LoadingSpinner v-else text="인증 중..." />
 		</main>
 	</div>
 </template>
@@ -63,6 +64,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { loadFeatures, enabledSortedFeatures, featuresLoaded } from './features/featureStore.js';
 import { getStoredToken, authenticateByRoom } from './auth/authBootstrap.js';
+import LoadingSpinner from './components/LoadingSpinner.vue';
 import { useRouter, useRoute } from 'vue-router';
 
 const router = useRouter();
@@ -73,6 +75,7 @@ const showLnb = computed(() => !(route.meta?.admin || route.meta?.staff));
 const guestRoomNo = ref('');
 const guestName = ref('');
 const authError = ref('');
+const ready = ref(false);
 
 /**
  * 방 번호 기반 자동 인증
@@ -105,6 +108,7 @@ onMounted(async () => {
 	}
 
 	await loadFeatures();
+	ready.value = true;
 	const cur = router.currentRoute.value;
 	const cd = cur.meta?.featureCd;
 	if (cd && featuresLoaded.value && !tabs.value.some(t => t.featureCd === cd)) {
