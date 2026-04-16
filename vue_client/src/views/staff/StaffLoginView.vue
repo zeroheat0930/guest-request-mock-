@@ -2,7 +2,7 @@
 	<div class="login-shell">
 		<div class="card">
 			<header class="brand">
-				<div class="logo">🧑‍🍳</div>
+				<div class="logo"><img src="/daol-logo.png" alt="DAOL" /></div>
 				<h1>DAOL CCS</h1>
 				<p class="tag">Communication Center System</p>
 			</header>
@@ -124,16 +124,17 @@ async function submit() {
 
 .brand { text-align: center; margin-bottom: var(--sp-6); }
 .brand .logo {
-	width: 64px;
-	height: 64px;
+	width: 80px;
+	height: 80px;
 	margin: 0 auto var(--sp-3);
-	background: linear-gradient(135deg, var(--c-brand-500), var(--c-accent-500));
-	border-radius: var(--r-lg);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 32px;
-	box-shadow: var(--sh-brand);
+}
+.brand .logo img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
 }
 .brand h1 {
 	font-size: 22px;
