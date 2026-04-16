@@ -53,6 +53,15 @@ jwt:
   # 발급 후 유효 시간(시간 단위). 실제 만료는 이 값과 예약 체크아웃 일자 중 빠른 쪽.
   hours-valid: 72
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
 mybatis:
   mapper-locations: classpath:mapper/**/*_SQL.xml
   configuration:

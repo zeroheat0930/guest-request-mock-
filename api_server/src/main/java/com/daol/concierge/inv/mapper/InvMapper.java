@@ -45,6 +45,11 @@ public interface InvMapper {
 	int insertLateCo(Map<String, Object> param);
 	int updateLateCoStatus(Map<String, Object> param);
 
+	// ── CCS_DEPARTMENT ──
+	int insertDepartment(Map<String, Object> param);
+	int updateDepartment(Map<String, Object> param);
+	int deleteDepartment(@Param("propCd") String propCd, @Param("cmpxCd") String cmpxCd, @Param("deptCd") String deptCd);
+
 	// ── HK (CCS_TASK 기반) ──
 	Map<String, Object> selectLatestHkTask(@Param("propCd") String propCd,
 	                                        @Param("cmpxCd") String cmpxCd,

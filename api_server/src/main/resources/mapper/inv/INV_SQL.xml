@@ -138,6 +138,24 @@
 		 WHERE REQ_NO = #{reqNo}
 	</update>
 
+	<!-- ═══════════ CCS_DEPARTMENT ═══════════ -->
+
+	<insert id="insertDepartment" parameterType="map">
+		INSERT INTO INV.CCS_DEPARTMENT (PROP_CD, CMPX_CD, DEPT_CD, DEPT_NM, SORT_ORD, USE_YN, REG_USER, REG_DT)
+		VALUES (#{propCd}, #{cmpxCd}, #{deptCd}, #{deptNm}, #{sortOrd}, 'Y', 'ADMIN', NOW())
+	</insert>
+
+	<update id="updateDepartment" parameterType="map">
+		UPDATE INV.CCS_DEPARTMENT
+		SET DEPT_NM = #{deptNm}, SORT_ORD = #{sortOrd}, USE_YN = #{useYn}, MOD_USER = 'ADMIN', MOD_DT = NOW()
+		WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd} AND DEPT_CD = #{deptCd}
+	</update>
+
+	<delete id="deleteDepartment" parameterType="map">
+		DELETE FROM INV.CCS_DEPARTMENT
+		WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd} AND DEPT_CD = #{deptCd}
+	</delete>
+
 	<!-- ═══════════ CCS_TASK ═══════════ -->
 
 	<select id="selectLatestHkTask" resultType="map">

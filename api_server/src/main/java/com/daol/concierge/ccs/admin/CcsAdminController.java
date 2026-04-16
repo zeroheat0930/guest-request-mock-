@@ -4,9 +4,11 @@ import com.daol.concierge.core.api.ApiResponse;
 import com.daol.concierge.core.api.Responses;
 import com.daol.concierge.core.controller.BaseController;
 import com.daol.concierge.core.parameter.RequestParams;
+import com.daol.concierge.inv.mapper.InvMapper;
 import com.daol.concierge.pms.mapper.PmsMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -21,6 +23,7 @@ import java.util.Map;
 public class CcsAdminController extends BaseController {
 
 	@Autowired private PmsMapper pmsMapper;
+	@Autowired private InvMapper invMapper;
 
 	@ResponseBody
 	@RequestMapping(value = "/departments", method = RequestMethod.GET, produces = APPLICATION_JSON)
@@ -66,6 +69,32 @@ public class CcsAdminController extends BaseController {
 			out.add(row);
 		}
 		return Responses.MapResponse.of(Map.of("list", out));
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/departments", method = RequestMethod.POST, produces = APPLICATION_JSON)
+	public ApiResponse createDept(RequestParams requestParams) {
+		Map<String, Object> params = requestParams.getParams();
+		invMapper.insertDepartment(params);
+		return ok("등록 완료");
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/departments/{deptCd}", method = RequestMethod.PUT, produces = APPLICATION_JSON)
+	public ApiResponse updateDept(@PathVariable String deptCd, RequestParams requestParams) {
+		Map<String, Object> params = requestParams.getParams();
+		params.put("deptCd", deptCd);
+		invMapper.updateDepartment(params);
+		return ok("수정 완료");
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/departments/{deptCd}", method = RequestMethod.DELETE, produces = APPLICATION_JSON)
+	public ApiResponse deleteDept(@PathVariable String deptCd, RequestParams requestParams) {
+		String propCd = requestParams.getString("propCd");
+		String cmpxCd = requestParams.getString("cmpxCd");
+		invMapper.deleteDepartment(propCd, cmpxCd, deptCd);
+		return ok("삭제 완료");
 	}
 
 	private static String str(Object o) { return o == null ? null : String.valueOf(o); }
