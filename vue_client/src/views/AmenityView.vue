@@ -18,8 +18,8 @@
 
 		<div class="form-card">
 			<div class="guest-info">
-				<span class="guest-room">{{ roomNo }}호</span>
-				<span class="guest-name">{{ guestName }}</span>
+				<span class="guest-room">{{ roomNo }}호 고객님</span>
+				
 			</div>
 
 			<LoadingSpinner v-if="loading" text="품목 불러오는 중..." />

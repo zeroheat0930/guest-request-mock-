@@ -33,8 +33,8 @@
 
 		<div class="form-card">
 			<div class="guest-info">
-				<span class="guest-room">{{ roomNo }}호</span>
-				<span class="guest-name">{{ guestName }}</span>
+				<span class="guest-room">{{ roomNo }}호 고객님</span>
+				
 			</div>
 
 			<div class="form-group">

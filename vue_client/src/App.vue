@@ -46,10 +46,8 @@
 
 			<div class="lnb-foot">
 				<div class="guest-card">
-					<div class="guest-card__room">
-						<span class="room-badge">{{ guestRoomNo }}</span>
-					</div>
-					<div class="guest-card__name">{{ guestName }}</div>
+					<div class="guest-card__welcome">{{ guestRoomNo }} 고객님</div>
+					<div class="guest-card__sub">환영합니다</div>
 				</div>
 			</div>
 		</aside>
