@@ -31,7 +31,7 @@ concierge:
   # 멀티 테넌시 식별자 — 호텔 체인 내에서 물리 호텔과 부속건물을 구분.
   # 운영 시 호텔별로 주입(인증/태스크/기능플래그가 이 값으로 스코핑됨).
   tenant:
-    prop-cd: ${CONCIERGE_TENANT_PROP_CD:0000000010}
+    prop-cd: ${CONCIERGE_TENANT_PROP_CD:0000000001}
     cmpx-cd: ${CONCIERGE_TENANT_CMPX_CD:00001}
 
 admin:

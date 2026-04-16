@@ -71,6 +71,7 @@ public class SecurityConfig {
 					// H2 console 은 dev 프로파일에서만 공개 — prod 엔 절대 노출 금지
 					if (devLike) {
 						authz.requestMatchers("/h2-console/**").permitAll();
+						authz.requestMatchers("/dev/**").permitAll();
 					}
 					authz
 							.requestMatchers("/api/**").authenticated()

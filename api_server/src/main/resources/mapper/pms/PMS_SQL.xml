@@ -3,15 +3,15 @@
 		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.daol.concierge.pms.mapper.PmsMapper">
 
-	<!-- 예약 단건 조회 -->
 	<select id="selectReservation" resultType="map">
-		SELECT A.PROP_CD, A.CMPX_CD, A.RESV_NO, A.RESV_STAT,
-		       A.RESV_USER_NM, A.RM_NO, A.RM_TP_CD,
-		       A.ARR_DT, A.DEP_DT, A.DEP_HOUR,
-		       A.CHK_IN_HOUR, A.CHK_OUT_HOUR,
-		       A.PER_NM, A.PER_USE_LANG, A.PER_PASS_NO,
-		       A.PER_ADULT_QTY, A.PER_CHILD_QTY,
-		       A.CAR_NO, A.USE_YN
+		SELECT A.PROP_CD   AS propCd,  A.CMPX_CD  AS cmpxCd,  A.RESV_NO    AS resvNo,
+		       A.RESV_STAT AS resvStat, A.RESV_USER_NM AS resvUserNm,
+		       A.RM_NO     AS rmNo,    A.RM_TP_CD AS rmTpCd,
+		       A.ARR_DT    AS arrDt,   A.DEP_DT   AS depDt,   A.DEP_HOUR   AS depHour,
+		       A.CHK_IN_HOUR  AS chkInHour,  A.CHK_OUT_HOUR AS chkOutHour,
+		       A.PER_NM    AS perNm,   A.PER_USE_LANG AS perUseLang,
+		       A.PER_ADULT_QTY AS perAdultQty, A.PER_CHILD_QTY AS perChildQty,
+		       A.PER_PASS_NO AS perPassNo, A.CAR_NO AS carNo, A.USE_YN AS useYn
 		  FROM PMS.PMS_RESERVATION A
 		 WHERE A.PROP_CD = #{propCd}
 		   AND A.CMPX_CD = #{cmpxCd}
@@ -19,11 +19,11 @@
 		   AND A.USE_YN  = 'Y'
 	</select>
 
-	<!-- 체크인 상태 예약 목록 (특정 프로퍼티/컴플렉스) -->
 	<select id="selectCheckedInReservations" resultType="map">
-		SELECT A.PROP_CD, A.CMPX_CD, A.RESV_NO, A.RESV_STAT,
-		       A.RM_NO, A.PER_NM, A.PER_USE_LANG,
-		       A.ARR_DT, A.DEP_DT, A.CHK_IN_HOUR
+		SELECT A.PROP_CD AS propCd, A.CMPX_CD AS cmpxCd, A.RESV_NO AS resvNo,
+		       A.RESV_STAT AS resvStat, A.RM_NO AS rmNo,
+		       A.PER_NM AS perNm, A.PER_USE_LANG AS perUseLang,
+		       A.ARR_DT AS arrDt, A.DEP_DT AS depDt, A.CHK_IN_HOUR AS chkInHour
 		  FROM PMS.PMS_RESERVATION A
 		 WHERE A.PROP_CD  = #{propCd}
 		   AND A.CMPX_CD  = #{cmpxCd}
@@ -32,11 +32,12 @@
 		 ORDER BY A.CHK_IN_HOUR DESC
 	</select>
 
-	<!-- 예약 목록 (데모용: 전체) -->
 	<select id="selectReservationList" resultType="map">
-		SELECT A.PROP_CD, A.CMPX_CD, A.RESV_NO, A.RESV_STAT,
-		       A.RM_NO, A.PER_NM, A.PER_USE_LANG,
-		       A.ARR_DT, A.DEP_DT, A.CHK_IN_HOUR, A.CHK_OUT_HOUR
+		SELECT A.PROP_CD AS propCd, A.CMPX_CD AS cmpxCd, A.RESV_NO AS resvNo,
+		       A.RESV_STAT AS resvStat, A.RM_NO AS rmNo,
+		       A.PER_NM AS perNm, A.PER_USE_LANG AS perUseLang,
+		       A.ARR_DT AS arrDt, A.DEP_DT AS depDt,
+		       A.CHK_IN_HOUR AS chkInHour, A.CHK_OUT_HOUR AS chkOutHour
 		  FROM PMS.PMS_RESERVATION A
 		 WHERE A.PROP_CD = #{propCd}
 		   AND A.CMPX_CD = #{cmpxCd}
@@ -45,31 +46,33 @@
 		 LIMIT 100
 	</select>
 
-	<!-- 컴플렉스 단건 조회 -->
 	<select id="selectComplex" resultType="map">
-		SELECT A.PROP_CD, A.CMPX_CD, A.CMPX_TP, A.CMPX_NM,
-		       A.CMPX_ZIP_CD, A.CMPX_ADDR, A.CMPX_DTL_ADDR,
-		       A.CMPX_REPR_TEL, A.USE_YN
+		SELECT A.PROP_CD AS propCd, A.CMPX_CD AS cmpxCd,
+		       A.CMPX_TP AS cmpxTp, A.CMPX_NM AS cmpxNm,
+		       A.CMPX_ZIP_CD AS cmpxZipCd, A.CMPX_ADDR AS cmpxAddr,
+		       A.CMPX_DTL_ADDR AS cmpxDtlAddr, A.CMPX_REPR_TEL AS cmpxReprTel,
+		       A.USE_YN AS useYn
 		  FROM PMS.PMS_COMPLEX A
 		 WHERE A.PROP_CD = #{propCd}
 		   AND A.CMPX_CD = #{cmpxCd}
 	</select>
 
-	<!-- 사용자(직원) 단건 조회 -->
 	<select id="selectUser" resultType="map">
-		SELECT A.USER_ID, A.PROP_CD, A.CMPX_CD,
-		       A.USER_NM, A.USER_PW, A.USER_TP, A.DEPT_CD,
-		       A.USER_LOCALE, A.USER_TEL_NO, A.USER_EMAIL,
-		       A.USER_MOBILE, A.USER_WK_STAT, A.USE_YN
+		SELECT A.USER_ID AS userId, A.PROP_CD AS propCd, A.CMPX_CD AS cmpxCd,
+		       A.USER_NM AS userNm, A.USER_PW AS userPw, A.USER_TP AS userTp,
+		       A.DEPT_CD AS deptCd, A.USER_LOCALE AS userLocale,
+		       A.USER_TEL_NO AS userTelNo, A.USER_EMAIL AS userEmail,
+		       A.USER_MOBILE AS userMobile, A.USER_WK_STAT AS userWkStat,
+		       A.USE_YN AS useYn
 		  FROM PMS.PMS_USER_MTR A
 		 WHERE A.USER_ID = #{userId}
 		   AND A.USE_YN  = 'Y'
 	</select>
 
-	<!-- 특정 부서 소속 재직 직원 목록 -->
 	<select id="selectUsersByDept" resultType="map">
-		SELECT A.USER_ID, A.USER_NM, A.USER_TP, A.DEPT_CD,
-		       A.USER_MOBILE, A.USER_WK_STAT
+		SELECT A.USER_ID AS userId, A.USER_NM AS userNm,
+		       A.USER_TP AS userTp, A.DEPT_CD AS deptCd,
+		       A.USER_MOBILE AS userMobile, A.USER_WK_STAT AS userWkStat
 		  FROM PMS.PMS_USER_MTR A
 		 WHERE A.PROP_CD = #{propCd}
 		   AND A.CMPX_CD = #{cmpxCd}

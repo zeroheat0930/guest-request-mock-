@@ -157,7 +157,7 @@ public class SeedDataRunner implements CommandLineRunner {
 	}
 
 	private void seedCcsDepartmentsAndStaff() {
-		final String propCd = "0000000010";
+		final String propCd = "0000000001";
 		final String cmpxCd = "00001";
 
 		// Departments: {deptCd, deptNm, sortOrd}

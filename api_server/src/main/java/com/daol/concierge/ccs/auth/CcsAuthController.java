@@ -16,7 +16,7 @@ import java.util.Map;
 @RequestMapping("/api/ccs/auth")
 public class CcsAuthController {
 
-	private static final String DEFAULT_PROP_CD = "0000000010";
+	private static final String DEFAULT_PROP_CD = "0000000001";
 	private static final String DEFAULT_CMPX_CD = "00001";
 
 	@Autowired private PmsMapper pmsMapper;

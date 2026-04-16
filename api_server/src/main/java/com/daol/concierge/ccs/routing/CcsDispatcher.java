@@ -19,7 +19,7 @@ public class CcsDispatcher implements RequestDispatcher {
 	@Autowired private CcsTaskService taskService;
 	@Autowired private CcsRoutingRuleDefault routing;
 
-	@Value("${concierge.tenant.prop-cd:0000000010}") private String propCd;
+	@Value("${concierge.tenant.prop-cd:0000000001}") private String propCd;
 	@Value("${concierge.tenant.cmpx-cd:00001}") private String cmpxCd;
 
 	@Override
