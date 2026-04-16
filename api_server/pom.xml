@@ -76,6 +76,12 @@
 			<version>3.0.3</version>
 		</dependency>
 
+		<!-- Apache Commons Lang3 — CommonDAO camelCase 변환 등 -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+		</dependency>
+
 		<!-- 프로덕션: MariaDB 드라이버 — 회사 PMS 가 MariaDB 를 쓰므로 스택 일치
 		     (SPRING_PROFILES_ACTIVE=prod 일 때 사용) -->
 		<dependency>

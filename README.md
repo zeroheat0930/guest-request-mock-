@@ -302,7 +302,14 @@ Base: `http://localhost:8080/api`
 - **CcsDispatcher** + **RequestEvent**: cmpxCd 전파
 - 기존 JPA 엔티티/Repository 는 dead code 로 잔존 (다음 정리)
 
+**PMS 유틸리티 이식**:
+- `CommonDAO` — PMS 의 `toCamelCase()` Map 키 자동 변환 래퍼. 추후 SQL 별칭(AS camelCase) 제거하고 이 DAO 경유로 전환
+- `TxAdviceConfig` — AOP 트랜잭션 자동 적용 (`insert*/update*/delete*/save*/proc*` 메서드). 추후 `@Transactional` 제거 가능
+- `commons-lang3` 의존성 추가
+
 **남은 것**:
+- SQL 별칭(AS camelCase) 제거 → CommonDAO 경유로 전환
+- @Transactional 제거 → TxAdviceConfig AOP 로 대체
 - 기존 JPA 엔티티(gr/domain/*, feature/*, ccs/domain/*) + Repository(gr/repo/*, ccs/repo/*) 삭제 정리
 - AmenityRequest 다건 요청 구조 변경 확인 (1 item per row)
 - spring-boot-starter-data-jpa 의존성 제거 검토
