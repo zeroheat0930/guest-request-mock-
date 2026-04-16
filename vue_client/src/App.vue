@@ -43,8 +43,12 @@
 
 			<div class="lnb-foot">
 				<div class="guest-card">
-					<div class="guest-card__welcome">{{ guestRoomNo }} {{ t('welcome') }}</div>
-					<div class="guest-card__sub">{{ t('welcome.sub') }}</div>
+					<div class="guest-card__room-num">{{ guestRoomNo }}</div>
+					<div class="guest-card__divider"></div>
+					<div class="guest-card__text">
+						<div class="guest-card__greet">{{ t('welcome') }}</div>
+						<div class="guest-card__sub">{{ t('welcome.sub') }}</div>
+					</div>
 				</div>
 			</div>
 		</aside>
@@ -242,32 +246,42 @@ onMounted(async () => {
 	border-top: 1px solid rgba(255,255,255,0.07);
 }
 .guest-card {
-	background: rgba(255,255,255,0.05);
-	border: 1px solid rgba(255,255,255,0.08);
-	border-radius: var(--r-md);
-	padding: var(--sp-3) var(--sp-4);
+	background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+	border: 1px solid rgba(255,255,255,0.1);
+	border-radius: var(--r-lg);
+	padding: var(--sp-4) var(--sp-5);
 	display: flex;
 	align-items: center;
-	gap: var(--sp-3);
+	gap: var(--sp-4);
 }
-.guest-card__room { flex-shrink: 0; }
-.room-badge {
-	display: inline-block;
-	background: var(--c-brand-600);
-	color: #fff;
-	font-size: var(--fs-sm);
-	font-weight: 800;
-	padding: 3px var(--sp-3);
-	border-radius: var(--r-pill);
+.guest-card__room-num {
+	font-size: 20px;
+	font-weight: 900;
+	color: var(--c-brand-300);
+	letter-spacing: 1px;
+	white-space: nowrap;
+}
+.guest-card__divider {
+	width: 1px;
+	height: 32px;
+	background: rgba(255,255,255,0.15);
+	flex-shrink: 0;
+}
+.guest-card__text {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.guest-card__greet {
+	font-size: var(--fs-md);
+	font-weight: 700;
+	color: rgba(255,255,255,0.85);
 	letter-spacing: 0.3px;
 }
-.guest-card__name {
-	font-size: var(--fs-sm);
-	color: rgba(255,255,255,0.6);
-	font-weight: 500;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+.guest-card__sub {
+	font-size: var(--fs-xs);
+	color: rgba(255,255,255,0.4);
+	letter-spacing: 0.5px;
 }
 
 /* ═══════════ BODY ═══════════ */
