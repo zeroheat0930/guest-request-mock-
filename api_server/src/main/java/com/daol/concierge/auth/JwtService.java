@@ -15,11 +15,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
-/**
- * 게스트 토큰 발급/검증 서비스
- *
- * HS256 대칭키 서명. 만료 시간은 `jwt.hours-valid` 와 예약 chkOutDt 23:59 중 먼저 오는 시각.
- */
 @Service
 public class JwtService {
 
@@ -35,25 +30,29 @@ public class JwtService {
 		return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
 	}
 
-	public String issue(String rsvNo, String propCd, String chkOutDt) {
+	public String issue(String rsvNo, String propCd, String cmpxCd, String depDt) {
 		Instant now = Instant.now();
 		Instant hardCap = now.plusSeconds(hoursValid * 3600);
-		Instant resvExpiry = LocalDate.parse(chkOutDt, FMT_DT)
-				.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+		Instant resvExpiry;
+		try {
+			String normalized = depDt.replace("-", "");
+			resvExpiry = LocalDate.parse(normalized, FMT_DT)
+					.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+		} catch (Exception e) {
+			resvExpiry = hardCap;
+		}
 		Instant exp = hardCap.isBefore(resvExpiry) ? hardCap : resvExpiry;
 
 		return Jwts.builder()
 				.subject(rsvNo)
 				.claim("propCd", propCd)
+				.claim("cmpxCd", cmpxCd)
 				.issuedAt(Date.from(now))
 				.expiration(Date.from(exp))
 				.signWith(key())
 				.compact();
 	}
 
-	/**
-	 * @return 파싱된 claims, 실패 시 null
-	 */
 	public Claims parse(String token) {
 		try {
 			return Jwts.parser()

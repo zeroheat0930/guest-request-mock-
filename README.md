@@ -279,13 +279,37 @@ Base: `http://localhost:8080/api`
 
 ## 🗓️ 진행 로그
 
-### 2026-04-16 (회사 세션 — 실제 DAOL DB 직결 + 스키마 확정) 🚧 진행중
+### 2026-04-16 (회사 세션 — JPA→MyBatis 전면 전환 + DAOL DB 직결)
 
-**목표**: W1-1 cmpxCd 전면 도입 — 엔티티를 실제 다올 PMS 스키마에 맞춰 재작성.
+**목표**: W1-1 cmpxCd 전면 도입 + 데이터 접근을 PMS 스타일 MyBatis XML 매퍼로 통일.
 
-**결정**: 컨시어지 로컬 `concierge_property`/`gr_*` 테이블 버리고 **실제 다올 DB 직결**로 전환.
-PMS 측 `PMS_RESERVATION`/`PMS_COMPLEX`/`PMS_PROPERTY`/`PMS_USER_MTR`/`PMS_CUST_MGMT` 는 읽기전용 매핑,
-컨시어지 고유 데이터만 `INV` 스키마에 7개 테이블로 신규.
+**결정**:
+- JPA 엔티티/Repository 방식 → **MyBatis XML 매퍼 + `Map<String, Object>`** 패턴으로 전면 전환 (PMS 소스와 동일 패턴)
+- H2 완전 비활성화 (pom.xml 주석, test 프로파일 주석)
+- PMS 테이블은 `PMS.*` cross-schema 읽기, 컨시어지 데이터는 `INV.*` 7개 테이블
+
+**완료**:
+- `mybatis-spring-boot-starter` 3.0.3 추가, `mapper-locations: classpath:mapper/**/*_SQL.xml`, `map-underscore-to-camel-case: true`
+- `PmsMapper` + `PMS_SQL.xml` — PMS_RESERVATION/PMS_COMPLEX/PMS_USER_MTR 읽기 쿼리 (6개)
+- `InvMapper` + `INV_SQL.xml` — INV 7개 테이블 CRUD 쿼리 (25개+)
+- **Auth 레이어**: `GuestPrincipal` 에 `cmpxCd` 추가, `JwtService` cmpxCd 클레임, `AuthService` → PmsMapper
+- **GrService**: JPA 6개 Repository → PmsMapper + InvMapper. 하우스키핑은 별도 테이블 대신 `CCS_TASK(HK_*)` 로 통합
+- **FeatureService**: JPA → InvMapper, `listForGuest`/`listForAdmin`/`upsertBulk` 에 cmpxCd 파라미터 추가
+- **NearbyController**: `ConciergeProperty` → InvMapper `CONCIERGE_PROPERTY_EXT` (lat/lng)
+- **CCS 전체**: `CcsTaskService`/`CcsTaskController`/`CcsStatsController`/`CcsDeptLoadController` → InvMapper
+- **CcsAuthController**: `CcsStaff` JPA → `PmsMapper.selectUser` (PMS_USER_MTR 직접 인증)
+- **CcsAdminController**: 부서 목록은 PMS_USER_MTR DEPT_CD 그룹핑으로 추출
+- **CcsDispatcher** + **RequestEvent**: cmpxCd 전파
+- 기존 JPA 엔티티/Repository 는 dead code 로 잔존 (다음 정리)
+
+**남은 것**:
+- 기존 JPA 엔티티(gr/domain/*, feature/*, ccs/domain/*) + Repository(gr/repo/*, ccs/repo/*) 삭제 정리
+- AmenityRequest 다건 요청 구조 변경 확인 (1 item per row)
+- spring-boot-starter-data-jpa 의존성 제거 검토
+- CONCIERGE_PROPERTY_EXT 시드 데이터 (lat/lng) 삽입
+- CONCIERGE_FEATURE 시드 데이터 삽입
+- CONCIERGE_AMENITY_ITEM 시드 데이터 삽입
+- 부팅 + 실제 쿼리 동작 검증 (사내망 필요)
 
 **접속**: `jdbc:mariadb://211.34.228.191:3336/INV` (dev 프로파일 기본값), `dongjunkorea` 계정. 사내망/VPN 필수.
 

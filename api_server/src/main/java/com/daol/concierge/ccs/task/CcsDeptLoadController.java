@@ -2,11 +2,10 @@ package com.daol.concierge.ccs.task;
 
 import com.daol.concierge.ccs.auth.CcsPrincipal;
 import com.daol.concierge.ccs.auth.CcsSecurityContextUtil;
-import com.daol.concierge.ccs.domain.CcsStaff;
-import com.daol.concierge.ccs.repo.CcsStaffRepository;
-import com.daol.concierge.ccs.repo.CcsTaskRepository;
 import com.daol.concierge.ccs.util.CcsResponse;
 import com.daol.concierge.core.api.BizException;
+import com.daol.concierge.inv.mapper.InvMapper;
+import com.daol.concierge.pms.mapper.PmsMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,47 +17,32 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * CCS 부서 로드 조회 — US-011
- *
- * GET /api/ccs/dept/{deptCd}/load
- * 응답: { resCd, resMsg, map: { list: [ { staffId, staffNm, assignedCount, inProgCount } ] } }
- */
 @RestController
 @RequestMapping("/api/ccs/dept")
 public class CcsDeptLoadController {
 
-	@Autowired
-	private CcsStaffRepository staffRepo;
-
-	@Autowired
-	private CcsTaskRepository taskRepo;
+	@Autowired private PmsMapper pmsMapper;
+	@Autowired private InvMapper invMapper;
 
 	@GetMapping("/{deptCd}/load")
 	public Map<String, Object> load(@PathVariable String deptCd) {
 		CcsPrincipal me = CcsSecurityContextUtil.requireCcsPrincipal();
+		if (!me.deptCd().equals(deptCd)) throw new BizException("9102", "권한 없음");
 
-		// 자기 부서만 조회 가능
-		if (!me.deptCd().equals(deptCd)) {
-			throw new BizException("9102", "권한 없음");
-		}
-
-		List<CcsStaff> members = staffRepo.findByPropCdAndCmpxCdAndDeptCdOrderByStaffNm(
-				me.propCd(), me.cmpxCd(), deptCd);
+		List<Map<String, Object>> members = pmsMapper.selectUsersByDept(me.propCd(), me.cmpxCd(), deptCd);
 
 		List<Map<String, Object>> out = new ArrayList<>();
-		for (CcsStaff s : members) {
+		for (Map<String, Object> m : members) {
+			String userId = str(m.get("userId"));
 			Map<String, Object> row = new LinkedHashMap<>();
-			row.put("staffId", s.getStaffId());
-			row.put("staffNm", s.getStaffNm());
-			row.put("assignedCount", taskRepo.countByAssigneeIdAndStatusCd(s.getStaffId(), "ASSIGNED"));
-			row.put("inProgCount",   taskRepo.countByAssigneeIdAndStatusCd(s.getStaffId(), "IN_PROG"));
+			row.put("staffId", userId);
+			row.put("staffNm", str(m.get("userNm")));
+			row.put("assignedCount", invMapper.selectTaskCountByStatus(userId, "ASSIGNED"));
+			row.put("inProgCount", invMapper.selectTaskCountByStatus(userId, "IN_PROG"));
 			out.add(row);
 		}
-
-		Map<String, Object> inner = new LinkedHashMap<>();
-		inner.put("list", out);
-
-		return CcsResponse.ok(inner);
+		return CcsResponse.ok(Map.of("list", out));
 	}
+
+	private static String str(Object o) { return o == null ? null : String.valueOf(o); }
 }

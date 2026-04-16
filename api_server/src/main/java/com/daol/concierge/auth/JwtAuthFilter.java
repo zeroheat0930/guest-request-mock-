@@ -14,11 +14,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 
-/**
- * Authorization: Bearer <jwt> 헤더를 읽어 SecurityContext 에 GuestPrincipal 을 채우는 필터.
- *
- * 토큰이 없거나 유효하지 않으면 SecurityContext 를 비워둠 → 이후 authorization 규칙이 401 결정.
- */
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
@@ -35,8 +30,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 			if (claims != null) {
 				String rsvNo = claims.getSubject();
 				String propCd = claims.get("propCd", String.class);
+				String cmpxCd = claims.get("cmpxCd", String.class);
 				if (rsvNo != null && propCd != null) {
-					GuestPrincipal principal = new GuestPrincipal(rsvNo, propCd);
+					GuestPrincipal principal = new GuestPrincipal(rsvNo, propCd,
+							cmpxCd != null ? cmpxCd : "00001");
 					UsernamePasswordAuthenticationToken auth =
 							new UsernamePasswordAuthenticationToken(principal, null, Collections.emptyList());
 					SecurityContextHolder.getContext().setAuthentication(auth);

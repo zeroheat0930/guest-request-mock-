@@ -53,6 +53,11 @@ jwt:
   # 발급 후 유효 시간(시간 단위). 실제 만료는 이 값과 예약 체크아웃 일자 중 빠른 쪽.
   hours-valid: 72
 
+mybatis:
+  mapper-locations: classpath:mapper/**/*_SQL.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
 ---
 # ───────── dev (사내 MariaDB 직결) ─────────
 # 회사 PMS DB 에 직접 붙는다. 신규 테이블은 INV 스키마, 기존 예약/유저는 PMS 스키마 cross-schema read.
@@ -98,17 +103,18 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MariaDBDialect
 
----
-# ───────── test (H2 인메모리, MariaDB/MySQL 호환 모드) ─────────
-spring:
-  config:
-    activate:
-      on-profile: test
-  datasource:
-    url: jdbc:h2:mem:concierge-test;MODE=MYSQL;DATABASE_TO_LOWER=TRUE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
+# ───────── test (H2 비활성화 — 2026-04-16) ─────────
+# H2 의존성 주석 처리로 사용 불가. 추후 testcontainers MariaDB 로 전환 예정.
+# ---
+# spring:
+#   config:
+#     activate:
+#       on-profile: test
+#   datasource:
+#     url: jdbc:h2:mem:concierge-test;MODE=MYSQL;DATABASE_TO_LOWER=TRUE
+#     driver-class-name: org.h2.Driver
+#     username: sa
+#     password:
+#   jpa:
+#     hibernate:
+#       ddl-auto: create-drop

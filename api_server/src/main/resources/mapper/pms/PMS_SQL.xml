@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daol.concierge.pms.mapper.PmsMapper">
+
+	<!-- 예약 단건 조회 -->
+	<select id="selectReservation" resultType="map">
+		SELECT A.PROP_CD, A.CMPX_CD, A.RESV_NO, A.RESV_STAT,
+		       A.RESV_USER_NM, A.RM_NO, A.RM_TP_CD,
+		       A.ARR_DT, A.DEP_DT, A.DEP_HOUR,
+		       A.CHK_IN_HOUR, A.CHK_OUT_HOUR,
+		       A.PER_NM, A.PER_USE_LANG, A.PER_PASS_NO,
+		       A.PER_ADULT_QTY, A.PER_CHILD_QTY,
+		       A.CAR_NO, A.USE_YN
+		  FROM PMS.PMS_RESERVATION A
+		 WHERE A.PROP_CD = #{propCd}
+		   AND A.CMPX_CD = #{cmpxCd}
+		   AND A.RESV_NO = #{resvNo}
+		   AND A.USE_YN  = 'Y'
+	</select>
+
+	<!-- 체크인 상태 예약 목록 (특정 프로퍼티/컴플렉스) -->
+	<select id="selectCheckedInReservations" resultType="map">
+		SELECT A.PROP_CD, A.CMPX_CD, A.RESV_NO, A.RESV_STAT,
+		       A.RM_NO, A.PER_NM, A.PER_USE_LANG,
+		       A.ARR_DT, A.DEP_DT, A.CHK_IN_HOUR
+		  FROM PMS.PMS_RESERVATION A
+		 WHERE A.PROP_CD  = #{propCd}
+		   AND A.CMPX_CD  = #{cmpxCd}
+		   AND A.RESV_STAT = 'I'
+		   AND A.USE_YN   = 'Y'
+		 ORDER BY A.CHK_IN_HOUR DESC
+	</select>
+
+	<!-- 예약 목록 (데모용: 전체) -->
+	<select id="selectReservationList" resultType="map">
+		SELECT A.PROP_CD, A.CMPX_CD, A.RESV_NO, A.RESV_STAT,
+		       A.RM_NO, A.PER_NM, A.PER_USE_LANG,
+		       A.ARR_DT, A.DEP_DT, A.CHK_IN_HOUR, A.CHK_OUT_HOUR
+		  FROM PMS.PMS_RESERVATION A
+		 WHERE A.PROP_CD = #{propCd}
+		   AND A.CMPX_CD = #{cmpxCd}
+		   AND A.USE_YN  = 'Y'
+		 ORDER BY A.RESV_NO DESC
+		 LIMIT 100
+	</select>
+
+	<!-- 컴플렉스 단건 조회 -->
+	<select id="selectComplex" resultType="map">
+		SELECT A.PROP_CD, A.CMPX_CD, A.CMPX_TP, A.CMPX_NM,
+		       A.CMPX_ZIP_CD, A.CMPX_ADDR, A.CMPX_DTL_ADDR,
+		       A.CMPX_REPR_TEL, A.USE_YN
+		  FROM PMS.PMS_COMPLEX A
+		 WHERE A.PROP_CD = #{propCd}
+		   AND A.CMPX_CD = #{cmpxCd}
+	</select>
+
+	<!-- 사용자(직원) 단건 조회 -->
+	<select id="selectUser" resultType="map">
+		SELECT A.USER_ID, A.PROP_CD, A.CMPX_CD,
+		       A.USER_NM, A.USER_PW, A.USER_TP, A.DEPT_CD,
+		       A.USER_LOCALE, A.USER_TEL_NO, A.USER_EMAIL,
+		       A.USER_MOBILE, A.USER_WK_STAT, A.USE_YN
+		  FROM PMS.PMS_USER_MTR A
+		 WHERE A.USER_ID = #{userId}
+		   AND A.USE_YN  = 'Y'
+	</select>
+
+	<!-- 특정 부서 소속 재직 직원 목록 -->
+	<select id="selectUsersByDept" resultType="map">
+		SELECT A.USER_ID, A.USER_NM, A.USER_TP, A.DEPT_CD,
+		       A.USER_MOBILE, A.USER_WK_STAT
+		  FROM PMS.PMS_USER_MTR A
+		 WHERE A.PROP_CD = #{propCd}
+		   AND A.CMPX_CD = #{cmpxCd}
+		<if test="deptCd != null and deptCd != ''">
+		   AND A.DEPT_CD = #{deptCd}
+		</if>
+		   AND A.USE_YN  = 'Y'
+		 ORDER BY A.USER_NM
+	</select>
+
+</mapper>

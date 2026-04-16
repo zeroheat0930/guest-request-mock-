@@ -61,11 +61,19 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- 개발/로컬: H2 파일 모드 (재시작해도 데이터 유지, MariaDB/MySQL 호환 모드) -->
+		<!-- H2 비활성화 — 사내 DAOL MariaDB 직결 전환 (2026-04-16)
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<scope>runtime</scope>
+		</dependency>
+		-->
+
+		<!-- MyBatis — PMS 스타일 XML 매퍼 기반 데이터 접근 -->
+		<dependency>
+			<groupId>org.mybatis.spring.boot</groupId>
+			<artifactId>mybatis-spring-boot-starter</artifactId>
+			<version>3.0.3</version>
 		</dependency>
 
 		<!-- 프로덕션: MariaDB 드라이버 — 회사 PMS 가 MariaDB 를 쓰므로 스택 일치

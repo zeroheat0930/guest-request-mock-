@@ -12,28 +12,23 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 관리자 — 기능 플래그 조회/저장.
- *
- * 모든 요청은 AdminAuthInterceptor (X-Admin-Token 헤더) 를 통과해야 한다.
- */
 @Controller
 @ResponseBody
 @RequestMapping(value = "/api/concierge/admin/features")
 public class FeatureAdminController {
 
-	private static final String APPLICATION_JSON = "application/json;charset=UTF-8";
-
 	@Autowired private FeatureService featureService;
 
-	@RequestMapping(method = RequestMethod.GET, produces = APPLICATION_JSON)
-	public Responses.ListResponse list(@RequestParam String propCd) {
-		return Responses.ListResponse.of(featureService.listForAdmin(propCd));
+	@RequestMapping(method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
+	public Responses.ListResponse list(@RequestParam String propCd,
+	                                    @RequestParam(defaultValue = "00001") String cmpxCd) {
+		return Responses.ListResponse.of(featureService.listForAdmin(propCd, cmpxCd));
 	}
 
-	@RequestMapping(method = RequestMethod.PUT, produces = APPLICATION_JSON)
+	@RequestMapping(method = RequestMethod.PUT, produces = "application/json;charset=UTF-8")
 	public Responses.ListResponse upsert(@RequestParam String propCd,
-										 @RequestBody List<Map<String, Object>> rows) {
-		return Responses.ListResponse.of(featureService.upsertBulk(propCd, rows));
+	                                      @RequestParam(defaultValue = "00001") String cmpxCd,
+	                                      @RequestBody List<Map<String, Object>> rows) {
+		return Responses.ListResponse.of(featureService.upsertBulk(propCd, cmpxCd, rows));
 	}
 }

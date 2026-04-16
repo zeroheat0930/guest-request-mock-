@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daol.concierge.inv.mapper.InvMapper">
+
+	<!-- ═══════════ CONCIERGE_PROPERTY_EXT ═══════════ -->
+
+	<select id="selectPropertyExt" resultType="map">
+		SELECT PROP_CD, CMPX_CD, LAT, LNG, NEARBY_RADIUS
+		  FROM INV.CONCIERGE_PROPERTY_EXT
+		 WHERE PROP_CD = #{propCd}
+		   AND CMPX_CD = #{cmpxCd}
+	</select>
+
+	<insert id="insertPropertyExt">
+		INSERT INTO INV.CONCIERGE_PROPERTY_EXT (PROP_CD, CMPX_CD, LAT, LNG, NEARBY_RADIUS, REG_USER, REG_DT)
+		VALUES (#{propCd}, #{cmpxCd}, #{lat}, #{lng}, #{nearbyRadius}, #{regUser}, NOW())
+	</insert>
+
+	<update id="updatePropertyExt">
+		UPDATE INV.CONCIERGE_PROPERTY_EXT
+		   SET LAT = #{lat}, LNG = #{lng}, NEARBY_RADIUS = #{nearbyRadius},
+		       MOD_USER = #{modUser}, MOD_DT = NOW()
+		 WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd}
+	</update>
+
+	<!-- ═══════════ CONCIERGE_FEATURE ═══════════ -->
+
+	<select id="selectFeatures" resultType="map">
+		SELECT PROP_CD, CMPX_CD, FEATURE_CD, USE_YN, SORT_ORD, CONFIG_JSON
+		  FROM INV.CONCIERGE_FEATURE
+		 WHERE PROP_CD = #{propCd}
+		   AND CMPX_CD = #{cmpxCd}
+		 ORDER BY SORT_ORD
+	</select>
+
+	<select id="selectEnabledFeatures" resultType="map">
+		SELECT PROP_CD, CMPX_CD, FEATURE_CD, SORT_ORD, CONFIG_JSON
+		  FROM INV.CONCIERGE_FEATURE
+		 WHERE PROP_CD = #{propCd}
+		   AND CMPX_CD = #{cmpxCd}
+		   AND USE_YN  = 'Y'
+		 ORDER BY SORT_ORD
+	</select>
+
+	<insert id="insertFeature">
+		INSERT INTO INV.CONCIERGE_FEATURE (PROP_CD, CMPX_CD, FEATURE_CD, USE_YN, SORT_ORD, CONFIG_JSON, REG_USER, REG_DT)
+		VALUES (#{propCd}, #{cmpxCd}, #{featureCd}, #{useYn}, #{sortOrd}, #{configJson}, #{regUser}, NOW())
+	</insert>
+
+	<update id="updateFeature">
+		UPDATE INV.CONCIERGE_FEATURE
+		   SET USE_YN = #{useYn}, SORT_ORD = #{sortOrd}, CONFIG_JSON = #{configJson},
+		       MOD_USER = #{modUser}, MOD_DT = NOW()
+		 WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd} AND FEATURE_CD = #{featureCd}
+	</update>
+
+	<!-- ═══════════ CONCIERGE_AMENITY_ITEM ═══════════ -->
+
+	<select id="selectAmenityItems" resultType="map">
+		SELECT PROP_CD, CMPX_CD, ITEM_CD, ITEM_NM, ITEM_NM_ENG, MAX_QTY, USE_YN, SORT_ORD
+		  FROM INV.CONCIERGE_AMENITY_ITEM
+		 WHERE PROP_CD = #{propCd}
+		   AND CMPX_CD = #{cmpxCd}
+		   AND USE_YN  = 'Y'
+		 ORDER BY SORT_ORD
+	</select>
+
+	<insert id="insertAmenityItem">
+		INSERT INTO INV.CONCIERGE_AMENITY_ITEM (PROP_CD, CMPX_CD, ITEM_CD, ITEM_NM, ITEM_NM_ENG, MAX_QTY, USE_YN, SORT_ORD, REG_USER, REG_DT)
+		VALUES (#{propCd}, #{cmpxCd}, #{itemCd}, #{itemNm}, #{itemNmEng}, #{maxQty}, #{useYn}, #{sortOrd}, #{regUser}, NOW())
+	</insert>
+
+	<!-- ═══════════ CONCIERGE_AMENITY_REQ ═══════════ -->
+
+	<select id="selectAmenityReqList" resultType="map">
+		SELECT REQ_NO, PROP_CD, CMPX_CD, RESV_NO, RM_NO, ITEM_CD, QTY, MEMO, PROC_STAT_CD, REG_DT
+		  FROM INV.CONCIERGE_AMENITY_REQ
+		 WHERE PROP_CD = #{propCd}
+		   AND CMPX_CD = #{cmpxCd}
+		   AND RESV_NO = #{resvNo}
+		 ORDER BY REG_DT DESC
+	</select>
+
+	<insert id="insertAmenityReq" useGeneratedKeys="true" keyProperty="reqNo" keyColumn="REQ_NO">
+		INSERT INTO INV.CONCIERGE_AMENITY_REQ (PROP_CD, CMPX_CD, RESV_NO, RM_NO, ITEM_CD, QTY, MEMO, PROC_STAT_CD, REG_USER, REG_DT)
+		VALUES (#{propCd}, #{cmpxCd}, #{resvNo}, #{rmNo}, #{itemCd}, #{qty}, #{memo}, 'REQ', #{regUser}, NOW())
+	</insert>
+
+	<update id="updateAmenityReqStatus">
+		UPDATE INV.CONCIERGE_AMENITY_REQ
+		   SET PROC_STAT_CD = #{procStatCd}, MOD_USER = #{modUser}, MOD_DT = NOW()
+		 WHERE REQ_NO = #{reqNo}
+	</update>
+
+	<!-- ═══════════ CONCIERGE_PARKING ═══════════ -->
+
+	<select id="selectParkingList" resultType="map">
+		SELECT REQ_NO, PROP_CD, CMPX_CD, RESV_NO, RM_NO, CAR_NO, CAR_TP, MEMO, PMS_SYNC_YN, REG_DT
+		  FROM INV.CONCIERGE_PARKING
+		 WHERE PROP_CD = #{propCd}
+		   AND CMPX_CD = #{cmpxCd}
+		   AND RESV_NO = #{resvNo}
+		 ORDER BY REG_DT DESC
+	</select>
+
+	<insert id="insertParking" useGeneratedKeys="true" keyProperty="reqNo" keyColumn="REQ_NO">
+		INSERT INTO INV.CONCIERGE_PARKING (PROP_CD, CMPX_CD, RESV_NO, RM_NO, CAR_NO, CAR_TP, MEMO, PMS_SYNC_YN, REG_USER, REG_DT)
+		VALUES (#{propCd}, #{cmpxCd}, #{resvNo}, #{rmNo}, #{carNo}, #{carTp}, #{memo}, 'N', #{regUser}, NOW())
+	</insert>
+
+	<update id="updateParkingSyncYn">
+		UPDATE INV.CONCIERGE_PARKING
+		   SET PMS_SYNC_YN = #{pmsSyncYn}, MOD_USER = #{modUser}, MOD_DT = NOW()
+		 WHERE REQ_NO = #{reqNo}
+	</update>
+
+	<!-- ═══════════ CONCIERGE_LATE_CO ═══════════ -->
+
+	<select id="selectLateCo" resultType="map">
+		SELECT REQ_NO, PROP_CD, CMPX_CD, RESV_NO, RM_NO,
+		       REQ_OUT_TM, ADD_AMT, CUR_CD, RATE_TP_CD, PROC_STAT_CD, REG_DT
+		  FROM INV.CONCIERGE_LATE_CO
+		 WHERE PROP_CD = #{propCd}
+		   AND CMPX_CD = #{cmpxCd}
+		   AND RESV_NO = #{resvNo}
+		 ORDER BY REG_DT DESC
+	</select>
+
+	<insert id="insertLateCo" useGeneratedKeys="true" keyProperty="reqNo" keyColumn="REQ_NO">
+		INSERT INTO INV.CONCIERGE_LATE_CO (PROP_CD, CMPX_CD, RESV_NO, RM_NO, REQ_OUT_TM, ADD_AMT, CUR_CD, RATE_TP_CD, PROC_STAT_CD, REG_USER, REG_DT)
+		VALUES (#{propCd}, #{cmpxCd}, #{resvNo}, #{rmNo}, #{reqOutTm}, #{addAmt}, #{curCd}, #{rateTpCd}, 'REQ', #{regUser}, NOW())
+	</insert>
+
+	<update id="updateLateCoStatus">
+		UPDATE INV.CONCIERGE_LATE_CO
+		   SET PROC_STAT_CD = #{procStatCd}, MOD_USER = #{modUser}, MOD_DT = NOW()
+		 WHERE REQ_NO = #{reqNo}
+	</update>
+
+	<!-- ═══════════ CCS_TASK ═══════════ -->
+
+	<select id="selectTasksByDept" resultType="map">
+		SELECT TASK_ID, PROP_CD, CMPX_CD, DEPT_CD, SOURCE_TYPE, SOURCE_REF_NO,
+		       TITLE, MEMO, RM_NO, ASSIGNEE_ID, STATUS_CD, CREATED_AT, UPDATED_AT
+		  FROM INV.CCS_TASK
+		 WHERE PROP_CD  = #{propCd}
+		   AND CMPX_CD  = #{cmpxCd}
+		   AND DEPT_CD  = #{deptCd}
+		<if test="statusCd != null and statusCd != ''">
+		   AND STATUS_CD = #{statusCd}
+		</if>
+		 ORDER BY CREATED_AT DESC
+	</select>
+
+	<select id="selectTask" resultType="map">
+		SELECT TASK_ID, PROP_CD, CMPX_CD, DEPT_CD, SOURCE_TYPE, SOURCE_REF_NO,
+		       TITLE, MEMO, RM_NO, ASSIGNEE_ID, STATUS_CD, CREATED_AT, UPDATED_AT
+		  FROM INV.CCS_TASK
+		 WHERE TASK_ID = #{taskId}
+	</select>
+
+	<insert id="insertTask">
+		INSERT INTO INV.CCS_TASK (TASK_ID, PROP_CD, CMPX_CD, DEPT_CD, SOURCE_TYPE, SOURCE_REF_NO,
+		                          TITLE, MEMO, RM_NO, ASSIGNEE_ID, STATUS_CD, CREATED_AT, UPDATED_AT)
+		VALUES (#{taskId}, #{propCd}, #{cmpxCd}, #{deptCd}, #{sourceType}, #{sourceRefNo},
+		        #{title}, #{memo}, #{rmNo}, #{assigneeId}, #{statusCd}, NOW(), NOW())
+	</insert>
+
+	<update id="updateTaskStatus">
+		UPDATE INV.CCS_TASK
+		   SET STATUS_CD = #{statusCd}, UPDATED_AT = NOW()
+		 WHERE TASK_ID = #{taskId}
+	</update>
+
+	<update id="updateTaskAssignee">
+		UPDATE INV.CCS_TASK
+		   SET ASSIGNEE_ID = #{assigneeId}, STATUS_CD = #{statusCd}, UPDATED_AT = NOW()
+		 WHERE TASK_ID = #{taskId}
+	</update>
+
+	<select id="selectTaskCountByAssignee" resultType="map">
+		SELECT ASSIGNEE_ID, COUNT(*) AS CNT
+		  FROM INV.CCS_TASK
+		 WHERE PROP_CD  = #{propCd}
+		   AND CMPX_CD  = #{cmpxCd}
+		   AND DEPT_CD  = #{deptCd}
+		   AND STATUS_CD IN ('REQ','ASSIGNED','IN_PROG')
+		 GROUP BY ASSIGNEE_ID
+	</select>
+
+	<!-- HK 최신 상태 조회 (GrService 하우스키핑) -->
+	<select id="selectLatestHkTask" resultType="map">
+		SELECT TASK_ID, SOURCE_TYPE, STATUS_CD, CREATED_AT
+		  FROM INV.CCS_TASK
+		 WHERE PROP_CD = #{propCd}
+		   AND CMPX_CD = #{cmpxCd}
+		   AND RM_NO   = #{rmNo}
+		   AND SOURCE_TYPE LIKE 'HK_%'
+		 ORDER BY CREATED_AT DESC
+		 LIMIT 1
+	</select>
+
+	<select id="selectTaskCountByStatus" resultType="int">
+		SELECT COUNT(*)
+		  FROM INV.CCS_TASK
+		 WHERE ASSIGNEE_ID = #{assigneeId}
+		   AND STATUS_CD   = #{statusCd}
+	</select>
+
+	<select id="selectTodayStats" resultType="map">
+		SELECT COUNT(*) AS TOTAL_CNT,
+		       SUM(CASE WHEN STATUS_CD = 'DONE' THEN 1 ELSE 0 END) AS DONE_CNT,
+		       AVG(CASE WHEN STATUS_CD = 'DONE' THEN TIMESTAMPDIFF(MINUTE, CREATED_AT, UPDATED_AT) END) AS AVG_MINUTES
+		  FROM INV.CCS_TASK
+		 WHERE PROP_CD  = #{propCd}
+		   AND CMPX_CD  = #{cmpxCd}
+		<if test="deptCd != null and deptCd != ''">
+		   AND DEPT_CD  = #{deptCd}
+		</if>
+		   AND DATE(CREATED_AT) = CURDATE()
+	</select>
+
+</mapper>
