@@ -57,7 +57,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue';
-import { createCcsTask } from '@/api/client.js';
+import { createCcsTask } from '../../api/client.js';
 
 const props = defineProps({
   open:      { type: Boolean, required: true },

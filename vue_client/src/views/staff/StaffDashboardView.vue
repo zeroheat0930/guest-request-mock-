@@ -1,12 +1,19 @@
 <template>
 	<div class="staff">
 		<header class="page-head">
-			<h2>🛎️ CCS 대시보드</h2>
-			<p class="page-sub">
-				<strong>{{ staff.staffNm || '—' }}</strong> ·
-				<span class="dept">{{ staff.deptCd || '-' }} 부서</span>
-			</p>
+			<div class="page-head-row">
+				<div>
+					<h2>🛎️ CCS 대시보드</h2>
+					<p class="page-sub">
+						<strong>{{ staff.staffNm || '—' }}</strong> ·
+						<span class="dept">{{ staff.deptCd || '-' }} 부서</span>
+					</p>
+				</div>
+				<button class="btn-new-request" @click="showRequestModal = true">+ 새 요청</button>
+			</div>
 		</header>
+
+		<StatsWidget :deptCd="staff?.deptCd" class="stats-widget-wrap" />
 
 		<div class="tabs">
 			<button
@@ -63,6 +70,17 @@
 			</div>
 		</div>
 		<div v-else class="dim">{{ busy ? '불러오는 중…' : '표시할 작업이 없습니다' }}</div>
+
+		<details class="dept-load-section" v-if="staff?.deptCd">
+			<summary>부서원 로드 현황</summary>
+			<DeptLoadPanel :deptCd="staff.deptCd" />
+		</details>
+
+		<StaffRequestModal
+			:open="showRequestModal"
+			:onClose="() => { showRequestModal = false; }"
+			:onSuccess="() => { load(); showRequestModal = false; }"
+		/>
 	</div>
 </template>
 
@@ -70,6 +88,9 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchCcsTasks, assignCcsTask, transitionCcsTask } from '../../api/client.js';
+import StatsWidget from './StatsWidget.vue';
+import DeptLoadPanel from './DeptLoadPanel.vue';
+import StaffRequestModal from './StaffRequestModal.vue';
 
 const TABS = [
 	{ key: 'wait',  label: '대기',    statuses: ['REQ'] },
@@ -84,6 +105,7 @@ const err = ref('');
 const busy = ref(false);
 const busyId = ref('');
 const staff = ref({});
+const showRequestModal = ref(false);
 let pollTimer = null;
 
 function loadStaff() {
@@ -320,4 +342,52 @@ onUnmounted(() => {
 	border-color: #1a3a6e;
 }
 .actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.page-head-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+}
+
+.btn-new-request {
+	padding: 10px 18px;
+	background: #1a3a6e;
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	font-size: 14px;
+	font-weight: 700;
+	cursor: pointer;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+.btn-new-request:hover { background: #152e58; }
+
+.stats-widget-wrap { margin-bottom: 16px; }
+
+.dept-load-section {
+	margin-top: 20px;
+	border: 1px solid #edf2f7;
+	border-radius: 10px;
+	overflow: hidden;
+}
+.dept-load-section > summary {
+	padding: 12px 16px;
+	font-size: 14px;
+	font-weight: 700;
+	color: #1a3a6e;
+	background: #f7fafc;
+	cursor: pointer;
+	user-select: none;
+	list-style: none;
+}
+.dept-load-section > summary::-webkit-details-marker { display: none; }
+.dept-load-section > summary::before {
+	content: '▶ ';
+	font-size: 11px;
+	margin-right: 4px;
+	color: #8492a6;
+}
+.dept-load-section[open] > summary::before { content: '▼ '; }
+.dept-load-section > :not(summary) { padding: 12px; }
 </style>

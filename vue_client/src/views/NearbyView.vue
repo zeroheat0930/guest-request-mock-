@@ -15,7 +15,7 @@
 			</button>
 		</div>
 
-		<div v-if="loading" class="state">불러오는 중…</div>
+		<LoadingSpinner v-if="loading" text="불러오는 중..." />
 		<div v-else-if="error" class="state error">
 			잠시 후 다시 시도해주세요.<br />
 			<small>{{ error }}</small>
@@ -51,6 +51,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import { fetchNearby } from '../api/client';
+import LoadingSpinner from '../components/LoadingSpinner.vue';
 
 const TABS = [
 	{ cd: 'food',     label: '음식점', emoji: '🍽️' },

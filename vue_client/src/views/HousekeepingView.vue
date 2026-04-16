@@ -8,14 +8,15 @@
 					<option value="R2026041300002">R2026041300002 / 0807</option>
 				</select>
 			</label>
-			<div class="cur">현재 상태: <strong>{{ curStatNm }}</strong></div>
+			<LoadingSpinner v-if="loadingStatus" text="상태 확인 중..." />
+			<div v-else class="cur">현재 상태: <strong>{{ curStatNm }}</strong></div>
 			<div class="btns">
-				<button @click="change('MU')"  class="btn btn-mu">🧹 객실 정비 요청</button>
-				<button @click="change('DND')" class="btn btn-dnd">🚫 방해 금지</button>
-				<button @click="change('CLR')" class="btn btn-clr">✓ 해제</button>
+				<button @click="change('MU')"  class="btn btn-mu" :disabled="submitting">🧹 객실 정비 요청</button>
+				<button @click="change('DND')" class="btn btn-dnd" :disabled="submitting">🚫 방해 금지</button>
+				<button @click="change('CLR')" class="btn btn-clr" :disabled="submitting">✓ 해제</button>
 			</div>
 			<div v-if="result" class="result" :class="{ ok: result.status === 0 }">
-				[{{ result.status }}] {{ result.message }}
+				{{ result.message }}
 			</div>
 		</div>
 	</div>
@@ -24,26 +25,41 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { fetchHousekeeping, updateHousekeeping } from '../api/client';
+import LoadingSpinner from '../components/LoadingSpinner.vue';
 
 const rsvNo = ref('R2026041300001');
 const curStatNm = ref('-');
 const result = ref(null);
+const loadingStatus = ref(false);
+const submitting = ref(false);
 
 async function loadStat() {
+	loadingStatus.value = true;
 	try {
 		const r = await fetchHousekeeping(rsvNo.value);
 		curStatNm.value = r.map?.hkStatNm || '-';
 	} catch (e) {
 		curStatNm.value = '조회 실패';
+	} finally {
+		loadingStatus.value = false;
 	}
 }
 
+function showResult(data) {
+	result.value = data;
+	setTimeout(() => { result.value = null; }, 3000);
+}
+
 async function change(cd) {
+	submitting.value = true;
 	try {
-		result.value = await updateHousekeeping({ rsvNo: rsvNo.value, hkStatCd: cd });
+		const res = await updateHousekeeping({ rsvNo: rsvNo.value, hkStatCd: cd });
+		showResult(res);
 		await loadStat();
 	} catch (err) {
-		result.value = err;
+		showResult(err);
+	} finally {
+		submitting.value = false;
 	}
 }
 
@@ -57,10 +73,14 @@ onMounted(loadStat);
 .form select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 16px; margin-top: 6px; }
 .cur { margin: 16px 0; padding: 12px; background: #edf2f7; border-radius: 6px; font-size: 16px; }
 .btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
-.btn { padding: 20px; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; color: #fff; }
+.btn { padding: 20px; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; color: #fff; min-height: 48px; cursor: pointer; }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-mu  { background: #3182ce; }
 .btn-dnd { background: #c53030; }
 .btn-clr { background: #718096; }
 .result { padding: 12px; border-radius: 6px; background: #fff5f5; color: #c53030; }
 .result.ok { background: #f0fff4; color: #2f855a; }
+@media (max-width: 480px) {
+	.btns { grid-template-columns: 1fr; gap: 8px; }
+}
 </style>

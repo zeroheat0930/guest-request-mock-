@@ -8,7 +8,8 @@
 					<option value="R2026041300002">R2026041300002 / 0807 / JOHN SMITH</option>
 				</select>
 			</label>
-			<div class="items">
+			<LoadingSpinner v-if="loading" text="품목 불러오는 중..." />
+			<div v-else class="items">
 				<div v-for="item in items" :key="item.itemCd" class="item-row">
 					<span class="nm">{{ item.itemNm }} <small>({{ item.itemNmEng }})</small></span>
 					<span class="max">최대 {{ item.maxQty }}</span>
@@ -20,7 +21,7 @@
 			</label>
 			<button class="submit" @click="submit">요청 등록</button>
 			<div v-if="result" class="result" :class="{ ok: result.status === 0 }">
-				[{{ result.status }}] {{ result.message }}
+				{{ result.message }}
 				<template v-if="result.map && result.map.reqNo"> / 요청번호: {{ result.map.reqNo }}</template>
 			</div>
 		</div>
@@ -30,12 +31,14 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue';
 import { fetchAmenityItems, requestAmenity } from '../api/client';
+import LoadingSpinner from '../components/LoadingSpinner.vue';
 
 const rsvNo = ref('R2026041300001');
 const reqMemo = ref('');
 const items = ref([]);
 const qtyMap = reactive({});
 const result = ref(null);
+const loading = ref(false);
 
 const roomNoMap = {
 	'R2026041300001': '1205',
@@ -43,10 +46,20 @@ const roomNoMap = {
 };
 
 onMounted(async () => {
-	const res = await fetchAmenityItems();
-	items.value = res.list || [];
-	items.value.forEach(it => { qtyMap[it.itemCd] = 0; });
+	loading.value = true;
+	try {
+		const res = await fetchAmenityItems();
+		items.value = res.list || [];
+		items.value.forEach(it => { qtyMap[it.itemCd] = 0; });
+	} finally {
+		loading.value = false;
+	}
 });
+
+function showResult(data) {
+	result.value = data;
+	setTimeout(() => { result.value = null; }, 3000);
+}
 
 async function submit() {
 	const itemList = items.value
@@ -54,19 +67,20 @@ async function submit() {
 		.map(it => ({ itemCd: it.itemCd, qty: qtyMap[it.itemCd] }));
 
 	if (itemList.length === 0) {
-		result.value = { status: 401, message: '품목 수량을 입력하세요', map: {} };
+		showResult({ status: 401, message: '품목 수량을 입력하세요', map: {} });
 		return;
 	}
 
 	try {
-		result.value = await requestAmenity({
+		const res = await requestAmenity({
 			rsvNo: rsvNo.value,
 			roomNo: roomNoMap[rsvNo.value],
 			itemList,
 			reqMemo: reqMemo.value
 		});
+		showResult(res);
 	} catch (err) {
-		result.value = err;
+		showResult(err);
 	}
 }
 </script>
@@ -94,4 +108,8 @@ async function submit() {
 }
 .result { margin-top: 16px; padding: 12px; border-radius: 6px; background: #fff5f5; color: #c53030; }
 .result.ok { background: #f0fff4; color: #2f855a; }
+@media (max-width: 480px) {
+	.item-row { grid-template-columns: 1fr auto; }
+	.item-row input[type="number"] { width: 70px; }
+}
 </style>

@@ -27,7 +27,8 @@
 		</div>
 
 		<h3 class="list-h">등록된 차량</h3>
-		<div v-if="list.length === 0" class="empty">등록된 차량이 없습니다</div>
+		<LoadingSpinner v-if="loadingList" text="차량 목록 불러오는 중..." />
+		<div v-else-if="list.length === 0" class="empty">등록된 차량이 없습니다</div>
 		<div v-else class="cards">
 			<div v-for="row in list" :key="row.reqNo" class="card">
 				<div class="car-no">{{ row.carNo }}</div>
@@ -45,6 +46,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { fetchParkingList, requestParking } from '../api/client';
+import LoadingSpinner from '../components/LoadingSpinner.vue';
 
 const rsvNo = ref('R2026041300001');
 const carNo = ref('');
@@ -52,6 +54,7 @@ const carTp = ref('SEDAN');
 const reqMemo = ref('');
 const list = ref([]);
 const toast = ref(null);
+const loadingList = ref(false);
 
 const roomNoMap = {
 	'R2026041300001': '1205',
@@ -67,17 +70,20 @@ function fmtTime(d, t) {
 }
 
 async function loadList() {
+	loadingList.value = true;
 	try {
 		const r = await fetchParkingList(rsvNo.value);
 		list.value = r.list || [];
 	} catch (e) {
 		list.value = [];
+	} finally {
+		loadingList.value = false;
 	}
 }
 
 function showToast(msg, ok) {
 	toast.value = { msg, ok };
-	setTimeout(() => { toast.value = null; }, 3500);
+	setTimeout(() => { toast.value = null; }, 3000);
 }
 
 async function submit() {
@@ -104,10 +110,10 @@ async function submit() {
 			reqMemo.value = '';
 			await loadList();
 		} else {
-			showToast(`[${res.status}] ${res.message}`, false);
+			showToast(res.message, false);
 		}
 	} catch (err) {
-		showToast(`[${err.status}] ${err.message}`, false);
+		showToast(err.message || '요청 처리 중 오류가 발생했습니다', false);
 	}
 }
 
@@ -124,7 +130,7 @@ onMounted(loadList);
 }
 .submit {
 	width: 100%; padding: 14px; background: #1a3a6e; color: #fff;
-	border: none; border-radius: 8px; font-size: 16px; font-weight: 700;
+	border: none; border-radius: 8px; font-size: 16px; font-weight: 700; min-height: 48px;
 }
 .toast { margin-top: 16px; padding: 12px; border-radius: 6px; background: #fff5f5; color: #c53030; }
 .toast.ok { background: #f0fff4; color: #2f855a; }

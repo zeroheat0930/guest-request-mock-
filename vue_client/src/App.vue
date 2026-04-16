@@ -22,8 +22,8 @@
 				</router-link>
 			</nav>
 			<div class="lnb-foot">
-				<small>ROOM 1205</small>
-				<small class="dim">HONG GILDONG</small>
+				<small>{{ guestRoomNo }}</small>
+				<small class="dim">{{ guestName }}</small>
 			</div>
 		</aside>
 
@@ -35,7 +35,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { loadFeatures, enabledSortedFeatures, featuresLoaded } from './features/featureStore.js';
 import { getStoredToken, authenticateGuest, DEMO_RESERVATIONS } from './auth/authBootstrap.js';
 import { useRouter, useRoute } from 'vue-router';
@@ -45,10 +45,28 @@ const route = useRoute();
 const tabs = computed(() => enabledSortedFeatures());
 const showLnb = computed(() => !(route.meta?.admin || route.meta?.staff));
 
+const guestRoomNo = ref('');
+const guestName = ref('');
+
 onMounted(async () => {
 	// 데모 부트: 토큰이 없으면 첫 데모 게스트로 자동 인증 (ChatView 에서도 다시 switchGuest 함)
 	if (!getStoredToken()) {
-		try { await authenticateGuest(DEMO_RESERVATIONS[0].rsvNo); } catch {}
+		try {
+			const info = await authenticateGuest(DEMO_RESERVATIONS[0].rsvNo);
+			if (info) {
+				guestRoomNo.value = info.roomNo ? `ROOM ${info.roomNo}` : '';
+				guestName.value = info.perNm || '';
+			}
+		} catch {}
+	} else {
+		// Token already present — derive display from stored rsvNo label
+		const stored = sessionStorage.getItem('concierge.rsvNo');
+		const demo = DEMO_RESERVATIONS.find(r => r.rsvNo === stored);
+		if (demo) {
+			const parts = demo.label.split('·');
+			guestRoomNo.value = parts[0] ? `ROOM ${parts[0].trim()}` : '';
+			guestName.value = parts[1] ? parts[1].trim().split(' ')[0] + ' ' + (parts[1].trim().split(' ').slice(1).join(' ')) : '';
+		}
 	}
 	await loadFeatures();
 	// 현재 경로가 비활성 feature 면 첫 활성 탭으로 재배치
