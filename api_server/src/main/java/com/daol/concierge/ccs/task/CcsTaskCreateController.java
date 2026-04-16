@@ -38,9 +38,10 @@ public class CcsTaskCreateController extends BaseController {
 		if (toDeptCd == null || toDeptCd.isBlank() || title == null || title.isBlank())
 			throw new ApiException(ApiStatus.SYSTEM_ERROR, "필수값 누락");
 
+		String reqTitle = "[" + me.staffNm() + "] " + title;
 		Map<String, Object> task = taskService.createTask(
 				me.propCd(), me.cmpxCd(), "STAFF_REQ", me.staffId(),
-				toDeptCd, title, memo, roomNo);
+				toDeptCd, reqTitle, memo, roomNo);
 
 		if (toAssigneeId != null && !toAssigneeId.isBlank()) {
 			String taskId = str(task.get("taskId"));

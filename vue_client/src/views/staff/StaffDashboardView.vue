@@ -41,6 +41,7 @@
 					<span>🕒 {{ fmtTime(t.createdAt) }}</span>
 					<span class="st">{{ t.statusCd }}</span>
 				</div>
+				<div v-if="t.assigneeId" class="assignee">👤 {{ t.assigneeId }}</div>
 				<div class="actions">
 					<button
 						v-if="t.statusCd === 'REQ'"
@@ -49,19 +50,13 @@
 						@click="take(t)"
 					>내가 받기</button>
 					<button
-						v-if="t.statusCd === 'ASSIGNED'"
-						class="primary"
-						:disabled="busyId === t.taskId"
-						@click="changeStatus(t, 'IN_PROG')"
-					>시작</button>
-					<button
 						v-if="t.statusCd === 'IN_PROG'"
 						class="primary"
 						:disabled="busyId === t.taskId"
 						@click="changeStatus(t, 'DONE')"
 					>완료</button>
 					<button
-						v-if="['REQ','ASSIGNED','IN_PROG'].includes(t.statusCd)"
+						v-if="['REQ','IN_PROG'].includes(t.statusCd)"
 						class="ghost"
 						:disabled="busyId === t.taskId"
 						@click="changeStatus(t, 'CANCELED')"
@@ -95,7 +90,7 @@ import StaffRequestModal from './StaffRequestModal.vue';
 
 const TABS = [
 	{ key: 'wait',  label: '대기',    statuses: ['REQ'] },
-	{ key: 'prog',  label: '진행중',  statuses: ['ASSIGNED', 'IN_PROG'] },
+	{ key: 'prog',  label: '진행중',  statuses: ['IN_PROG'] },
 	{ key: 'done',  label: '완료',    statuses: ['DONE'] }
 ];
 

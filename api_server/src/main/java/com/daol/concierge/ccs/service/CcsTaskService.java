@@ -50,7 +50,7 @@ public class CcsTaskService {
 		Map<String, Object> param = new HashMap<>();
 		param.put("taskId", taskId);
 		param.put("assigneeId", assigneeId);
-		param.put("statusCd", "ASSIGNED");
+		param.put("statusCd", "IN_PROG");
 		invMapper.updateTaskAssignee(param);
 
 		Map<String, Object> saved = invMapper.selectTask(taskId);
@@ -65,11 +65,9 @@ public class CcsTaskService {
 
 		boolean legal = false;
 		if ("CANCELED".equals(newStatusCd)) {
-			legal = "REQ".equals(cur) || "ASSIGNED".equals(cur) || "IN_PROG".equals(cur);
-		} else if ("ASSIGNED".equals(newStatusCd)) {
-			legal = "REQ".equals(cur);
+			legal = "REQ".equals(cur) || "IN_PROG".equals(cur);
 		} else if ("IN_PROG".equals(newStatusCd)) {
-			legal = "ASSIGNED".equals(cur);
+			legal = "REQ".equals(cur);
 		} else if ("DONE".equals(newStatusCd)) {
 			legal = "IN_PROG".equals(cur);
 		}
