@@ -179,7 +179,10 @@
 		       ASSIGNEE_ID AS assigneeId, STATUS_CD AS statusCd,
 		       CREATED_AT AS createdAt, UPDATED_AT AS updatedAt
 		  FROM INV.CCS_TASK
-		 WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd} AND DEPT_CD = #{deptCd}
+		 WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd}
+		<if test="deptCd != null and deptCd != '' and deptCd != '00000'">
+		   AND DEPT_CD = #{deptCd}
+		</if>
 		<if test="statusCd != null and statusCd != ''">
 		   AND STATUS_CD = #{statusCd}
 		</if>
