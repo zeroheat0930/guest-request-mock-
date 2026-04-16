@@ -67,6 +67,7 @@ public class SecurityConfig {
 							.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 							// 토큰 발급 엔드포인트만 공개 (미래에 /api/auth/* 하위 엔드포인트가 늘어도 자동 공개되지 않도록 구체화)
 							.requestMatchers(HttpMethod.POST, "/api/auth/guest-token").permitAll()
+							.requestMatchers(HttpMethod.POST, "/api/auth/room-token").permitAll()
 							.requestMatchers(HttpMethod.POST, "/api/ccs/auth/login").permitAll()
 							.requestMatchers(HttpMethod.GET, "/api/ai/status").permitAll()
 							// 관리자 API 는 자체 헤더 인증(AdminAuthInterceptor) 을 쓰므로 JWT 필터에서는 통과시킨다.

@@ -46,7 +46,7 @@
 		 LIMIT 100
 	</select>
 
-	<!-- 방 번호로 현재 체크인 중인 투숙객 조회 -->
+	<!-- 방 번호로 체크인 중인 투숙객 조회 (가장 최근 체크인) -->
 	<select id="selectCheckedInByRoom" resultType="map">
 		SELECT A.PROP_CD AS propCd, A.CMPX_CD AS cmpxCd, A.RESV_NO AS resvNo,
 		       A.RESV_STAT AS resvStat, A.RM_NO AS rmNo,
@@ -59,7 +59,6 @@
 		   AND A.RM_NO     = #{rmNo}
 		   AND A.RESV_STAT = 'I'
 		   AND A.USE_YN    = 'Y'
-		   AND CURDATE() BETWEEN DATE(A.ARR_DT) AND DATE(A.DEP_DT)
 		 ORDER BY A.CHK_IN_HOUR DESC
 		 LIMIT 1
 	</select>
