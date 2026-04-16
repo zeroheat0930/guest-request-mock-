@@ -41,7 +41,9 @@ public class JwtService {
 		} catch (Exception e) {
 			resvExpiry = hardCap;
 		}
-		Instant exp = hardCap.isBefore(resvExpiry) ? hardCap : resvExpiry;
+		// 체크아웃이 과거면(시연 데이터 등) hardCap 사용, 아니면 min(hardCap, resvExpiry)
+		Instant exp = resvExpiry.isBefore(now) ? hardCap
+				: (hardCap.isBefore(resvExpiry) ? hardCap : resvExpiry);
 
 		return Jwts.builder()
 				.subject(rsvNo)
