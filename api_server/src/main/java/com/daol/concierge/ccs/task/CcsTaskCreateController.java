@@ -3,35 +3,40 @@ package com.daol.concierge.ccs.task;
 import com.daol.concierge.ccs.auth.CcsPrincipal;
 import com.daol.concierge.ccs.auth.CcsSecurityContextUtil;
 import com.daol.concierge.ccs.service.CcsTaskService;
-import com.daol.concierge.ccs.util.CcsResponse;
-import com.daol.concierge.core.api.BizException;
+import com.daol.concierge.core.api.ApiException;
+import com.daol.concierge.core.api.ApiResponse;
+import com.daol.concierge.core.api.ApiStatus;
+import com.daol.concierge.core.api.Responses;
+import com.daol.concierge.core.controller.BaseController;
+import com.daol.concierge.core.parameter.RequestParams;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@RestController
+@Controller
 @RequestMapping("/api/ccs/tasks")
-public class CcsTaskCreateController {
+public class CcsTaskCreateController extends BaseController {
 
 	@Autowired private CcsTaskService taskService;
 
-	@PostMapping
-	public Map<String, Object> create(@RequestBody Map<String, Object> body) {
+	@ResponseBody
+	@RequestMapping(method = RequestMethod.POST, produces = APPLICATION_JSON)
+	public ApiResponse create(RequestParams requestParams) {
 		CcsPrincipal me = CcsSecurityContextUtil.requireCcsPrincipal();
 
-		String toDeptCd = str(body.get("toDeptCd"));
-		String toAssigneeId = str(body.get("toAssigneeId"));
-		String title = str(body.get("title"));
-		String memo = str(body.get("memo"));
-		String roomNo = str(body.get("roomNo"));
+		String toDeptCd = requestParams.getString("toDeptCd");
+		String toAssigneeId = requestParams.getString("toAssigneeId");
+		String title = requestParams.getString("title");
+		String memo = requestParams.getString("memo");
+		String roomNo = requestParams.getString("roomNo");
 
 		if (toDeptCd == null || toDeptCd.isBlank() || title == null || title.isBlank())
-			throw new BizException("9001", "필수값 누락");
+			throw new ApiException(ApiStatus.SYSTEM_ERROR, "필수값 누락");
 
 		Map<String, Object> task = taskService.createTask(
 				me.propCd(), me.cmpxCd(), "STAFF_REQ", me.staffId(),
@@ -45,7 +50,7 @@ public class CcsTaskCreateController {
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("taskId", str(task.get("taskId")));
 		map.put("statusCd", str(task.get("statusCd")));
-		return CcsResponse.ok(map);
+		return Responses.MapResponse.of(map);
 	}
 
 	private static String str(Object o) {

@@ -1,7 +1,8 @@
 package com.daol.concierge.ai;
 
 import com.daol.concierge.auth.SecurityContextUtil;
-import com.daol.concierge.core.api.BizException;
+import com.daol.concierge.core.api.ApiException;
+import com.daol.concierge.core.api.ApiStatus;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -65,14 +66,14 @@ public class AiChatService {
 		// 이후 누군가 /api/ai/chat 을 실수로 permitAll 로 풀어도 서비스 레이어에서 한 번 더 막는다.
 		SecurityContextUtil.requirePrincipal();
 		if (!isConfigured()) {
-			throw new BizException("9501", "LLM API key not configured");
+			throw new ApiException(ApiStatus.SYSTEM_ERROR, "LLM API key not configured");
 		}
 		if (params == null) {
-			throw new BizException("9001", "params 필수");
+			throw new ApiException(ApiStatus.SYSTEM_ERROR, "params 필수");
 		}
 		Object textObj = params.get("text");
 		if (!(textObj instanceof String) || ((String) textObj).isBlank()) {
-			throw new BizException("9001", "text 필수");
+			throw new ApiException(ApiStatus.SYSTEM_ERROR, "text 필수");
 		}
 		String text = (String) textObj;
 
@@ -112,25 +113,25 @@ public class AiChatService {
 			HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
 			if (res.statusCode() != 200) {
 				log.warn("Anthropic API error status={} body={}", res.statusCode(), res.body());
-				throw new BizException("9502", "LLM upstream error " + res.statusCode());
+				throw new ApiException(ApiStatus.SYSTEM_ERROR, "LLM upstream error " + res.statusCode());
 			}
 
 			JsonNode root = mapper.readTree(res.body());
 			String rawText = root.path("content").path(0).path("text").asText("");
 			Matcher m = JSON_BLOCK.matcher(rawText);
 			if (!m.find()) {
-				throw new BizException("9503", "LLM did not return JSON");
+				throw new ApiException(ApiStatus.SYSTEM_ERROR, "LLM did not return JSON");
 			}
 			Map<String, Object> parsed = mapper.readValue(m.group(), Map.class);
 			if (!parsed.containsKey("intent")) {
-				throw new BizException("9503", "LLM response missing 'intent'");
+				throw new ApiException(ApiStatus.SYSTEM_ERROR, "LLM response missing 'intent'");
 			}
 			return parsed;
-		} catch (BizException e) {
+		} catch (ApiException e) {
 			throw e;
 		} catch (Exception e) {
 			log.error("AiChatService parseIntent failure", e);
-			throw new BizException("9502", "LLM call failed: " + e.getMessage());
+			throw new ApiException(ApiStatus.SYSTEM_ERROR, "LLM call failed: " + e.getMessage());
 		}
 	}
 

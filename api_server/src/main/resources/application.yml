@@ -62,7 +62,7 @@ mybatis:
 # ───────── dev (사내 MariaDB 직결) ─────────
 # 회사 PMS DB 에 직접 붙는다. 신규 테이블은 INV 스키마, 기존 예약/유저는 PMS 스키마 cross-schema read.
 # 접속: VPN 또는 사내망에서만 211.34.228.191:3336 에 접근 가능.
-# ddl-auto=none — 신규 테이블은 사용자가 수동 DDL 로 만들었고 엔티티 매핑 재정비 중이므로 validate 는 보류.
+# JPA 제거 완료 — MyBatis 단일 경로. 테이블 DDL 은 수동 관리.
 spring:
   config:
     activate:
@@ -72,14 +72,6 @@ spring:
     driver-class-name: org.mariadb.jdbc.Driver
     username: ${DB_USER:dongjunkorea}
     password: ${DB_PASSWORD:!Ehdwnsdl0930}
-  jpa:
-    hibernate:
-      ddl-auto: none
-    show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MariaDBDialect
-        format_sql: true
 
 ---
 # ───────── prod (MariaDB) ─────────
@@ -93,15 +85,6 @@ spring:
     driver-class-name: org.mariadb.jdbc.Driver
     username: ${DB_USER:concierge}
     password: ${DB_PASSWORD:}
-  jpa:
-    hibernate:
-      # 상용화 전에는 Flyway/Liquibase 마이그레이션으로 교체 권장 (PMS 규칙: DDL 파일 금지라
-      # 실제 회사 이식 시엔 사내 DDL 변경 절차 경유).
-      ddl-auto: validate
-    show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MariaDBDialect
 
 # ───────── test (H2 비활성화 — 2026-04-16) ─────────
 # H2 의존성 주석 처리로 사용 불가. 추후 testcontainers MariaDB 로 전환 예정.

@@ -1,6 +1,7 @@
 package com.daol.concierge.ccs.service;
 
-import com.daol.concierge.core.api.BizException;
+import com.daol.concierge.core.api.ApiException;
+import com.daol.concierge.core.api.ApiStatus;
 import com.daol.concierge.inv.mapper.InvMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -43,8 +44,8 @@ public class CcsTaskService {
 
 	public Map<String, Object> assignTo(String taskId, String assigneeId) {
 		Map<String, Object> t = invMapper.selectTask(taskId);
-		if (t == null) throw new BizException("9404", "작업 없음");
-		if (!"REQ".equals(str(t.get("statusCd")))) throw new BizException("9005", "상태 전이 불가");
+		if (t == null) throw new ApiException(ApiStatus.NOT_FOUND, "작업 없음");
+		if (!"REQ".equals(str(t.get("statusCd")))) throw new ApiException(ApiStatus.SYSTEM_ERROR, "상태 전이 불가");
 
 		Map<String, Object> param = new HashMap<>();
 		param.put("taskId", taskId);
@@ -59,7 +60,7 @@ public class CcsTaskService {
 
 	public Map<String, Object> transitionStatus(String taskId, String newStatusCd) {
 		Map<String, Object> t = invMapper.selectTask(taskId);
-		if (t == null) throw new BizException("9404", "작업 없음");
+		if (t == null) throw new ApiException(ApiStatus.NOT_FOUND, "작업 없음");
 		String cur = str(t.get("statusCd"));
 
 		boolean legal = false;
@@ -72,7 +73,7 @@ public class CcsTaskService {
 		} else if ("DONE".equals(newStatusCd)) {
 			legal = "IN_PROG".equals(cur);
 		}
-		if (!legal) throw new BizException("9005", "상태 전이 불가");
+		if (!legal) throw new ApiException(ApiStatus.SYSTEM_ERROR, "상태 전이 불가");
 
 		Map<String, Object> param = new HashMap<>();
 		param.put("taskId", taskId);

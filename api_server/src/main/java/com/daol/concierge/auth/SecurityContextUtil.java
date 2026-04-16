@@ -1,6 +1,7 @@
 package com.daol.concierge.auth;
 
-import com.daol.concierge.core.api.BizException;
+import com.daol.concierge.core.api.ApiException;
+import com.daol.concierge.core.api.ApiStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -22,7 +23,7 @@ public final class SecurityContextUtil {
 	public static GuestPrincipal requirePrincipal() {
 		GuestPrincipal p = currentPrincipalOrNull();
 		if (p == null) {
-			throw new BizException("9102", "인증 필요");
+			throw new ApiException(ApiStatus.ACCESS_DENIED, "인증 필요");
 		}
 		return p;
 	}
@@ -34,7 +35,7 @@ public final class SecurityContextUtil {
 	public static GuestPrincipal assertOwnsRsv(String rsvNo) {
 		GuestPrincipal p = requirePrincipal();
 		if (rsvNo == null || !rsvNo.equals(p.rsvNo())) {
-			throw new BizException("9102", "권한 없음");
+			throw new ApiException(ApiStatus.ACCESS_DENIED, "권한 없음");
 		}
 		return p;
 	}

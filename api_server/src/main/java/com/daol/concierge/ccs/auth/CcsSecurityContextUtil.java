@@ -1,6 +1,7 @@
 package com.daol.concierge.ccs.auth;
 
-import com.daol.concierge.core.api.BizException;
+import com.daol.concierge.core.api.ApiException;
+import com.daol.concierge.core.api.ApiStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -22,6 +23,6 @@ public final class CcsSecurityContextUtil {
 
 	public static CcsPrincipal requireCcsPrincipal() {
 		return currentCcsPrincipal()
-				.orElseThrow(() -> new BizException("9102", "인증 필요"));
+				.orElseThrow(() -> new ApiException(ApiStatus.ACCESS_DENIED, "인증 필요"));
 	}
 }

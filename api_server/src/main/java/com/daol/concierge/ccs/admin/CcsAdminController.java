@@ -1,28 +1,32 @@
 package com.daol.concierge.ccs.admin;
 
-import com.daol.concierge.ccs.util.CcsResponse;
+import com.daol.concierge.core.api.ApiResponse;
+import com.daol.concierge.core.api.Responses;
+import com.daol.concierge.core.controller.BaseController;
+import com.daol.concierge.core.parameter.RequestParams;
 import com.daol.concierge.pms.mapper.PmsMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-@RestController
+@Controller
 @RequestMapping("/api/concierge/admin")
-public class CcsAdminController {
+public class CcsAdminController extends BaseController {
 
 	@Autowired private PmsMapper pmsMapper;
 
-	@GetMapping("/departments")
-	public Map<String, Object> listDepartments(
-			@RequestParam String propCd,
-			@RequestParam String cmpxCd) {
+	@ResponseBody
+	@RequestMapping(value = "/departments", method = RequestMethod.GET, produces = APPLICATION_JSON)
+	public ApiResponse listDepartments(RequestParams requestParams) {
+		String propCd = requestParams.getString("propCd");
+		String cmpxCd = requestParams.getString("cmpxCd");
 		// PMS_USER_MTR 의 DEPT_CD 그룹핑으로 부서 목록 추출
 		List<Map<String, Object>> allUsers = pmsMapper.selectUsersByDept(propCd, cmpxCd, null);
 		Map<String, String> deptMap = new LinkedHashMap<>();
@@ -36,14 +40,15 @@ public class CcsAdminController {
 		for (String dc : deptMap.keySet()) {
 			depts.add(Map.of("deptCd", dc, "deptNm", dc, "useYn", "Y"));
 		}
-		return CcsResponse.ok(Map.of("list", depts));
+		return Responses.MapResponse.of(Map.of("list", depts));
 	}
 
-	@GetMapping("/staff")
-	public Map<String, Object> listStaff(
-			@RequestParam String propCd,
-			@RequestParam String cmpxCd,
-			@RequestParam(required = false) String deptCd) {
+	@ResponseBody
+	@RequestMapping(value = "/staff", method = RequestMethod.GET, produces = APPLICATION_JSON)
+	public ApiResponse listStaff(RequestParams requestParams) {
+		String propCd = requestParams.getString("propCd");
+		String cmpxCd = requestParams.getString("cmpxCd");
+		String deptCd = requestParams.getString("deptCd");
 		List<Map<String, Object>> users;
 		if (deptCd != null && !deptCd.isBlank()) {
 			users = pmsMapper.selectUsersByDept(propCd, cmpxCd, deptCd);
@@ -60,7 +65,7 @@ public class CcsAdminController {
 			row.put("useYn", str(u.get("useYn")));
 			out.add(row);
 		}
-		return CcsResponse.ok(Map.of("list", out));
+		return Responses.MapResponse.of(Map.of("list", out));
 	}
 
 	private static String str(Object o) { return o == null ? null : String.valueOf(o); }

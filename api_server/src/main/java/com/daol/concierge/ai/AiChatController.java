@@ -2,12 +2,12 @@ package com.daol.concierge.ai;
 
 import com.daol.concierge.core.api.ApiResponse;
 import com.daol.concierge.core.api.Responses;
+import com.daol.concierge.core.controller.BaseController;
+import com.daol.concierge.core.parameter.RequestParams;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.HashMap;
@@ -20,11 +20,8 @@ import java.util.Map;
  * 서버 경유로 전환. 서버는 환경변수 ANTHROPIC_API_KEY에서만 키를 읽음.
  */
 @Controller
-@ResponseBody
 @RequestMapping(value = "/api/ai")
-public class AiChatController {
-
-	private static final String APPLICATION_JSON = "application/json;charset=UTF-8";
+public class AiChatController extends BaseController {
 
 	@Autowired
 	private AiChatService aiChatService;
@@ -34,16 +31,18 @@ public class AiChatController {
 	 * Request body: { "text": "...", "ctx": { rsvNo, roomNo, chkOutTm, perUseLang } }
 	 * Response map: { intent, reply, payload }
 	 */
-	@PostMapping(value = "/chat", produces = APPLICATION_JSON)
-	public ApiResponse chat(@RequestBody Map<String, Object> params) {
-		return Responses.MapResponse.of(aiChatService.parseIntent(params));
+	@ResponseBody
+	@RequestMapping(value = "/chat", method = RequestMethod.POST, produces = APPLICATION_JSON)
+	public ApiResponse chat(RequestParams requestParams) {
+		return Responses.MapResponse.of(aiChatService.parseIntent(requestParams.getParams()));
 	}
 
 	/**
 	 * LLM 사용 가능 여부 조회 (서버에 키가 설정돼 있는지)
 	 * 프론트 챗봇의 'LLM/Rule' 배지 표시용
 	 */
-	@GetMapping(value = "/status", produces = APPLICATION_JSON)
+	@ResponseBody
+	@RequestMapping(value = "/status", method = RequestMethod.GET, produces = APPLICATION_JSON)
 	public ApiResponse status() {
 		Map<String, Object> m = new HashMap<>();
 		m.put("enabled", aiChatService.isConfigured());

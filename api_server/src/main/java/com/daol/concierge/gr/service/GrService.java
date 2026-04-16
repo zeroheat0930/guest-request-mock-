@@ -1,7 +1,8 @@
 package com.daol.concierge.gr.service;
 
 import com.daol.concierge.auth.SecurityContextUtil;
-import com.daol.concierge.core.api.BizException;
+import com.daol.concierge.core.api.ApiException;
+import com.daol.concierge.core.api.ApiStatus;
 import com.daol.concierge.dispatcher.RequestDispatcher;
 import com.daol.concierge.dispatcher.RequestEvent;
 import com.daol.concierge.inv.mapper.InvMapper;
@@ -28,10 +29,10 @@ public class GrService {
 	// ==================== 예약 ====================
 
 	public Map<String, Object> getReservation(String rsvNo) {
-		if (rsvNo == null || rsvNo.isEmpty()) throw new BizException("9001", "필수값 누락");
+		if (rsvNo == null || rsvNo.isEmpty()) throw new ApiException(ApiStatus.SYSTEM_ERROR, "필수값 누락");
 		SecurityContextUtil.assertOwnsRsv(rsvNo);
 		Map<String, Object> r = pmsMapper.selectReservation(pp(), pc(), rsvNo);
-		if (r == null) throw new BizException("9404", "예약 없음");
+		if (r == null) throw new ApiException(ApiStatus.NOT_FOUND, "예약 없음");
 		return toResvMap(r);
 	}
 
@@ -53,7 +54,7 @@ public class GrService {
 	public List<Map<String, Object>> getAmenityList(String rsvNo) {
 		var principal = SecurityContextUtil.requirePrincipal();
 		String target = (rsvNo == null || rsvNo.isEmpty()) ? principal.rsvNo() : rsvNo;
-		if (!target.equals(principal.rsvNo())) throw new BizException("9102", "권한 없음");
+		if (!target.equals(principal.rsvNo())) throw new ApiException(ApiStatus.ACCESS_DENIED, "권한 없음");
 		return invMapper.selectAmenityReqList(pp(), pc(), target);
 	}
 
@@ -65,10 +66,10 @@ public class GrService {
 		String reqMemo = str(params.getOrDefault("reqMemo", ""));
 
 		if (rsvNo == null || roomNo == null || itemList == null || itemList.isEmpty())
-			throw new BizException("9001", "필수값 누락");
+			throw new ApiException(ApiStatus.SYSTEM_ERROR, "필수값 누락");
 		SecurityContextUtil.assertOwnsRsv(rsvNo);
 		if (pmsMapper.selectReservation(pp(), pc(), rsvNo) == null)
-			throw new BizException("9404", "예약 없음");
+			throw new ApiException(ApiStatus.NOT_FOUND, "예약 없음");
 
 		List<Long> reqNos = new ArrayList<>();
 		for (Map<String, Object> it : itemList) {
@@ -106,7 +107,7 @@ public class GrService {
 	public Map<String, Object> getHousekeepingStat(String rsvNo) {
 		SecurityContextUtil.assertOwnsRsv(rsvNo);
 		Map<String, Object> rsv = pmsMapper.selectReservation(pp(), pc(), rsvNo);
-		if (rsv == null) throw new BizException("9404", "예약 없음");
+		if (rsv == null) throw new ApiException(ApiStatus.NOT_FOUND, "예약 없음");
 
 		Map<String, Object> latest = invMapper.selectLatestHkTask(pp(), pc(), str(rsv.get("rmNo")));
 
@@ -132,13 +133,13 @@ public class GrService {
 		String hkStatCd = str(params.get("hkStatCd"));
 		String reqMemo = str(params.getOrDefault("reqMemo", ""));
 
-		if (rsvNo == null || hkStatCd == null) throw new BizException("9001", "필수값 누락");
+		if (rsvNo == null || hkStatCd == null) throw new ApiException(ApiStatus.SYSTEM_ERROR, "필수값 누락");
 		SecurityContextUtil.assertOwnsRsv(rsvNo);
 		String nm = hkStatNm(hkStatCd);
-		if (nm == null) throw new BizException("9002", "상태코드 오류");
+		if (nm == null) throw new ApiException(ApiStatus.SYSTEM_ERROR, "상태코드 오류");
 
 		Map<String, Object> rsv = pmsMapper.selectReservation(pp(), pc(), rsvNo);
-		if (rsv == null) throw new BizException("9404", "예약 없음");
+		if (rsv == null) throw new ApiException(ApiStatus.NOT_FOUND, "예약 없음");
 		String roomNo = str(rsv.get("rmNo"));
 
 		String taskId = "HK" + System.currentTimeMillis();
@@ -170,10 +171,10 @@ public class GrService {
 	// ==================== 레이트 체크아웃 ====================
 
 	public Map<String, Object> getLateCheckoutInfo(String rsvNo, String reqOutTm) {
-		if (rsvNo == null || reqOutTm == null) throw new BizException("9001", "필수값 누락");
+		if (rsvNo == null || reqOutTm == null) throw new ApiException(ApiStatus.SYSTEM_ERROR, "필수값 누락");
 		SecurityContextUtil.assertOwnsRsv(rsvNo);
 		Map<String, Object> rsv = pmsMapper.selectReservation(pp(), pc(), rsvNo);
-		if (rsv == null) throw new BizException("9404", "예약 없음");
+		if (rsv == null) throw new ApiException(ApiStatus.NOT_FOUND, "예약 없음");
 
 		String depHour = str(rsv.get("depHour"));
 		if (depHour == null || depHour.isEmpty()) depHour = "1100";
@@ -207,10 +208,10 @@ public class GrService {
 		String reqOutTm = str(params.get("reqOutTm"));
 		int addAmt = params.get("addAmt") == null ? 0 : ((Number) params.get("addAmt")).intValue();
 
-		if (rsvNo == null || reqOutTm == null) throw new BizException("9001", "필수값 누락");
+		if (rsvNo == null || reqOutTm == null) throw new ApiException(ApiStatus.SYSTEM_ERROR, "필수값 누락");
 		SecurityContextUtil.assertOwnsRsv(rsvNo);
 		Map<String, Object> rsv = pmsMapper.selectReservation(pp(), pc(), rsvNo);
-		if (rsv == null) throw new BizException("9404", "예약 없음");
+		if (rsv == null) throw new ApiException(ApiStatus.NOT_FOUND, "예약 없음");
 		String roomNo = str(rsv.get("rmNo"));
 
 		Map<String, Object> row = new HashMap<>();
@@ -253,13 +254,13 @@ public class GrService {
 		String carTp = str(params.getOrDefault("carTp", ""));
 		String reqMemo = str(params.getOrDefault("reqMemo", ""));
 
-		if (carNo == null || carNo.trim().isEmpty()) throw new BizException("9001", "차량번호 누락");
+		if (carNo == null || carNo.trim().isEmpty()) throw new ApiException(ApiStatus.SYSTEM_ERROR, "차량번호 누락");
 		carNo = carNo.trim();
-		if (carNo.length() < 4 || carNo.length() > 20) throw new BizException("9002", "차량번호 형식 오류");
-		if (rsvNo == null || roomNo == null) throw new BizException("9001", "필수값 누락");
+		if (carNo.length() < 4 || carNo.length() > 20) throw new ApiException(ApiStatus.SYSTEM_ERROR, "차량번호 형식 오류");
+		if (rsvNo == null || roomNo == null) throw new ApiException(ApiStatus.SYSTEM_ERROR, "필수값 누락");
 		SecurityContextUtil.assertOwnsRsv(rsvNo);
 		if (pmsMapper.selectReservation(pp(), pc(), rsvNo) == null)
-			throw new BizException("9404", "예약 없음");
+			throw new ApiException(ApiStatus.NOT_FOUND, "예약 없음");
 
 		Map<String, Object> row = new HashMap<>();
 		row.put("propCd", pp());

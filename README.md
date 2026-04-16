@@ -9,7 +9,7 @@
 
 ```
 guest-request-mock/
- ├ api_server/    ← Spring Boot 3.2 / Java 17 / JPA (H2 dev, MariaDB prod)
+ ├ api_server/    ← Spring Boot 3.2 / Java 17 / MyBatis (MariaDB, PMS MVC 패턴)
  ├ vue_client/    ← Vue 3 + Vite 멀티 엔트리 (index.html 게스트 / staff.html 스태프·관리자)
  └ landing/       ← QR 랜딩 페이지 (순수 HTML, 심사 제출용)
 ```
@@ -18,8 +18,8 @@ guest-request-mock/
 | 레이어 | 스택 |
 |---|---|
 | 프론트 | Vue 3, Vite, Vue Router, Axios, PWA |
-| 백엔드 | Spring Boot 3.2, Java 17, JPA, Jackson, java.net.http |
-| 저장소 | H2 파일 모드 (dev) / MariaDB (prod, 회사 PMS 스택과 일치) |
+| 백엔드 | Spring Boot 3.2, Java 17, MyBatis, Jackson, java.net.http |
+| 저장소 | MariaDB (사내 PMS DB 직결, INV/PMS cross-schema) |
 | AI | Anthropic Claude API (프록시) + 룰 기반 폴백 |
 | 인증 | 게스트 JWT (예약번호+체크인일자+생년월일 → 72h) |
 
@@ -171,7 +171,7 @@ WebSocket 연결: `ws://localhost:8080/ws-ccs` (STOMP)
 ## 🔌 API 명세
 
 Base: `http://localhost:8080/api`
-응답 포맷 (PMS 스타일): `{ resCd, resMsg, map }`
+응답 포맷 (PMS 스타일): `{ status, message, error }` + `Responses.MapResponse { map }` / `Responses.ListResponse { list, page }`
 
 ### `/api/gr` (게스트 요청)
 | Method | Path | 설명 |
@@ -222,19 +222,19 @@ Base: `http://localhost:8080/api`
 | DELETE | `/admin/departments/{deptCd}` | 부서 삭제 |
 | GET/PUT | `/admin/staff` | 직원 목록/수정 |
 
-### 응답 코드
+### 응답 코드 (ApiStatus)
 | Code | 의미 |
 |---|---|
-| `0000` | SUCCESS |
-| `9001` | 필수값 누락 |
-| `9002` | 코드 오류 |
-| `9003` | 최대수량 초과 |
-| `9010` | 프로퍼티 좌표 미설정 (NEARBY) |
-| `9102` | 권한 없음 |
-| `9404` | 리소스 없음 |
-| `9999` | 미처리 예외 |
+| `0` | SUCCESS |
+| `-10` | NOT_FOUND_USER |
+| `-20` | INVALID_PASSWORD |
+| `-30` | ACCESS_DENIED |
+| `401` | BAD_REQUEST |
+| `403` | FORBIDDEN |
+| `404` | NOT_FOUND |
+| `-500` | SYSTEM_ERROR |
 
-### 샘플 데이터 (SeedDataRunner)
+### 샘플 데이터 (InvSeedRunner + INV_SEED.sql)
 - 프로퍼티: `HQ` (서울시청 좌표 `37.5665, 126.9780`)
 - 예약: `R2026041300001` (1205호/HONG GILDONG/ko_KR), `R2026041300002` (0807호/JOHN SMITH/en_US)
 - 품목: `AM001~AM005` (수건/생수/비누/샴푸/칫솔세트)
@@ -244,15 +244,18 @@ Base: `http://localhost:8080/api`
 
 ## 🎨 PMS 스타일 일치 포인트
 
-사내 이식 시 일관성을 위해 아래 규칙을 따름:
+사내 이식 시 일관성을 위해 아래 규칙을 따름 (PMS core 인프라 이식 완료):
 
-- Controller: `@Controller + @ResponseBody + @RequestMapping("/api/...")`
-- Response: `Responses.MapResponse.of(map)` / `ListResponse.of(list)` / `ok()` / `fail(cd, msg)`
-- 예외: `BizException(resCd, resMsg)` → `GlobalExceptionHandler` 변환
+- Controller: `@Controller extends BaseController` + `@ResponseBody` + `@RequestMapping("/api/...")`
+- 파라미터: `RequestParams requestParams` → `requestParams.getParams()` / `getString()` / `getInt()`
+- Response: `Responses.MapResponse.of(map)` / `ListResponse.of(list)` / `ok()` / `ok(message)`
+- 예외: `ApiException(ApiStatus, message)` → `BaseController @ExceptionHandler` 자동 처리
+- DAO: `CommonDAO` (MyBatis SqlSession 래퍼, snake_case → camelCase 자동 변환) + Mapper 인터페이스
+- 트랜잭션: `TxAdviceConfig` AOP — `insert*/update*/delete*/save*/proc*` 메서드 자동 트랜잭션
 - 네이밍: camelCase 약어 (`rsvNo`, `roomNo`, `chkOutTm`, `hkStatCd`, `procStatCd`, `rateTpCd`, `addAmt`, `curCd`)
 - 서비스: 한국어 주석만 (변수/메서드명은 영문)
 - 헬퍼 최소화 (인라인 우선)
-- DDL 파일 금지 → JPA `ddl-auto=update` 또는 Flyway 마이그레이션
+- DDL: 수동 관리 (INV 스키마, JPA 완전 제거)
 - 들여쓰기: 탭
 
 ---
@@ -270,14 +273,43 @@ Base: `http://localhost:8080/api`
 
 ### 핵심 결정
 - 플랫폼: **Vue 3 + PWA** (게스트 1~2박 특성상 앱 설치 저항 = 전환율 사망 → QR 웹앱이 정답)
-- DB: **MariaDB** + H2 파일 모드(dev)
-- 인증: 게스트 JWT, 모든 엔티티 `propCd` 컬럼 격리 (멀티 테넌시)
+- DB: **MariaDB** (사내 PMS DB 직결, INV/PMS cross-schema)
+- 인증: 게스트 JWT, 모든 데이터 `propCd`/`cmpxCd` 격리 (멀티 테넌시)
 - 아키텍처: 컨시어지가 **자체 DB + 자체 어드민 UI + 자체 스태프 시스템(CCS) 의 주인**. 게스트 요청은 `CcsDispatcher` 를 통해 부서별 태스크로 라우팅되어 `/staff` 대시보드와 `/runner` PWA 에 실시간 푸시됨. 외부 PMS 브릿지 없음
 - 배포 분리: `hotel.com/` 게스트 / `hotel.com/staff.html` 스태프·관리자 — 두 개의 독립된 JS 번들
 
 ---
 
 ## 🗓️ 진행 로그
+
+### 2026-04-16 (맥북 야간 세션 — PMS MVC 인프라 이식 + JPA 완전 제거)
+
+**목표**: 회사 개발자가 소스 열었을 때 PMS와 동일한 패턴으로 바로 이해할 수 있도록 MVC 인프라 통일.
+
+**완료**:
+- **JPA 완전 제거** — Entity 14개 + Repository 11개 + SeedDataRunner 삭제 (26파일, -1241줄)
+  - `spring-boot-starter-data-jpa` 의존성 제거
+  - `application.yml` 에서 `jpa.*` 설정 전부 제거 (dev/prod)
+  - `spring-boot-starter-aop` 명시 추가 (JPA transitive 의존성 대체)
+- **PMS Core 인프라 이식** — 7개 클래스 신규 생성:
+  - `BaseController` — `@ControllerAdvice`, 통합 예외 핸들링, `ok()`/`ok(message)` 응답 빌더
+  - `RequestParams` + `RequestParamsArgumentResolver` — Map 기반 파라미터 래퍼 + 자동 파싱
+  - `ApiResponse` / `ApiStatus` / `ApiError` / `ApiException` — PMS 스타일 응답 체계 (`{status, message, error}`)
+  - `PageableVO` — 페이징 VO
+  - `WebConfig` — ObjectMapper + RequestParams 리졸버 등록
+- **BizException → ApiException 전환** — 9개 서비스/컨트롤러 마이그레이션
+- **CcsResponse 제거** — `Responses.MapResponse` 통일
+- **GlobalExceptionHandler 제거** — `BaseController` 로 흡수
+- **컨트롤러 13개 PMS 스타일 전환**:
+  - `@RestController` → `@Controller extends BaseController`
+  - `@GetMapping`/`@PostMapping` → `@RequestMapping(method=...)`
+  - `@RequestParam`/`@RequestBody` → `RequestParams requestParams`
+  - 메서드별 `@ResponseBody` 추가
+- **Lombok + spring-data-commons** 의존성 추가
+
+**빌드**: `mvn compile` — 58 sources, 0 errors
+
+**변경 규모**: 53 files changed, +436 -1,677 lines
 
 ### 2026-04-16 (회사 세션 — JPA→MyBatis 전면 전환 + DAOL DB 직결)
 
@@ -308,15 +340,14 @@ Base: `http://localhost:8080/api`
 - `commons-lang3` 의존성 추가
 
 **남은 것**:
+- ~~기존 JPA 엔티티/Repository 삭제 정리~~ ✅ (2026-04-16 맥북 야간)
+- ~~spring-boot-starter-data-jpa 의존성 제거~~ ✅ (2026-04-16 맥북 야간)
+- ~~PMS MVC 인프라 이식 (BaseController, RequestParams 등)~~ ✅ (2026-04-16 맥북 야간)
 - SQL 별칭(AS camelCase) 제거 → CommonDAO 경유로 전환
 - @Transactional 제거 → TxAdviceConfig AOP 로 대체
-- 기존 JPA 엔티티(gr/domain/*, feature/*, ccs/domain/*) + Repository(gr/repo/*, ccs/repo/*) 삭제 정리
 - AmenityRequest 다건 요청 구조 변경 확인 (1 item per row)
-- spring-boot-starter-data-jpa 의존성 제거 검토
-- CONCIERGE_PROPERTY_EXT 시드 데이터 (lat/lng) 삽입
-- CONCIERGE_FEATURE 시드 데이터 삽입
-- CONCIERGE_AMENITY_ITEM 시드 데이터 삽입
 - 부팅 + 실제 쿼리 동작 검증 (사내망 필요)
+- Vue 프론트엔드 응답 포맷 대응 (resCd → status 변경 반영)
 
 **접속**: `jdbc:mariadb://211.34.228.191:3336/INV` (dev 프로파일 기본값), `dongjunkorea` 계정. 사내망/VPN 필수.
 

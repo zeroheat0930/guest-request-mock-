@@ -3,15 +3,17 @@ package com.daol.concierge.nearby;
 import com.daol.concierge.auth.GuestPrincipal;
 import com.daol.concierge.auth.SecurityContextUtil;
 import com.daol.concierge.core.api.ApiResponse;
-import com.daol.concierge.core.api.BizException;
+import com.daol.concierge.core.api.ApiException;
+import com.daol.concierge.core.api.ApiStatus;
 import com.daol.concierge.core.api.Responses;
+import com.daol.concierge.core.controller.BaseController;
+import com.daol.concierge.core.parameter.RequestParams;
 import com.daol.concierge.inv.mapper.InvMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.LinkedHashMap;
@@ -20,9 +22,8 @@ import java.util.Map;
 import java.util.Set;
 
 @Controller
-@ResponseBody
 @RequestMapping(value = "/api/concierge/nearby")
-public class NearbyController {
+public class NearbyController extends BaseController {
 
 	private static final Set<String> ALLOWED = Set.of("food", "cafe", "conv", "tour", "pharmacy");
 
@@ -32,14 +33,16 @@ public class NearbyController {
 	@Value("${nearby.default-radius-m:1000}")
 	private int defaultRadiusM;
 
-	@RequestMapping(method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
-	public ApiResponse search(@RequestParam String category) {
-		if (!ALLOWED.contains(category)) throw new BizException("9001", "category 값이 올바르지 않습니다");
+	@ResponseBody
+	@RequestMapping(method = RequestMethod.GET, produces = APPLICATION_JSON)
+	public ApiResponse search(RequestParams requestParams) {
+		String category = requestParams.getString("category");
+		if (!ALLOWED.contains(category)) throw new ApiException(ApiStatus.SYSTEM_ERROR, "category 값이 올바르지 않습니다");
 
 		GuestPrincipal p = SecurityContextUtil.requirePrincipal();
 		Map<String, Object> ext = invMapper.selectPropertyExt(p.propCd(), p.cmpxCd());
 		if (ext == null || ext.get("lat") == null || ext.get("lng") == null)
-			throw new BizException("9010", "프로퍼티 좌표 미설정");
+			throw new ApiException(ApiStatus.SYSTEM_ERROR, "프로퍼티 좌표 미설정");
 
 		double lat = ((Number) ext.get("lat")).doubleValue();
 		double lng = ((Number) ext.get("lng")).doubleValue();

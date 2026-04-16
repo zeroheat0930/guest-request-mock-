@@ -1,60 +1,68 @@
 package com.daol.concierge.dev;
 
+import com.daol.concierge.core.api.ApiResponse;
+import com.daol.concierge.core.api.Responses;
+import com.daol.concierge.core.controller.BaseController;
+import com.daol.concierge.core.parameter.RequestParams;
 import com.daol.concierge.pms.mapper.PmsMapper;
 import com.daol.concierge.inv.mapper.InvMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.List;
 import java.util.Map;
 
-@RestController
+@Controller
 @RequestMapping("/dev")
 @Profile("dev")
-public class DevQueryController {
+public class DevQueryController extends BaseController {
 
 	@Autowired private PmsMapper pmsMapper;
 	@Autowired private InvMapper invMapper;
 
-	@GetMapping("/reservations")
-	public List<Map<String, Object>> reservations(
-			@RequestParam(defaultValue = "0000000001") String propCd,
-			@RequestParam(defaultValue = "00001") String cmpxCd) {
-		return pmsMapper.selectReservationList(propCd, cmpxCd);
+	@ResponseBody
+	@RequestMapping(value = "/reservations", method = RequestMethod.GET, produces = APPLICATION_JSON)
+	public Responses.ListResponse reservations(RequestParams requestParams) {
+		String propCd = requestParams.getString("propCd", "0000000001");
+		String cmpxCd = requestParams.getString("cmpxCd", "00001");
+		return Responses.ListResponse.of(pmsMapper.selectReservationList(propCd, cmpxCd));
 	}
 
-	@GetMapping("/reservation")
-	public Map<String, Object> reservation(
-			@RequestParam(defaultValue = "0000000001") String propCd,
-			@RequestParam(defaultValue = "00001") String cmpxCd,
-			@RequestParam String resvNo) {
+	@ResponseBody
+	@RequestMapping(value = "/reservation", method = RequestMethod.GET, produces = APPLICATION_JSON)
+	public ApiResponse reservation(RequestParams requestParams) {
+		String propCd = requestParams.getString("propCd", "0000000001");
+		String cmpxCd = requestParams.getString("cmpxCd", "00001");
+		String resvNo = requestParams.getString("resvNo");
 		Map<String, Object> r = pmsMapper.selectReservation(propCd, cmpxCd, resvNo);
-		return r != null ? r : Map.of("error", "not found");
+		return Responses.MapResponse.of(r != null ? r : Map.of("error", "not found"));
 	}
 
-	@GetMapping("/features")
-	public List<Map<String, Object>> features(
-			@RequestParam(defaultValue = "0000000001") String propCd,
-			@RequestParam(defaultValue = "00001") String cmpxCd) {
-		return invMapper.selectFeatures(propCd, cmpxCd);
+	@ResponseBody
+	@RequestMapping(value = "/features", method = RequestMethod.GET, produces = APPLICATION_JSON)
+	public Responses.ListResponse features(RequestParams requestParams) {
+		String propCd = requestParams.getString("propCd", "0000000001");
+		String cmpxCd = requestParams.getString("cmpxCd", "00001");
+		return Responses.ListResponse.of(invMapper.selectFeatures(propCd, cmpxCd));
 	}
 
-	@GetMapping("/amenity-items")
-	public List<Map<String, Object>> amenityItems(
-			@RequestParam(defaultValue = "0000000001") String propCd,
-			@RequestParam(defaultValue = "00001") String cmpxCd) {
-		return invMapper.selectAmenityItems(propCd, cmpxCd);
+	@ResponseBody
+	@RequestMapping(value = "/amenity-items", method = RequestMethod.GET, produces = APPLICATION_JSON)
+	public Responses.ListResponse amenityItems(RequestParams requestParams) {
+		String propCd = requestParams.getString("propCd", "0000000001");
+		String cmpxCd = requestParams.getString("cmpxCd", "00001");
+		return Responses.ListResponse.of(invMapper.selectAmenityItems(propCd, cmpxCd));
 	}
 
-	@GetMapping("/users")
-	public List<Map<String, Object>> users(
-			@RequestParam(defaultValue = "0000000001") String propCd,
-			@RequestParam(defaultValue = "00001") String cmpxCd,
-			@RequestParam(required = false) String deptCd) {
-		return pmsMapper.selectUsersByDept(propCd, cmpxCd, deptCd);
+	@ResponseBody
+	@RequestMapping(value = "/users", method = RequestMethod.GET, produces = APPLICATION_JSON)
+	public Responses.ListResponse users(RequestParams requestParams) {
+		String propCd = requestParams.getString("propCd", "0000000001");
+		String cmpxCd = requestParams.getString("cmpxCd", "00001");
+		String deptCd = requestParams.getString("deptCd");
+		return Responses.ListResponse.of(pmsMapper.selectUsersByDept(propCd, cmpxCd, deptCd));
 	}
 }

@@ -1,20 +1,24 @@
 package com.daol.concierge.ccs.auth;
 
-import com.daol.concierge.ccs.util.CcsResponse;
-import com.daol.concierge.core.api.BizException;
+import com.daol.concierge.core.api.ApiException;
+import com.daol.concierge.core.api.ApiResponse;
+import com.daol.concierge.core.api.ApiStatus;
+import com.daol.concierge.core.api.Responses;
+import com.daol.concierge.core.controller.BaseController;
+import com.daol.concierge.core.parameter.RequestParams;
 import com.daol.concierge.pms.mapper.PmsMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@RestController
+@Controller
 @RequestMapping("/api/ccs/auth")
-public class CcsAuthController {
+public class CcsAuthController extends BaseController {
 
 	private static final String DEFAULT_PROP_CD = "0000000001";
 	private static final String DEFAULT_CMPX_CD = "00001";
@@ -22,20 +26,21 @@ public class CcsAuthController {
 	@Autowired private PmsMapper pmsMapper;
 	@Autowired private CcsJwtService jwtService;
 
-	@PostMapping("/login")
-	public Map<String, Object> login(@RequestBody Map<String, Object> body) {
-		String userId = str(body.get("loginId"));
-		String password = str(body.get("password"));
+	@ResponseBody
+	@RequestMapping(value = "/login", method = RequestMethod.POST, produces = APPLICATION_JSON)
+	public ApiResponse login(RequestParams requestParams) {
+		String userId = requestParams.getString("loginId");
+		String password = requestParams.getString("password");
 
 		if (userId == null || userId.isBlank() || password == null || password.isBlank())
-			throw new BizException("9400", "loginId/password 필수");
+			throw new ApiException(ApiStatus.BAD_REQUEST, "loginId/password 필수");
 
 		Map<String, Object> user = pmsMapper.selectUser(userId);
-		if (user == null) throw new BizException("9404", "계정 없음");
-		if (!"Y".equals(str(user.get("useYn")))) throw new BizException("9102", "비활성 계정");
+		if (user == null) throw new ApiException(ApiStatus.NOT_FOUND, "계정 없음");
+		if (!"Y".equals(str(user.get("useYn")))) throw new ApiException(ApiStatus.ACCESS_DENIED, "비활성 계정");
 
 		String storedPw = str(user.get("userPw"));
-		if (!password.equals(storedPw)) throw new BizException("9102", "비밀번호 오류");
+		if (!password.equals(storedPw)) throw new ApiException(ApiStatus.INVALID_PASSWORD, "비밀번호 오류");
 
 		String propCd = str(user.get("propCd"));
 		String cmpxCd = str(user.get("cmpxCd"));
@@ -51,7 +56,7 @@ public class CcsAuthController {
 		map.put("staffId", userId);
 		map.put("staffNm", str(user.get("userNm")));
 		map.put("deptCd", deptCd);
-		return CcsResponse.ok(map);
+		return Responses.MapResponse.of(map);
 	}
 
 	private static String str(Object o) {

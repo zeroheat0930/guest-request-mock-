@@ -1,6 +1,7 @@
 package com.daol.concierge.auth;
 
-import com.daol.concierge.core.api.BizException;
+import com.daol.concierge.core.api.ApiException;
+import com.daol.concierge.core.api.ApiStatus;
 import com.daol.concierge.pms.mapper.PmsMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,14 +29,14 @@ public class AuthService {
 		String birthDt = trim(params.get("birthDt"));
 
 		if (rsvNo == null || chkInDt == null) {
-			throw new BizException("9001", "필수값 누락 (rsvNo, chkInDt)");
+			throw new ApiException(ApiStatus.SYSTEM_ERROR, "필수값 누락 (rsvNo, chkInDt)");
 		}
 
 		log.info("[AUTH] tenant={}/{} rsvNo={} chkInDt={}", tenantPropCd, tenantCmpxCd, rsvNo, chkInDt);
 		Map<String, Object> rsv = pmsMapper.selectReservation(tenantPropCd, tenantCmpxCd, rsvNo);
 		log.info("[AUTH] rsv={}", rsv);
 		if (rsv == null) {
-			throw new BizException("9101", "본인 확인 실패");
+			throw new ApiException(ApiStatus.INVALID_PASSWORD, "본인 확인 실패");
 		}
 
 		String arrDt = str(rsv.get("arrDt"));
@@ -43,7 +44,7 @@ public class AuthService {
 		String inputDt = chkInDt.replace("-", "");
 		log.info("[AUTH] arrDt={} inputDt={} match={}", arrDt, inputDt, inputDt.equals(arrDt));
 		if (!inputDt.equals(arrDt)) {
-			throw new BizException("9101", "본인 확인 실패");
+			throw new ApiException(ApiStatus.INVALID_PASSWORD, "본인 확인 실패");
 		}
 
 		String depDt = str(rsv.get("depDt"));

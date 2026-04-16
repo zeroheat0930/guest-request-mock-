@@ -2,32 +2,38 @@ package com.daol.concierge.ccs.task;
 
 import com.daol.concierge.ccs.auth.CcsPrincipal;
 import com.daol.concierge.ccs.auth.CcsSecurityContextUtil;
-import com.daol.concierge.ccs.util.CcsResponse;
-import com.daol.concierge.core.api.BizException;
+import com.daol.concierge.core.api.ApiException;
+import com.daol.concierge.core.api.ApiResponse;
+import com.daol.concierge.core.api.ApiStatus;
+import com.daol.concierge.core.api.Responses;
+import com.daol.concierge.core.controller.BaseController;
+import com.daol.concierge.core.parameter.RequestParams;
 import com.daol.concierge.inv.mapper.InvMapper;
 import com.daol.concierge.pms.mapper.PmsMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-@RestController
+@Controller
 @RequestMapping("/api/ccs/dept")
-public class CcsDeptLoadController {
+public class CcsDeptLoadController extends BaseController {
 
 	@Autowired private PmsMapper pmsMapper;
 	@Autowired private InvMapper invMapper;
 
-	@GetMapping("/{deptCd}/load")
-	public Map<String, Object> load(@PathVariable String deptCd) {
+	@ResponseBody
+	@RequestMapping(value = "/{deptCd}/load", method = RequestMethod.GET, produces = APPLICATION_JSON)
+	public ApiResponse load(RequestParams requestParams) {
 		CcsPrincipal me = CcsSecurityContextUtil.requireCcsPrincipal();
-		if (!me.deptCd().equals(deptCd)) throw new BizException("9102", "권한 없음");
+		String deptCd = requestParams.getString("deptCd");
+		if (!me.deptCd().equals(deptCd)) throw new ApiException(ApiStatus.ACCESS_DENIED, "권한 없음");
 
 		List<Map<String, Object>> members = pmsMapper.selectUsersByDept(me.propCd(), me.cmpxCd(), deptCd);
 
@@ -41,7 +47,7 @@ public class CcsDeptLoadController {
 			row.put("inProgCount", invMapper.selectTaskCountByStatus(userId, "IN_PROG"));
 			out.add(row);
 		}
-		return CcsResponse.ok(Map.of("list", out));
+		return Responses.MapResponse.of(Map.of("list", out));
 	}
 
 	private static String str(Object o) { return o == null ? null : String.valueOf(o); }
