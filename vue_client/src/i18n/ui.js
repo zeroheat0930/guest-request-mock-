@@ -8,6 +8,8 @@ const messages = {
   'brand.sub':  { ko: '고객 서비스',   en: 'Guest Services',  ja: 'ゲストサービス',       zh: '宾客服务' },
   'welcome':    { ko: '고객님',         en: 'Guest',           ja: 'お客様',                zh: '贵宾' },
   'welcome.sub':{ ko: '환영합니다',     en: 'Welcome',         ja: 'ようこそ',              zh: '欢迎光临' },
+  // {0} = 방번호. 각 뷰 상단 게스트 정보 바
+  'guest.room.label': { ko: '{0}호 고객님', en: 'Room {0} · Guest', ja: '{0}号室 お客様', zh: '{0}号房 贵宾' },
 
   // Amenity
   'amenity.title':   { ko: '어메니티 요청',    en: 'Amenity Request',      ja: 'アメニティリクエスト', zh: '客房用品' },
@@ -100,9 +102,11 @@ export function getLang() {
   }
 }
 
-export function t(key) {
+export function t(key, ...args) {
   const entry = messages[key];
   if (!entry) return key;
   const lang = getLang();
-  return entry[lang] || entry['ko'] || key;
+  let str = entry[lang] || entry['ko'] || key;
+  args.forEach((v, i) => { str = str.replace(`{${i}}`, v); });
+  return str;
 }

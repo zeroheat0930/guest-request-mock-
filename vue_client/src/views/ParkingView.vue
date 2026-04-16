@@ -17,7 +17,7 @@
 
 		<div class="form-card">
 			<div class="guest-info">
-				<span class="guest-room">{{ roomNo }}{{ t('guest.room') }} {{ t('welcome') }}</span>
+				<span class="guest-room">{{ t('guest.room.label', roomNo) }}</span>
 
 			</div>
 

@@ -33,7 +33,7 @@
 
 		<div class="form-card">
 			<div class="guest-info">
-				<span class="guest-room">{{ roomNo }}{{ t('guest.room') }} {{ t('welcome') }}</span>
+				<span class="guest-room">{{ t('guest.room.label', roomNo) }}</span>
 				<span class="guest-checkout">{{ t('late.stdTime') }}: {{ stdCheckOutH.toString().padStart(2,'0') }}:{{ stdCheckOutMm }}</span>
 			</div>
 
