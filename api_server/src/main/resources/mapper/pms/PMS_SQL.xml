@@ -46,7 +46,9 @@
 		 LIMIT 100
 	</select>
 
-	<!-- 방 번호로 체크인 중인 투숙객 조회 (가장 최근 체크인) -->
+	<!-- 방 번호로 투숙객 조회 (가장 최근) -->
+	<!-- ⚠️ TODO: 상용화 시 반드시 RESV_STAT = 'I' 만 허용으로 변경할 것!
+	     현재 시연용으로 'R'(예약)도 포함. PMS 영업일자 문제로 체크인 불가 상태. -->
 	<select id="selectCheckedInByRoom" resultType="map">
 		SELECT A.PROP_CD AS propCd, A.CMPX_CD AS cmpxCd, A.RESV_NO AS resvNo,
 		       A.RESV_STAT AS resvStat, A.RM_NO AS rmNo,
@@ -57,7 +59,7 @@
 		 WHERE A.PROP_CD   = #{propCd}
 		   AND A.CMPX_CD   = #{cmpxCd}
 		   AND A.RM_NO     = #{rmNo}
-		   AND A.RESV_STAT = 'I'
+		   AND A.RESV_STAT IN ('I', 'R')
 		   AND A.USE_YN    = 'Y'
 		 ORDER BY A.CHK_IN_HOUR DESC
 		 LIMIT 1
