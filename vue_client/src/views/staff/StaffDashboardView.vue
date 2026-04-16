@@ -149,7 +149,10 @@ function fmtTime(s) {
 	if (!s) return '';
 	try {
 		const d = new Date(s);
-		return d.toLocaleString('ko-KR', { hour12: false });
+		const ampm = d.getHours() < 12 ? '오전' : '오후';
+		const h = String(d.getHours() % 12 || 12).padStart(2, '0');
+		const m = String(d.getMinutes()).padStart(2, '0');
+		return `${ampm} ${h}:${m}`;
 	} catch {
 		return String(s);
 	}
