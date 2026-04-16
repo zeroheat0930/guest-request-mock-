@@ -91,8 +91,20 @@ public class GrService {
 		}
 
 		String reqNoStr = reqNos.isEmpty() ? "AM" + System.currentTimeMillis() : String.valueOf(reqNos.get(0));
+		// 품목 상세 타이틀: "수건x2, 생수x1"
+		Map<String, String> itemNmMap = new HashMap<>();
+		for (Map<String, Object> ai : invMapper.selectAmenityItems(pp(), pc())) {
+			itemNmMap.put(str(ai.get("itemCd")), str(ai.get("itemNm")));
+		}
+		StringBuilder itemDetail = new StringBuilder();
+		for (Map<String, Object> it : itemList) {
+			if (itemDetail.length() > 0) itemDetail.append(", ");
+			String cd = str(it.get("itemCd"));
+			int q = it.get("qty") instanceof Number n ? n.intValue() : 1;
+			itemDetail.append(itemNmMap.getOrDefault(cd, cd)).append("x").append(q);
+		}
 		RequestEvent ev = new RequestEvent(pp(), pc(), "AMENITY",
-				"[" + roomNo + "] 어메니티 요청 " + itemList.size() + "건", roomNo, reqNoStr, reqMemo);
+				"[" + roomNo + "] " + itemDetail, roomNo, reqNoStr, reqMemo);
 		requestDispatchers.forEach(d -> d.dispatch(ev));
 
 		Map<String, Object> res = new LinkedHashMap<>();
