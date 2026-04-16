@@ -85,10 +85,15 @@ const ready = ref(false);
 onMounted(async () => {
 	const urlRoom = new URLSearchParams(window.location.search).get('room');
 
-	if (getStoredToken()) {
+	const storedRoom = sessionStorage.getItem('concierge.roomNo') || '';
+	// URL room이 바뀌었으면 기존 세션 무시하고 재인증
+	if (urlRoom && urlRoom !== storedRoom) {
+		try { sessionStorage.clear(); } catch {}
+	}
+
+	if (getStoredToken() && (!urlRoom || urlRoom === storedRoom)) {
 		// 이미 인증된 상태 — 저장된 정보 복원
-		guestRoomNo.value = sessionStorage.getItem('concierge.roomNo') || '';
-		if (guestRoomNo.value) guestRoomNo.value += '호';
+		guestRoomNo.value = storedRoom ? storedRoom + '호' : '';
 		guestName.value = sessionStorage.getItem('concierge.guestName') || '';
 	} else if (urlRoom) {
 		// QR/태블릿 — URL에 room 파라미터 있으면 자동 인증
