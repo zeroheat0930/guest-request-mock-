@@ -145,7 +145,7 @@ onMounted(() => {
 			});
 		}
 	});
-	pollTimer = setInterval(load, 30000);
+	pollTimer = setInterval(load, 5000);
 });
 
 onUnmounted(() => {
