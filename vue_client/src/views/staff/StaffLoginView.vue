@@ -21,13 +21,24 @@
 				</label>
 				<label>
 					<span class="lb">비밀번호</span>
-					<input
-						type="password"
-						v-model="password"
-						autocomplete="current-password"
-						:disabled="busy"
-						placeholder="••••••••"
-					/>
+					<div class="pw-wrap">
+						<input
+							:type="showPw ? 'text' : 'password'"
+							v-model="password"
+							autocomplete="current-password"
+							:disabled="busy"
+							placeholder="••••••••"
+						/>
+						<button type="button" class="pw-toggle" @click="showPw = !showPw" tabindex="-1">
+							<svg v-if="!showPw" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+							</svg>
+							<svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+								<line x1="1" y1="1" x2="23" y2="23"/>
+							</svg>
+						</button>
+					</div>
 				</label>
 				<button class="primary" type="submit" :disabled="busy || !loginId || !password">
 					<span v-if="busy" class="spinner" />
@@ -36,22 +47,6 @@
 				<div v-if="err" class="err">{{ err }}</div>
 			</form>
 
-			<details class="demo">
-				<summary>데모 계정 빠른 입력</summary>
-				<div class="demo-grid">
-					<button
-						v-for="d in DEMO_STAFF"
-						:key="d.loginId"
-						type="button"
-						class="demo-btn"
-						@click="quickFill(d.loginId)"
-					>
-						<div class="nm">{{ d.loginId }}</div>
-						<div class="dept">{{ d.deptNm }}</div>
-					</button>
-				</div>
-				<p class="hint">비밀번호는 모두 <code>test1234</code></p>
-			</details>
 		</div>
 	</div>
 </template>
@@ -64,25 +59,13 @@ import { postCcsLogin } from '../../api/client.js';
 const PROP_CD = '0000000010';
 const CMPX_CD = '00001';
 
-const DEMO_STAFF = [
-	{ loginId: 'hk1',  deptNm: '하우스키핑' },
-	{ loginId: 'fr1',  deptNm: '프론트' },
-	{ loginId: 'eng1', deptNm: '엔지니어링' },
-	{ loginId: 'fb1',  deptNm: '식음료' }
-];
-
 const router = useRouter();
 const loginId = ref('');
 const password = ref('');
 const err = ref('');
 const busy = ref(false);
+const showPw = ref(false);
 const idInput = ref(null);
-
-function quickFill(id) {
-	loginId.value = id;
-	password.value = 'test1234';
-	err.value = '';
-}
 
 onMounted(() => {
 	idInput.value?.focus();
@@ -189,6 +172,28 @@ label input {
 	background: var(--c-bg);
 	transition: border-color var(--t-fast), box-shadow var(--t-fast);
 }
+.pw-wrap {
+	position: relative;
+}
+.pw-wrap input {
+	padding-right: 44px;
+}
+.pw-toggle {
+	position: absolute;
+	right: 8px;
+	top: 50%;
+	transform: translateY(-50%);
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 6px;
+	color: var(--c-text-dim);
+	transition: color var(--t-fast);
+}
+.pw-toggle:hover {
+	color: var(--c-brand-500);
+}
+
 label input:focus {
 	outline: none;
 	border-color: var(--c-brand-500);
@@ -239,68 +244,5 @@ label input:focus {
 	border: 1px solid rgba(197, 48, 48, 0.2);
 	border-radius: var(--r-sm);
 	font-size: var(--fs-sm);
-}
-
-.demo {
-	margin-top: var(--sp-6);
-	padding-top: var(--sp-5);
-	border-top: 1px dashed var(--c-border);
-}
-.demo summary {
-	cursor: pointer;
-	font-size: var(--fs-sm);
-	color: var(--c-text-soft);
-	font-weight: 600;
-	list-style: none;
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	user-select: none;
-}
-.demo summary::-webkit-details-marker { display: none; }
-.demo summary::before { content: '▸'; transition: transform var(--t-fast); color: var(--c-muted); }
-.demo[open] summary::before { transform: rotate(90deg); }
-
-.demo-grid {
-	margin-top: var(--sp-3);
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: var(--sp-2);
-}
-.demo-btn {
-	background: var(--c-bg);
-	border: 1px solid var(--c-border);
-	border-radius: var(--r-sm);
-	padding: 10px 12px;
-	text-align: left;
-	cursor: pointer;
-	transition: all var(--t-fast);
-}
-.demo-btn:hover {
-	background: var(--c-brand-50);
-	border-color: var(--c-brand-300);
-}
-.demo-btn .nm {
-	font-size: var(--fs-sm);
-	font-weight: 700;
-	color: var(--c-brand-700);
-}
-.demo-btn .dept {
-	font-size: var(--fs-xs);
-	color: var(--c-text-dim);
-	margin-top: 2px;
-}
-.hint {
-	margin: var(--sp-3) 0 0;
-	font-size: var(--fs-xs);
-	color: var(--c-text-dim);
-	text-align: center;
-}
-.hint code {
-	background: var(--c-bg-soft);
-	padding: 2px 6px;
-	border-radius: 4px;
-	font-family: ui-monospace, "SF Mono", Menlo, monospace;
-	color: var(--c-brand-700);
 }
 </style>
