@@ -7,11 +7,10 @@
 				<small v-if="llmEnabled">· LLM</small>
 				<small v-else>· Rule</small>
 			</div>
-			<select v-model="rsvNo" class="rsv-select" @change="switchGuest">
-				<option v-for="r in demoReservations" :key="r.rsvNo" :value="r.rsvNo">
-					{{ r.label }}
-				</option>
-			</select>
+			<div class="guest-badge">
+				<span class="guest-badge-room">{{ guestRoom }}호</span>
+				<span class="guest-badge-name">{{ guestName }}</span>
+			</div>
 		</header>
 
 		<div class="chat-log" ref="logRef">
@@ -50,10 +49,8 @@ import {
 	checkLateCheckout,
 	requestLateCheckout
 } from '../api/client.js';
-import { DEMO_RESERVATIONS, authenticateGuest, clearToken } from '../auth/authBootstrap.js';
 
 const llmEnabled = ref(false);
-const demoReservations = DEMO_RESERVATIONS;
 
 const draft = ref('');
 const busy = ref(false);
@@ -61,7 +58,9 @@ const messages = ref([]);
 const logRef = ref(null);
 const inputRef = ref(null);
 
-const rsvNo = ref(DEMO_RESERVATIONS[0].rsvNo);
+const rsvNo = ref(sessionStorage.getItem('concierge.rsvNo') || '');
+const guestRoom = ref(sessionStorage.getItem('concierge.roomNo') || '');
+const guestName = ref(sessionStorage.getItem('concierge.guestName') || '');
 const rsv = ref(null);
 const pendingLate = ref(null);
 
@@ -75,21 +74,9 @@ onMounted(async () => {
 	} catch (e) {
 		console.warn('[chat] LLM 상태 조회 실패', e);
 	}
-	await switchGuest();
+	await loadRsv();
 	nextTick(() => inputRef.value?.focus());
 });
-
-async function switchGuest() {
-	try {
-		clearToken();
-		await authenticateGuest(rsvNo.value);
-	} catch (e) {
-		console.warn('[chat] 인증 실패', e);
-		messages.value = [{ role: 'assistant', text: `${t(lang.value, 'failPrefix')}: ${e.message || e}` }];
-		return;
-	}
-	await loadRsv();
-}
 
 async function loadRsv() {
 	try {
@@ -237,15 +224,24 @@ function scrollDown() {
 .chat-head .title { font-weight: 700; display: flex; align-items: center; gap: 6px; flex: 1; font-size: 15px; }
 .chat-head .title small { font-weight: 400; opacity: 0.7; font-size: 11px; }
 .chat-head .dot { width: 8px; height: 8px; border-radius: 50%; background: #34d399; display: inline-block; }
-.rsv-select {
+.guest-badge {
+	display: flex;
+	align-items: center;
+	gap: 6px;
 	background: rgba(255,255,255,0.15);
-	color: #fff;
 	border: 1px solid rgba(255,255,255,0.3);
 	border-radius: 6px;
-	padding: 5px 8px;
-	font-size: 12px;
+	padding: 5px 10px;
 }
-.rsv-select option { color: #1a202c; }
+.guest-badge-room {
+	font-weight: 800;
+	font-size: 13px;
+	color: #fff;
+}
+.guest-badge-name {
+	font-size: 12px;
+	color: rgba(255,255,255,0.8);
+}
 
 .chat-log {
 	flex: 1;

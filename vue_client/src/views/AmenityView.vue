@@ -17,17 +17,9 @@
 		</div>
 
 		<div class="form-card">
-			<div class="form-group">
-				<label class="field-label">예약 정보</label>
-				<div class="select-wrap">
-					<select v-model="rsvNo">
-						<option value="R2026041300001">R2026041300001 · 1205호 · HONG GILDONG</option>
-						<option value="R2026041300002">R2026041300002 · 0807호 · JOHN SMITH</option>
-					</select>
-					<span class="select-arrow">
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-					</span>
-				</div>
+			<div class="guest-info">
+				<span class="guest-room">{{ roomNo }}호</span>
+				<span class="guest-name">{{ guestName }}</span>
 			</div>
 
 			<LoadingSpinner v-if="loading" text="품목 불러오는 중..." />
@@ -86,17 +78,14 @@ import { ref, onMounted, reactive } from 'vue';
 import { fetchAmenityItems, requestAmenity } from '../api/client';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 
-const rsvNo = ref('R2026041300001');
+const rsvNo = ref(sessionStorage.getItem('concierge.rsvNo') || '');
+const roomNo = ref(sessionStorage.getItem('concierge.roomNo') || '');
+const guestName = ref(sessionStorage.getItem('concierge.guestName') || '');
 const reqMemo = ref('');
 const items = ref([]);
 const qtyMap = reactive({});
 const result = ref(null);
 const loading = ref(false);
-
-const roomNoMap = {
-	'R2026041300001': '1205',
-	'R2026041300002': '0807'
-};
 
 onMounted(async () => {
 	loading.value = true;
@@ -134,7 +123,7 @@ async function submit() {
 	try {
 		const res = await requestAmenity({
 			rsvNo: rsvNo.value,
-			roomNo: roomNoMap[rsvNo.value],
+			roomNo: roomNo.value,
 			itemList,
 			reqMemo: reqMemo.value
 		});
@@ -181,6 +170,26 @@ async function submit() {
 	letter-spacing: 0.8px;
 	text-transform: uppercase;
 	margin-top: 2px;
+}
+
+/* ── Guest Info ── */
+.guest-info {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 14px 16px;
+	background: var(--c-brand-50, #ebf4ff);
+	border-radius: var(--r-md, 10px);
+	margin-bottom: 16px;
+}
+.guest-room {
+	font-weight: 800;
+	font-size: 16px;
+	color: var(--c-brand-700, #1a3a6e);
+}
+.guest-name {
+	font-size: 14px;
+	color: var(--c-text-soft, #718096);
 }
 
 /* ── Form Card ── */

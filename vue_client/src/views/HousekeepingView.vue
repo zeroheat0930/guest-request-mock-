@@ -14,17 +14,9 @@
 		</div>
 
 		<div class="form-card">
-			<div class="form-group">
-				<label class="field-label">예약 정보</label>
-				<div class="select-wrap">
-					<select v-model="rsvNo" @change="loadStat">
-						<option value="R2026041300001">R2026041300001 · 1205호</option>
-						<option value="R2026041300002">R2026041300002 · 0807호</option>
-					</select>
-					<span class="select-arrow">
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-					</span>
-				</div>
+			<div class="guest-info">
+				<span class="guest-room">{{ roomNo }}호</span>
+				<span class="guest-name">{{ guestName }}</span>
 			</div>
 
 			<div class="status-section">
@@ -80,7 +72,9 @@ const ACTIONS = [
 
 const STAT_ICONS = { MU: '🛏️', DND: '🚫', CLR: '✅' };
 
-const rsvNo = ref('R2026041300001');
+const rsvNo = ref(sessionStorage.getItem('concierge.rsvNo') || '');
+const roomNo = ref(sessionStorage.getItem('concierge.roomNo') || '');
+const guestName = ref(sessionStorage.getItem('concierge.guestName') || '');
 const curStatNm = ref('-');
 const curStatCd = ref('');
 const result = ref(null);
@@ -171,6 +165,26 @@ onMounted(loadStat);
 	gap: var(--sp-6);
 }
 
+/* ── Guest Info ── */
+.guest-info {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 14px 16px;
+	background: var(--c-brand-50, #ebf4ff);
+	border-radius: var(--r-md, 10px);
+	margin-bottom: 16px;
+}
+.guest-room {
+	font-weight: 800;
+	font-size: 16px;
+	color: var(--c-brand-700, #1a3a6e);
+}
+.guest-name {
+	font-size: 14px;
+	color: var(--c-text-soft, #718096);
+}
+
 /* ── Field ── */
 .form-group { display: flex; flex-direction: column; gap: var(--sp-2); }
 .field-label {
@@ -179,36 +193,6 @@ onMounted(loadStat);
 	color: var(--c-text-soft);
 	letter-spacing: 0.3px;
 	text-transform: uppercase;
-}
-
-.select-wrap { position: relative; }
-.select-wrap select {
-	width: 100%;
-	padding: var(--sp-3) var(--sp-10) var(--sp-3) var(--sp-4);
-	border: 1.5px solid var(--c-border);
-	border-radius: var(--r-md);
-	font-size: var(--fs-md);
-	background: var(--c-bg-soft);
-	color: var(--c-text);
-	appearance: none;
-	-webkit-appearance: none;
-	cursor: pointer;
-	transition: border-color var(--t-fast), box-shadow var(--t-fast);
-}
-.select-wrap select:focus {
-	outline: none;
-	border-color: var(--c-brand-500);
-	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-	background: var(--c-surface);
-}
-.select-arrow {
-	position: absolute;
-	right: var(--sp-4);
-	top: 50%;
-	transform: translateY(-50%);
-	color: var(--c-muted);
-	pointer-events: none;
-	display: flex;
 }
 
 /* ── Status ── */
