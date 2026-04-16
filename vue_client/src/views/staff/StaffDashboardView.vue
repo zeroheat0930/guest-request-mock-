@@ -149,10 +149,12 @@ function fmtTime(s) {
 	if (!s) return '';
 	try {
 		const d = new Date(s);
+		const mon = d.getMonth() + 1;
+		const day = d.getDate();
 		const ampm = d.getHours() < 12 ? '오전' : '오후';
 		const h = String(d.getHours() % 12 || 12).padStart(2, '0');
 		const m = String(d.getMinutes()).padStart(2, '0');
-		return `${ampm} ${h}:${m}`;
+		return `${mon}/${day} ${ampm} ${h}:${m}`;
 	} catch {
 		return String(s);
 	}
