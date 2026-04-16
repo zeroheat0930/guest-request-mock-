@@ -8,6 +8,7 @@ import com.daol.concierge.core.controller.BaseController;
 import com.daol.concierge.core.parameter.RequestParams;
 import com.daol.concierge.pms.mapper.PmsMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -25,6 +26,7 @@ public class CcsAuthController extends BaseController {
 
 	@Autowired private PmsMapper pmsMapper;
 	@Autowired private CcsJwtService jwtService;
+	private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(11);
 
 	@ResponseBody
 	@RequestMapping(value = "/login", method = RequestMethod.POST, produces = APPLICATION_JSON)
@@ -40,7 +42,8 @@ public class CcsAuthController extends BaseController {
 		if (!"Y".equals(str(user.get("useYn")))) throw new ApiException(ApiStatus.ACCESS_DENIED, "비활성 계정");
 
 		String storedPw = str(user.get("userPw"));
-		if (!password.equals(storedPw)) throw new ApiException(ApiStatus.INVALID_PASSWORD, "비밀번호 오류");
+		if (storedPw == null || !passwordEncoder.matches(password, storedPw))
+			throw new ApiException(ApiStatus.INVALID_PASSWORD, "비밀번호 오류");
 
 		String propCd = str(user.get("propCd"));
 		String cmpxCd = str(user.get("cmpxCd"));
