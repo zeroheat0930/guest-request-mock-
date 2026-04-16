@@ -198,8 +198,8 @@ async function load() {
 			axios.get(`${API_BASE}/concierge/admin/staff`, { params, headers, timeout: 8000 })
 		]);
 
-		depts.value = deptRes.data?.list ?? [];
-		staffList.value = staffRes.data?.list ?? [];
+		depts.value = deptRes.data?.map?.list || deptRes.data?.list || [];
+		staffList.value = staffRes.data?.map?.list || staffRes.data?.list || [];
 	} catch (e) {
 		if (e.response?.status === 401) { gotoLogin(); return; }
 		err.value = `조회 실패: ${e.response?.data?.message || e.message}`;

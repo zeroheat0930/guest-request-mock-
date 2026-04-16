@@ -61,7 +61,7 @@ async function load() {
 	err.value = '';
 	try {
 		const res = await fetchCcsDeptLoad(props.deptCd);
-		members.value = res?.list || [];
+		members.value = res?.map?.list || res?.list || [];
 	} catch (e) {
 		err.value = `로드 조회 실패: ${e?.message || '서버 오류'}`;
 	} finally {

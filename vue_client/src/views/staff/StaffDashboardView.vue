@@ -161,7 +161,7 @@ async function load() {
 	busy.value = true;
 	try {
 		const res = await fetchCcsTasks();
-		tasks.value = res?.list || [];
+		tasks.value = res?.map?.list || res?.list || [];
 	} catch (e) {
 		if (e?.status === -30) { gotoLogin(); return; }
 		err.value = `조회 실패: ${e?.message || '서버 오류'}`;
