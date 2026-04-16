@@ -34,7 +34,7 @@
 		<div class="form-card">
 			<div class="guest-info">
 				<span class="guest-room">{{ roomNo }}호 고객님</span>
-				
+				<span class="guest-checkout">기본 체크아웃: {{ stdCheckOutH.toString().padStart(2,'0') }}:{{ stdCheckOutMm }}</span>
 			</div>
 
 			<div class="form-group">
@@ -99,23 +99,27 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { checkLateCheckout, requestLateCheckout } from '../api/client';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
-
-const TIME_OPTIONS = [
-	{ val: '1200', label: '12:00' },
-	{ val: '1300', label: '13:00' },
-	{ val: '1400', label: '14:00' },
-	{ val: '1600', label: '16:00' },
-	{ val: '1800', label: '18:00' },
-	{ val: '2000', label: '20:00' },
-];
 
 const rsvNo = ref(sessionStorage.getItem('concierge.rsvNo') || '');
 const roomNo = ref(sessionStorage.getItem('concierge.roomNo') || '');
 const guestName = ref(sessionStorage.getItem('concierge.guestName') || '');
-const reqOutTm = ref('1300');
+
+// Build time options dynamically from hotel's standard checkout time
+const stdCheckOutRaw = sessionStorage.getItem('concierge.checkOutTime') || '1100';
+const stdCheckOutH = parseInt(stdCheckOutRaw.substring(0, 2), 10);
+const stdCheckOutMm = stdCheckOutRaw.length >= 4 ? stdCheckOutRaw.substring(2, 4) : '00';
+
+const TIME_OPTIONS = Array.from({ length: 8 }, (_, i) => {
+	const h = stdCheckOutH + i + 1;
+	const hh = String(h).padStart(2, '0');
+	return { val: `${hh}${stdCheckOutMm}`, label: `${hh}:${stdCheckOutMm}` };
+});
+
+const defaultTime = TIME_OPTIONS[1]?.val || TIME_OPTIONS[0]?.val || `${String(stdCheckOutH + 2).padStart(2, '0')}${stdCheckOutMm}`;
+const reqOutTm = ref(defaultTime);
 const info = ref(null);
 const result = ref(null);
 const checking = ref(false);
@@ -269,6 +273,11 @@ async function apply() {
 .guest-name {
 	font-size: 14px;
 	color: var(--c-text-soft, #718096);
+}
+.guest-checkout {
+	font-size: 13px;
+	color: var(--c-muted, #718096);
+	margin-left: auto;
 }
 
 .form-group { display: flex; flex-direction: column; gap: var(--sp-2); }

@@ -50,6 +50,12 @@ public class AuthService {
 		String depDt = str(rsv.get("depDt"));
 		String token = jwtService.issue(rsvNo, tenantPropCd, tenantCmpxCd, depDt != null ? depDt : "99991231");
 
+		Map<String, Object> conf = pmsMapper.selectComplexConf(tenantPropCd, tenantCmpxCd);
+		String checkOutTime = conf != null && conf.get("checkOutCloseTime") != null
+				? String.valueOf(conf.get("checkOutCloseTime")).replace(":", "")
+				: "1100";
+		if (checkOutTime.length() > 4) checkOutTime = checkOutTime.substring(0, 4);
+
 		Map<String, Object> out = new LinkedHashMap<>();
 		out.put("token", token);
 		out.put("rsvNo", rsvNo);
@@ -57,6 +63,7 @@ public class AuthService {
 		out.put("perNm", str(rsv.get("perNm")));
 		out.put("chkOutDt", depDt);
 		out.put("perUseLang", str(rsv.get("perUseLang")));
+		out.put("checkOutTime", checkOutTime);
 		return out;
 	}
 
@@ -80,6 +87,12 @@ public class AuthService {
 		String depDt = str(rsv.get("depDt"));
 		String token = jwtService.issue(rsvNo, tenantPropCd, tenantCmpxCd, depDt != null ? depDt : "99991231");
 
+		Map<String, Object> confRoom = pmsMapper.selectComplexConf(tenantPropCd, tenantCmpxCd);
+		String checkOutTimeRoom = confRoom != null && confRoom.get("checkOutCloseTime") != null
+				? String.valueOf(confRoom.get("checkOutCloseTime")).replace(":", "")
+				: "1100";
+		if (checkOutTimeRoom.length() > 4) checkOutTimeRoom = checkOutTimeRoom.substring(0, 4);
+
 		Map<String, Object> out = new LinkedHashMap<>();
 		out.put("token", token);
 		out.put("rsvNo", rsvNo);
@@ -87,6 +100,7 @@ public class AuthService {
 		out.put("perNm", str(rsv.get("perNm")));
 		out.put("chkOutDt", depDt);
 		out.put("perUseLang", str(rsv.get("perUseLang")));
+		out.put("checkOutTime", checkOutTimeRoom);
 		return out;
 	}
 

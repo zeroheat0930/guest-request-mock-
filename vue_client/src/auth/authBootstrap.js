@@ -78,6 +78,7 @@ export async function authenticateGuest(rsvNo) {
 	try {
 		sessionStorage.setItem(TOKEN_KEY, token);
 		sessionStorage.setItem(RSV_KEY, creds.rsvNo);
+		sessionStorage.setItem('concierge.checkOutTime', data.map.checkOutTime || '1100');
 	} catch {}
 	return data.map;
 }
@@ -101,6 +102,7 @@ export async function authenticateByRoom(rmNo) {
 		sessionStorage.setItem(TOKEN_KEY, token);
 		sessionStorage.setItem(RSV_KEY, data.map.rsvNo);
 		sessionStorage.setItem('concierge.roomNo', rmNo);
+		sessionStorage.setItem('concierge.checkOutTime', data.map.checkOutTime || '1100');
 	} catch {}
 	return data.map;
 }

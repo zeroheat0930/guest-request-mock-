@@ -63,6 +63,16 @@
 		 LIMIT 1
 	</select>
 
+	<select id="selectComplexConf" resultType="map">
+		SELECT A.PROP_CD AS propCd, A.CMPX_CD AS cmpxCd,
+		       A.CHECK_IN_TIME AS checkInTime,
+		       A.CHECK_IN_TIME_TO AS checkInTimeTo,
+		       A.CHECK_OUT_CLOSE_TIME AS checkOutCloseTime
+		  FROM PMS.PMS_COMPLEX_CONF_R A
+		 WHERE A.PROP_CD = #{propCd}
+		   AND A.CMPX_CD = #{cmpxCd}
+	</select>
+
 	<select id="selectComplex" resultType="map">
 		SELECT A.PROP_CD AS propCd, A.CMPX_CD AS cmpxCd,
 		       A.CMPX_TP AS cmpxTp, A.CMPX_NM AS cmpxNm,

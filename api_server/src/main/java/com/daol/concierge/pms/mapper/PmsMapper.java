@@ -23,6 +23,9 @@ public interface PmsMapper {
 	                                           @Param("cmpxCd") String cmpxCd,
 	                                           @Param("rmNo") String rmNo);
 
+	Map<String, Object> selectComplexConf(@Param("propCd") String propCd,
+	                                      @Param("cmpxCd") String cmpxCd);
+
 	Map<String, Object> selectComplex(@Param("propCd") String propCd,
 	                                   @Param("cmpxCd") String cmpxCd);
 

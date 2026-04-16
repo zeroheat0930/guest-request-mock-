@@ -176,9 +176,15 @@ public class GrService {
 		Map<String, Object> rsv = pmsMapper.selectReservation(pp(), pc(), rsvNo);
 		if (rsv == null) throw new ApiException(ApiStatus.NOT_FOUND, "예약 없음");
 
-		String depHour = str(rsv.get("depHour"));
-		if (depHour == null || depHour.isEmpty()) depHour = "1100";
-		int curOutH = Integer.parseInt(depHour.substring(0, 2));
+		// Get hotel standard checkout time from PMS_COMPLEX_CONF_R
+		Map<String, Object> conf = pmsMapper.selectComplexConf(pp(), pc());
+		String stdCheckOut = "1100"; // default
+		if (conf != null && conf.get("checkOutCloseTime") != null) {
+			String raw = String.valueOf(conf.get("checkOutCloseTime"));
+			stdCheckOut = raw.replace(":", "");
+			if (stdCheckOut.length() > 4) stdCheckOut = stdCheckOut.substring(0, 4);
+		}
+		int curOutH = Integer.parseInt(stdCheckOut.substring(0, 2));
 		int reqH = Integer.parseInt(reqOutTm.substring(0, 2));
 		int diffH = reqH - curOutH;
 
@@ -193,7 +199,8 @@ public class GrService {
 		Map<String, Object> res = new LinkedHashMap<>();
 		res.put("rsvNo", rsvNo);
 		res.put("roomNo", str(rsv.get("rmNo")));
-		res.put("curChkOutTm", depHour);
+		res.put("stdChkOutTm", stdCheckOut);
+		res.put("curChkOutTm", stdCheckOut);
 		res.put("reqChkOutTm", reqOutTm);
 		res.put("availYn", availYn);
 		res.put("addAmt", addAmt);
