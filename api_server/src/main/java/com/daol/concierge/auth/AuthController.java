@@ -28,4 +28,15 @@ public class AuthController extends BaseController {
 	public ApiResponse issueGuestToken(RequestParams requestParams) {
 		return Responses.MapResponse.of(authService.issueGuestToken(requestParams.getParams()));
 	}
+
+	/**
+	 * 방 번호 기반 토큰 발급 — 객실 태블릿 / QR 스캔 시나리오
+	 * POST /api/auth/room-token { rmNo: "00304" }
+	 * → 해당 방에 체크인 중인 투숙객 자동 조회 → JWT 발급
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/room-token", method = RequestMethod.POST, produces = APPLICATION_JSON)
+	public ApiResponse issueRoomToken(RequestParams requestParams) {
+		return Responses.MapResponse.of(authService.issueRoomToken(requestParams.getParams()));
+	}
 }

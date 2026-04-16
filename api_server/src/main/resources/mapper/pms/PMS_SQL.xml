@@ -46,6 +46,24 @@
 		 LIMIT 100
 	</select>
 
+	<!-- 방 번호로 현재 체크인 중인 투숙객 조회 -->
+	<select id="selectCheckedInByRoom" resultType="map">
+		SELECT A.PROP_CD AS propCd, A.CMPX_CD AS cmpxCd, A.RESV_NO AS resvNo,
+		       A.RESV_STAT AS resvStat, A.RM_NO AS rmNo,
+		       A.PER_NM AS perNm, A.PER_USE_LANG AS perUseLang,
+		       A.ARR_DT AS arrDt, A.DEP_DT AS depDt,
+		       A.CHK_IN_HOUR AS chkInHour
+		  FROM PMS.PMS_RESERVATION A
+		 WHERE A.PROP_CD   = #{propCd}
+		   AND A.CMPX_CD   = #{cmpxCd}
+		   AND A.RM_NO     = #{rmNo}
+		   AND A.RESV_STAT = 'I'
+		   AND A.USE_YN    = 'Y'
+		   AND CURDATE() BETWEEN DATE(A.ARR_DT) AND DATE(A.DEP_DT)
+		 ORDER BY A.CHK_IN_HOUR DESC
+		 LIMIT 1
+	</select>
+
 	<select id="selectComplex" resultType="map">
 		SELECT A.PROP_CD AS propCd, A.CMPX_CD AS cmpxCd,
 		       A.CMPX_TP AS cmpxTp, A.CMPX_NM AS cmpxNm,

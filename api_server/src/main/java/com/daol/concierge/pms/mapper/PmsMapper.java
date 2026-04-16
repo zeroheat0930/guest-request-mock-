@@ -19,6 +19,10 @@ public interface PmsMapper {
 	List<Map<String, Object>> selectReservationList(@Param("propCd") String propCd,
 	                                                 @Param("cmpxCd") String cmpxCd);
 
+	Map<String, Object> selectCheckedInByRoom(@Param("propCd") String propCd,
+	                                           @Param("cmpxCd") String cmpxCd,
+	                                           @Param("rmNo") String rmNo);
+
 	Map<String, Object> selectComplex(@Param("propCd") String propCd,
 	                                   @Param("cmpxCd") String cmpxCd);
 

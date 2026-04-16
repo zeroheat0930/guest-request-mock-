@@ -81,3 +81,26 @@ export async function authenticateGuest(rsvNo) {
 	} catch {}
 	return data.map;
 }
+
+/**
+ * 방 번호 기반 인증 — 객실 태블릿 / QR 스캔 시나리오
+ * 해당 방에 체크인 중인 투숙객이 있으면 자동 토큰 발급.
+ * 성공 시 { token, rsvNo, roomNo, perNm, chkOutDt, perUseLang } 반환.
+ */
+export async function authenticateByRoom(rmNo) {
+	const res = await axios.post(`${API_BASE}/auth/room-token`, {
+		rmNo
+	}, { timeout: 10000 });
+	const data = res.data;
+	if (!data || data.status !== 0) {
+		throw new Error(data?.error?.message || data?.message || '인증 실패');
+	}
+	const token = data.map?.token;
+	if (!token) throw new Error('토큰 없음');
+	try {
+		sessionStorage.setItem(TOKEN_KEY, token);
+		sessionStorage.setItem(RSV_KEY, data.map.rsvNo);
+		sessionStorage.setItem('concierge.roomNo', rmNo);
+	} catch {}
+	return data.map;
+}

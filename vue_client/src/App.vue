@@ -1,5 +1,18 @@
 <template>
-	<div class="app-shell" :class="{ 'no-lnb': !showLnb }">
+	<div v-if="authError && showLnb" class="room-login-shell">
+		<div class="room-login-card">
+			<div class="room-login-logo">
+				<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+					<polyline points="9 22 9 12 15 12 15 22"/>
+				</svg>
+			</div>
+			<h1 class="room-login-title">다올 컨시어지</h1>
+			<p class="room-login-sub">{{ authError }}</p>
+		</div>
+	</div>
+
+	<div v-else class="app-shell" :class="{ 'no-lnb': !showLnb }">
 		<!-- LNB (좌측 사이드) — 게스트 화면에서만 -->
 		<aside v-if="showLnb" class="lnb">
 			<div class="brand">
@@ -51,7 +64,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { loadFeatures, enabledSortedFeatures, featuresLoaded } from './features/featureStore.js';
-import { getStoredToken, authenticateGuest, DEMO_RESERVATIONS } from './auth/authBootstrap.js';
+import { getStoredToken, authenticateByRoom } from './auth/authBootstrap.js';
 import { useRouter, useRoute } from 'vue-router';
 
 const router = useRouter();
@@ -61,25 +74,38 @@ const showLnb = computed(() => !(route.meta?.admin || route.meta?.staff));
 
 const guestRoomNo = ref('');
 const guestName = ref('');
+const authError = ref('');
 
+/**
+ * 방 번호 기반 자동 인증
+ * URL: ?room=00304 (QR 코드 or 태블릿 북마크)
+ * 토큰 있으면 복원, 없으면 room 파라미터로 자동 발급
+ */
 onMounted(async () => {
-	if (!getStoredToken()) {
+	const urlRoom = new URLSearchParams(window.location.search).get('room');
+
+	if (getStoredToken()) {
+		// 이미 인증된 상태 — 저장된 정보 복원
+		guestRoomNo.value = sessionStorage.getItem('concierge.roomNo') || '';
+		if (guestRoomNo.value) guestRoomNo.value += '호';
+		guestName.value = sessionStorage.getItem('concierge.guestName') || '';
+	} else if (urlRoom) {
+		// QR/태블릿 — URL에 room 파라미터 있으면 자동 인증
 		try {
-			const info = await authenticateGuest(DEMO_RESERVATIONS[0].rsvNo);
-			if (info) {
-				guestRoomNo.value = info.roomNo ? `${info.roomNo}호` : '';
-				guestName.value = info.perNm || '';
-			}
-		} catch {}
-	} else {
-		const stored = sessionStorage.getItem('concierge.rsvNo');
-		const demo = DEMO_RESERVATIONS.find(r => r.rsvNo === stored);
-		if (demo) {
-			const parts = demo.label.split('·');
-			guestRoomNo.value = parts[0] ? `${parts[0].trim()}호` : '';
-			guestName.value = parts[1] ? parts[1].trim().split(' ')[0] + ' ' + (parts[1].trim().split(' ').slice(1).join(' ')) : '';
+			const info = await authenticateByRoom(urlRoom);
+			guestRoomNo.value = info.roomNo ? `${info.roomNo}호` : '';
+			guestName.value = info.perNm || '';
+			try { sessionStorage.setItem('concierge.guestName', info.perNm || ''); } catch {}
+		} catch (e) {
+			authError.value = e?.response?.data?.error?.message || e?.message || '객실 인증에 실패했습니다';
+			return;
 		}
+	} else {
+		// room 파라미터 없음 — QR 스캔 안내
+		authError.value = 'QR 코드를 스캔하거나 객실 태블릿을 이용해주세요';
+		return;
 	}
+
 	await loadFeatures();
 	const cur = router.currentRoute.value;
 	const cd = cur.meta?.featureCd;
