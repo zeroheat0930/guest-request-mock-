@@ -153,3 +153,38 @@ export const createCcsTask = (body) => ccsClient.post('/tasks', body);
 export const fetchCcsDeptLoad = (deptCd) => ccsClient.get(`/dept/${encodeURIComponent(deptCd)}/load`);
 
 export const fetchCcsStatsToday = (deptCd) => ccsClient.get('/stats/today', { params: { deptCd } });
+
+// ─────────────────────────────────────────────
+// Admin — /api/concierge/admin/**
+// ─────────────────────────────────────────────
+function attachAdminAuthHeader(config) {
+	try {
+		const token = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('concierge.adminToken');
+		if (token) {
+			config.headers = config.headers || {};
+			config.headers['X-Admin-Token'] = token;
+		}
+	} catch {}
+	return config;
+}
+
+const adminClient = axios.create({
+	baseURL: `${API_BASE}/concierge/admin`,
+	timeout: 8000
+});
+adminClient.interceptors.request.use(attachAdminAuthHeader);
+
+function unwrap(r) { return r.data; }
+
+export const fetchAdminDepts = (params) => adminClient.get('/departments', { params }).then(unwrap);
+export const fetchAdminStaff = (params) => adminClient.get('/staff', { params }).then(unwrap);
+
+export function createAdminDept(data) {
+	return adminClient.post('/departments', data).then(unwrap);
+}
+export function updateAdminDept(deptCd, data) {
+	return adminClient.put(`/departments/${encodeURIComponent(deptCd)}`, data).then(unwrap);
+}
+export function deleteAdminDept(deptCd) {
+	return adminClient.delete(`/departments/${encodeURIComponent(deptCd)}`).then(unwrap);
+}
