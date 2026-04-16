@@ -16,7 +16,7 @@
 						v-model="loginId"
 						autocomplete="username"
 						:disabled="busy"
-						placeholder="hk1, fr1, eng1..."
+						placeholder="아이디 입력"
 					/>
 				</label>
 				<label>
