@@ -19,6 +19,7 @@ const routes = [
 	{ path: '/admin/login',    component: AdminLoginView,     meta: { admin: true, public: true } },
 	{ path: '/admin/features', component: AdminFeaturesView,  meta: { admin: true } },
 	{ path: '/admin/ccs',      component: AdminCcsView,       meta: { admin: true } },
+	{ path: '/admin/qr',       component: () => import('../views/staff/QrGeneratorView.vue'), meta: { admin: true } },
 	// 스태프 번들로 잘못 들어온 미지 경로는 스태프 로그인으로
 	{ path: '/:pathMatch(.*)*', redirect: '/staff/login' }
 ];

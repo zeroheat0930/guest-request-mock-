@@ -1,4 +1,5 @@
 <template>
+	<NetworkStatus />
 	<div v-if="authError && showLnb" class="room-login-shell">
 		<div class="room-login-card">
 			<div class="room-login-logo">
@@ -65,10 +66,11 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { loadFeatures, enabledSortedFeatures, featuresLoaded } from './features/featureStore.js';
 import { getStoredToken, authenticateByRoom } from './auth/authBootstrap.js';
 import LoadingSpinner from './components/LoadingSpinner.vue';
+import NetworkStatus from './components/NetworkStatus.vue';
 import { useRouter, useRoute } from 'vue-router';
 import { t } from './i18n/ui.js';
 
@@ -81,6 +83,8 @@ const guestRoomNo = ref('');
 const guestName = ref('');
 const authError = ref('');
 const ready = ref(false);
+
+let tokenCheckTimer = null;
 
 onMounted(async () => {
 	const urlRoom = new URLSearchParams(window.location.search).get('room');
@@ -115,6 +119,23 @@ onMounted(async () => {
 	if (cd && featuresLoaded.value && !tabs.value.some(t => t.featureCd === cd)) {
 		if (tabs.value.length) router.replace(tabs.value[0].to);
 	}
+
+	tokenCheckTimer = setInterval(() => {
+		const token = sessionStorage.getItem('concierge.jwt');
+		if (!token) return;
+		try {
+			const payload = JSON.parse(atob(token.split('.')[1]));
+			if (payload.exp * 1000 < Date.now()) {
+				sessionStorage.clear();
+				authError.value = t('auth.expired');
+				ready.value = false;
+			}
+		} catch {}
+	}, 60000);
+});
+
+onUnmounted(() => {
+	if (tokenCheckTimer) clearInterval(tokenCheckTimer);
 });
 </script>
 

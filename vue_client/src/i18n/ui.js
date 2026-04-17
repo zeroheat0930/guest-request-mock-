@@ -82,14 +82,32 @@ const messages = {
   'nearby.noResult.sub': { ko: '다른 카테고리를 선택해 보세요', en: 'Try a different category', ja: '別のカテゴリを選択してください', zh: '请选择其他类别' },
   'nearby.map':      { ko: '카카오맵',     en: 'Map',            ja: 'マップ',       zh: '地图' },
 
+  // History
+  'history.title':        { ko: '요청 내역',       en: 'My Requests',         ja: 'リクエスト履歴',     zh: '请求记录' },
+  'history.sub':          { ko: '내 요청 내역을 확인하세요', en: 'View your request history', ja: 'リクエスト履歴を確認', zh: '查看您的请求记录' },
+  'history.loading':      { ko: '불러오는 중...',   en: 'Loading...',          ja: '読み込み中...',      zh: '加载中...' },
+  'history.empty':        { ko: '요청 내역이 없습니다', en: 'No requests yet',  ja: 'リクエストはありません', zh: '暂无请求记录' },
+  'history.type.amenity': { ko: '어메니티',         en: 'Amenity',             ja: 'アメニティ',         zh: '客房用品' },
+  'history.type.hk':      { ko: '객실정비',         en: 'Housekeeping',        ja: 'ハウスキーピング',   zh: '客房服务' },
+  'history.type.parking': { ko: '주차',             en: 'Parking',             ja: '駐車',               zh: '停车' },
+  'history.type.lateco':  { ko: '레이트체크아웃',   en: 'Late Checkout',       ja: 'レイトチェックアウト', zh: '延迟退房' },
+  'history.stat.req':     { ko: '대기',             en: 'Pending',             ja: '待機',               zh: '待处理' },
+  'history.stat.inprog':  { ko: '진행중',           en: 'In Progress',         ja: '進行中',             zh: '处理中' },
+  'history.stat.done':    { ko: '완료',             en: 'Completed',           ja: '完了',               zh: '已完成' },
+
   // Chat
   'chat.title': { ko: 'AI 컨시어지', en: 'AI Concierge', ja: 'AIコンシェルジュ', zh: 'AI礼宾' },
+
+  // Network / Error
+  'network.offline': { ko: '네트워크 연결이 끊어졌습니다', en: 'Network connection lost', ja: 'ネットワーク接続が切断されました', zh: '网络连接已断开' },
+  'error.server':    { ko: '서버에 연결할 수 없습니다',     en: 'Cannot connect to server', ja: 'サーバーに接続できません',         zh: '无法连接到服务器' },
 
   // Common
   'loading':      { ko: '불러오는 중...',      en: 'Loading...',          ja: '読み込み中...',       zh: '加载中...' },
   'error':        { ko: '오류가 발생했습니다', en: 'An error occurred',    ja: 'エラーが発生しました', zh: '发生错误' },
   'auth.loading': { ko: '인증 중...',          en: 'Authenticating...',   ja: '認証中...',           zh: '认证中...' },
   'auth.scan':    { ko: 'QR 코드를 스캔하거나 객실 태블릿을 이용해주세요', en: 'Please scan the QR code or use the room tablet', ja: 'QRコードをスキャンするか、客室タブレットをご利用ください', zh: '请扫描二维码或使用客房平板' },
+  'auth.expired': { ko: '세션이 만료되었습니다. QR 코드를 다시 스캔해주세요', en: 'Session expired. Please scan the QR code again', ja: 'セッションが期限切れです。QRコードを再スキャンしてください', zh: '会话已过期，请重新扫描二维码' },
   'guest.room':   { ko: '호',                  en: 'Room',                ja: '号室',                zh: '号房' },
 };
 

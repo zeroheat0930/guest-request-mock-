@@ -19,7 +19,8 @@ export const FEATURE_META = {
 	LATE_CO: { to: '/late-checkout', icon: '⏰', labels: { ko: '레이트 체크아웃', en: 'Late Checkout', ja: 'レイトチェックアウト', zh: '延迟退房' } },
 	CHAT:    { to: '/chat',          icon: '🤖', labels: { ko: 'AI 컨시어지',    en: 'AI Concierge',  ja: 'AIコンシェルジュ',     zh: 'AI礼宾' } },
 	NEARBY:  { to: '/nearby',        icon: '📍', labels: { ko: '주변 안내',      en: 'Nearby',        ja: '周辺案内',             zh: '周边信息' } },
-	PARKING: { to: '/parking',       icon: '🚗', labels: { ko: '주차',           en: 'Parking',       ja: '駐車',                 zh: '停车' } }
+	PARKING: { to: '/parking',       icon: '🚗', labels: { ko: '주차',           en: 'Parking',       ja: '駐車',                 zh: '停车' } },
+	HISTORY: { to: '/history',       icon: '📋', labels: { ko: '요청 내역',      en: 'My Requests',   ja: 'リクエスト履歴',       zh: '请求记录' } }
 };
 
 function authHeader() {
@@ -74,6 +75,10 @@ export function enabledSortedFeatures() {
 		out.push({ featureCd: cd, sortOrd: f.sortOrd, to: meta.to, icon: meta.icon, label });
 	}
 	out.sort((a, b) => a.sortOrd - b.sortOrd);
+	// Always append HISTORY as a permanent nav item
+	const historyMeta = FEATURE_META['HISTORY'];
+	const historyLabel = historyMeta.labels[lang] || historyMeta.labels.ko;
+	out.push({ featureCd: 'HISTORY', sortOrd: 99, to: historyMeta.to, icon: historyMeta.icon, label: historyLabel });
 	return out;
 }
 

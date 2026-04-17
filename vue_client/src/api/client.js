@@ -53,6 +53,10 @@ function unwrapOk(r) {
 }
 
 function unwrapErr(e) {
+	if (!e.response) {
+		// Network error — server unreachable
+		return Promise.reject({ status: -999, message: '서버에 연결할 수 없습니다', map: {} });
+	}
 	const data = e.response?.data;
 	if (e.response?.status === 401) {
 		return Promise.reject({ status: -30, message: '인증 필요', map: {} });

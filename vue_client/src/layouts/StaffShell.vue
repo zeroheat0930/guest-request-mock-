@@ -28,6 +28,9 @@
 					<router-link to="/admin/ccs" class="item">
 						<span class="ic">👥</span><span class="label">스태프 관리</span>
 					</router-link>
+					<router-link to="/admin/qr" class="item">
+						<span class="ic">📷</span><span class="label">QR 생성</span>
+					</router-link>
 				</div>
 			</nav>
 
