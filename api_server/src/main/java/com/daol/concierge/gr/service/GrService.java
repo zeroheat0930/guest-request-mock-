@@ -168,10 +168,7 @@ public class GrService {
 		task.put("assigneeId", null);
 		task.put("statusCd", "REQ");
 		invMapper.insertTask(task);
-
-		RequestEvent ev = new RequestEvent(pp(), pc(), "HK_" + hkStatCd,
-				"[" + roomNo + "] 객실정비 " + nm, roomNo, taskId, reqMemo);
-		requestDispatchers.forEach(d -> d.dispatch(ev));
+		// 디스패처 호출 불필요 — 위에서 직접 CCS_TASK 생성 완료
 
 		Map<String, Object> res = new LinkedHashMap<>();
 		res.put("reqNo", taskId);
