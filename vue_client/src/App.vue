@@ -2,7 +2,7 @@
 	<div v-if="authError && showLnb" class="room-login-shell">
 		<div class="room-login-card">
 			<div class="room-login-logo">
-				<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
 					<polyline points="9 22 9 12 15 12 15 22"/>
 				</svg>
@@ -17,7 +17,7 @@
 		<aside v-if="showLnb" class="lnb">
 			<div class="brand">
 				<div class="brand-logomark">
-					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
 						<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
 						<polyline points="9 22 9 12 15 12 15 22"/>
 					</svg>
@@ -125,12 +125,12 @@ onMounted(async () => {
 /* ═══════════ LNB ═══════════ */
 .lnb {
 	width: 240px;
-	background: var(--c-brand-900);
-	color: #fff;
+	background: var(--c-midnight);
+	color: var(--c-text-light);
 	display: flex;
 	flex-direction: column;
 	flex-shrink: 0;
-	border-right: 1px solid rgba(255,255,255,0.05);
+	border-right: 1px solid rgba(201, 169, 110, 0.12);
 }
 
 /* ── Brand ── */
@@ -139,38 +139,40 @@ onMounted(async () => {
 	align-items: center;
 	gap: var(--sp-3);
 	padding: var(--sp-6) var(--sp-6);
-	border-bottom: 1px solid rgba(255,255,255,0.06);
+	border-bottom: 1px solid rgba(201, 169, 110, 0.1);
 }
 .brand-logomark {
-	width: 36px;
-	height: 36px;
-	background: rgba(255,255,255,0.1);
+	width: 34px;
+	height: 34px;
+	background: rgba(201, 169, 110, 0.12);
+	border: 1px solid rgba(201, 169, 110, 0.2);
 	border-radius: var(--r-md);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	color: var(--c-brand-300);
+	color: var(--c-gold);
 	flex-shrink: 0;
 }
 .brand-name {
-	font-size: 14px;
-	font-weight: 700;
-	color: #fff;
-	letter-spacing: -0.2px;
+	font-family: 'Georgia', 'Times New Roman', serif;
+	font-size: 15px;
+	font-weight: 400;
+	color: var(--c-gold-light);
+	letter-spacing: 0.3px;
 	line-height: 1.2;
 }
 .brand-sub {
-	font-size: 11px;
-	color: rgba(255,255,255,0.35);
-	letter-spacing: 0.6px;
+	font-size: 10px;
+	color: rgba(232, 224, 212, 0.35);
+	letter-spacing: 1.8px;
 	text-transform: uppercase;
-	margin-top: 2px;
+	margin-top: 3px;
 }
 
 /* ── Nav ── */
 .lnb-nav {
 	flex: 1;
-	padding: var(--sp-4) var(--sp-4);
+	padding: var(--sp-4) var(--sp-3);
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
@@ -180,18 +182,18 @@ onMounted(async () => {
 	display: flex;
 	align-items: center;
 	gap: var(--sp-3);
-	padding: 14px var(--sp-4);
+	padding: 13px var(--sp-4);
 	border-radius: var(--r-md);
-	color: rgba(255,255,255,0.5);
+	color: rgba(232, 224, 212, 0.45);
 	text-decoration: none;
 	transition: background var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out);
 	position: relative;
-	min-height: 52px;
+	min-height: 50px;
 }
 .tab .ic {
-	font-size: 19px;
+	font-size: 18px;
 	line-height: 1;
-	width: 24px;
+	width: 22px;
 	text-align: center;
 	flex-shrink: 0;
 }
@@ -199,49 +201,50 @@ onMounted(async () => {
 	display: flex;
 	flex-direction: column;
 	line-height: 1.2;
-	font-size: 14px;
-	font-weight: 600;
+	font-size: 13.5px;
+	font-weight: 500;
+	letter-spacing: 0.1px;
 }
 .tab .label small {
 	font-weight: 400;
-	opacity: 0.5;
+	opacity: 0.45;
 	font-size: 11px;
 	margin-top: 2px;
 	letter-spacing: 0.2px;
 }
 .tab:hover {
-	background: rgba(255,255,255,0.07);
-	color: rgba(255,255,255,0.8);
+	background: rgba(201, 169, 110, 0.07);
+	color: rgba(232, 224, 212, 0.75);
 }
 .tab.router-link-active {
-	background: rgba(255,255,255,0.1);
-	color: #fff;
+	background: rgba(201, 169, 110, 0.1);
+	color: var(--c-gold-light);
 }
 .tab.router-link-active::before {
 	content: '';
 	position: absolute;
 	left: 0;
-	top: 20%;
-	bottom: 20%;
-	width: 3px;
-	background: var(--c-brand-400);
+	top: 18%;
+	bottom: 18%;
+	width: 2.5px;
+	background: var(--c-gold);
 	border-radius: 0 var(--r-pill) var(--r-pill) 0;
 }
 
 .tab.chat-tab {
 	margin-top: var(--sp-3);
-	border-top: 1px solid rgba(255,255,255,0.06);
+	border-top: 1px solid rgba(201, 169, 110, 0.08);
 	padding-top: var(--sp-5);
 }
 
 /* ── Footer guest card ── */
 .lnb-foot {
-	padding: var(--sp-4) var(--sp-4);
-	border-top: 1px solid rgba(255,255,255,0.06);
+	padding: var(--sp-4) var(--sp-3);
+	border-top: 1px solid rgba(201, 169, 110, 0.08);
 }
 .guest-card {
-	background: rgba(255,255,255,0.06);
-	border: 1px solid rgba(255,255,255,0.08);
+	background: rgba(201, 169, 110, 0.06);
+	border: 1px solid rgba(201, 169, 110, 0.18);
 	border-radius: var(--r-lg);
 	padding: var(--sp-4) var(--sp-5);
 	display: flex;
@@ -255,22 +258,24 @@ onMounted(async () => {
 	flex-shrink: 0;
 }
 .guest-card__room-label {
-	font-size: 10px;
+	font-size: 9px;
 	font-weight: 600;
-	color: rgba(255,255,255,0.35);
-	letter-spacing: 1px;
+	color: rgba(201, 169, 110, 0.55);
+	letter-spacing: 2px;
+	text-transform: uppercase;
 }
 .guest-card__room-num {
-	font-size: 18px;
-	font-weight: 800;
-	color: var(--c-brand-300);
+	font-family: 'Georgia', 'Times New Roman', serif;
+	font-size: 17px;
+	font-weight: 400;
+	color: var(--c-gold);
 	letter-spacing: 0.5px;
 	white-space: nowrap;
 }
 .guest-card__divider {
 	width: 1px;
-	height: 28px;
-	background: rgba(255,255,255,0.12);
+	height: 26px;
+	background: rgba(201, 169, 110, 0.15);
 	flex-shrink: 0;
 }
 .guest-card__text {
@@ -280,13 +285,13 @@ onMounted(async () => {
 	min-width: 0;
 }
 .guest-card__greet {
-	font-size: 13px;
-	font-weight: 600;
-	color: rgba(255,255,255,0.8);
+	font-size: 12.5px;
+	font-weight: 500;
+	color: rgba(232, 224, 212, 0.75);
 }
 .guest-card__sub {
 	font-size: 11px;
-	color: rgba(255,255,255,0.35);
+	color: rgba(232, 224, 212, 0.3);
 	letter-spacing: 0.3px;
 }
 
@@ -301,7 +306,7 @@ onMounted(async () => {
 @media (max-width: 720px) {
 	.app-shell { flex-direction: column; }
 	.lnb { width: 100%; flex-direction: row; flex-wrap: wrap; }
-	.brand { flex: 0 0 100%; padding: var(--sp-4) var(--sp-5); border-bottom: 1px solid rgba(255,255,255,0.06); }
+	.brand { flex: 0 0 100%; padding: var(--sp-4) var(--sp-5); border-bottom: 1px solid rgba(201, 169, 110, 0.08); }
 	.lnb-nav {
 		flex: 1;
 		flex-direction: row;

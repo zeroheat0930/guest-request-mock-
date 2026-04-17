@@ -9,7 +9,7 @@
 		<div class="steps">
 			<div class="step" :class="{ 'step--active': true, 'step--done': !!info }">
 				<div class="step-num">
-					<svg v-if="!!info" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+					<svg v-if="!!info" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
 					<span v-else>1</span>
 				</div>
 				<span class="step-label">{{ t('late.step1') }}</span>
@@ -17,7 +17,7 @@
 			<div class="step-line" :class="{ 'step-line--done': !!info }" />
 			<div class="step" :class="{ 'step--active': !!info, 'step--done': !!result && result.status === 0 }">
 				<div class="step-num">
-					<svg v-if="!!result && result.status === 0" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+					<svg v-if="!!result && result.status === 0" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
 					<span v-else>2</span>
 				</div>
 				<span class="step-label">{{ t('late.step2') }}</span>
@@ -161,17 +161,21 @@ async function apply() {
 	margin-bottom: var(--sp-6);
 }
 .page-title {
+	font-family: 'Georgia', 'Times New Roman', serif;
 	font-size: var(--fs-2xl);
-	font-weight: 700;
+	font-weight: 400;
 	color: var(--c-text);
-	letter-spacing: -0.5px;
+	letter-spacing: -0.3px;
 	line-height: 1.25;
 	margin: 0 0 var(--sp-1) 0;
+	padding-bottom: var(--sp-3);
+	border-bottom: 1px solid var(--c-border-gold);
 }
 .page-sub {
 	font-size: var(--fs-sm);
 	color: var(--c-text-soft);
-	margin: 0;
+	margin: var(--sp-2) 0 0 0;
+	letter-spacing: 0.3px;
 }
 
 /* ── Steps ── */
@@ -200,29 +204,39 @@ async function apply() {
 	align-items: center;
 	justify-content: center;
 	transition: background var(--t-norm) var(--ease-out), color var(--t-norm) var(--ease-out);
+	border: 1px solid transparent;
 }
-.step--active .step-num { background: var(--c-brand-500); color: #fff; }
-.step--done .step-num { background: #059669; color: #fff; }
+.step--active .step-num {
+	background: var(--c-gold-pale-md);
+	color: var(--c-gold-deep);
+	border-color: var(--c-gold);
+}
+.step--done .step-num {
+	background: var(--c-gold);
+	color: var(--c-midnight);
+	border-color: var(--c-gold-deep);
+}
 .step-label {
 	font-size: var(--fs-xs);
 	font-weight: 600;
 	color: var(--c-muted);
 	white-space: nowrap;
 	transition: color var(--t-norm);
+	letter-spacing: 0.3px;
 }
-.step--active .step-label { color: var(--c-brand-500); }
-.step--done .step-label { color: #059669; }
+.step--active .step-label { color: var(--c-gold-deep); }
+.step--done .step-label { color: var(--c-gold); }
 
 .step-line {
 	flex: 1;
-	height: 2px;
+	height: 1px;
 	background: var(--c-border);
 	margin: 0 var(--sp-2);
 	margin-bottom: 18px;
 	border-radius: var(--r-pill);
 	transition: background var(--t-norm);
 }
-.step-line--done { background: #059669; }
+.step-line--done { background: var(--c-gold); }
 
 /* ── Form Card ── */
 .form-card {
@@ -241,13 +255,14 @@ async function apply() {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 14px var(--sp-5);
-	background: var(--c-bg);
-	border: 1px solid var(--c-border);
+	padding: 13px var(--sp-5);
+	background: var(--c-cream);
+	border: 1px solid var(--c-border-gold);
+	border-left: 3px solid var(--c-gold);
 	border-radius: var(--r-md);
 }
 .guest-bar__room {
-	font-weight: 700;
+	font-weight: 600;
 	font-size: var(--fs-md);
 	color: var(--c-text);
 }
@@ -258,9 +273,11 @@ async function apply() {
 
 .form-group { display: flex; flex-direction: column; gap: var(--sp-3); }
 .field-label {
-	font-size: var(--fs-sm);
+	font-size: 11px;
 	font-weight: 600;
 	color: var(--c-text-soft);
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
 }
 
 /* ── Time pills ── */
@@ -271,9 +288,9 @@ async function apply() {
 }
 .time-pill {
 	padding: 14px var(--sp-2);
-	border: 1.5px solid var(--c-border);
+	border: 1px solid var(--c-border);
 	border-radius: var(--r-md);
-	background: var(--c-bg);
+	background: var(--c-cream);
 	font-size: var(--fs-md);
 	font-weight: 600;
 	color: var(--c-text-soft);
@@ -281,12 +298,17 @@ async function apply() {
 	transition: all var(--t-fast) var(--ease-out);
 	text-align: center;
 }
-.time-pill:hover { border-color: var(--c-brand-300); color: var(--c-brand-600); background: var(--c-brand-50); }
+.time-pill:hover {
+	border-color: var(--c-gold);
+	color: var(--c-gold-deep);
+	background: var(--c-gold-pale);
+}
 .time-pill--active {
-	border-color: var(--c-brand-500);
-	background: var(--c-brand-500);
-	color: #fff;
-	box-shadow: var(--sh-brand);
+	border-color: var(--c-gold);
+	background: linear-gradient(135deg, #c9a96e, #d4b896);
+	color: var(--c-midnight);
+	font-weight: 700;
+	box-shadow: var(--sh-gold);
 }
 
 /* ── Check button ── */
@@ -297,20 +319,22 @@ async function apply() {
 	gap: var(--sp-2);
 	width: 100%;
 	height: var(--touch-lg);
-	background: var(--c-text);
-	color: #fff;
-	border: none;
+	background: var(--c-midnight);
+	color: var(--c-gold-light);
+	border: 1px solid rgba(201, 169, 110, 0.2);
 	border-radius: var(--r-md);
-	font-size: var(--fs-lg);
-	font-weight: 700;
+	font-size: var(--fs-md);
+	font-weight: 600;
 	cursor: pointer;
-	transition: background var(--t-norm) var(--ease-out), transform var(--t-fast);
+	transition: background var(--t-norm) var(--ease-out), transform var(--t-fast), color var(--t-fast);
+	letter-spacing: 0.5px;
 }
 .check-btn:hover:not(:disabled) {
-	background: #374151;
+	background: var(--c-navy);
+	color: var(--c-gold);
 	transform: translateY(-1px);
 }
-.check-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.check-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .spin {
 	animation: spin 0.8s linear infinite;
@@ -320,10 +344,10 @@ async function apply() {
 /* ── Info card ── */
 .info-card {
 	border-radius: var(--r-lg);
-	border: 1.5px solid var(--c-border);
+	border: 1px solid var(--c-border);
 	overflow: hidden;
 }
-.info-card--avail { border-color: var(--c-ok-500); }
+.info-card--avail { border-color: var(--c-gold); }
 .info-card--unavail { border-color: var(--c-err-500); }
 
 .info-header {
@@ -331,7 +355,7 @@ async function apply() {
 	align-items: center;
 	justify-content: space-between;
 	padding: var(--sp-4) var(--sp-5);
-	background: var(--c-bg);
+	background: var(--c-cream);
 	border-bottom: 1px solid var(--c-border);
 }
 .avail-badge {
@@ -339,8 +363,13 @@ async function apply() {
 	border-radius: var(--r-pill);
 	font-size: var(--fs-sm);
 	font-weight: 700;
+	letter-spacing: 0.5px;
 }
-.avail-badge--ok { background: var(--c-ok-50); color: #059669; }
+.avail-badge--ok {
+	background: rgba(201, 169, 110, 0.12);
+	color: var(--c-gold-deep);
+	border: 1px solid rgba(201, 169, 110, 0.25);
+}
 .avail-badge--no { background: var(--c-err-50); color: var(--c-err-600); }
 .rate-type { font-size: var(--fs-sm); color: var(--c-muted); font-weight: 500; }
 
@@ -351,21 +380,25 @@ async function apply() {
 	padding: var(--sp-6) var(--sp-5) var(--sp-5);
 }
 .fee-label {
-	font-size: var(--fs-sm);
+	font-size: 11px;
 	color: var(--c-text-soft);
 	font-weight: 600;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
 }
 .fee-amount {
+	font-family: 'Georgia', 'Times New Roman', serif;
 	font-size: var(--fs-3xl);
-	font-weight: 800;
+	font-weight: 400;
 	color: var(--c-text);
 	letter-spacing: -0.5px;
 }
 .fee-currency {
+	font-family: inherit;
 	font-size: var(--fs-lg);
-	font-weight: 500;
-	color: var(--c-muted);
-	margin-right: var(--sp-1);
+	font-weight: 400;
+	color: var(--c-gold-deep);
+	margin-right: 4px;
 }
 
 .apply-btn {
@@ -375,16 +408,18 @@ async function apply() {
 	width: calc(100% - var(--sp-10));
 	margin: 0 var(--sp-5) var(--sp-5);
 	height: var(--touch-lg);
-	background: #059669;
-	color: #fff;
+	background: linear-gradient(135deg, #c9a96e, #d4b896);
+	color: var(--c-midnight);
 	border: none;
 	border-radius: var(--r-md);
 	font-size: var(--fs-md);
 	font-weight: 700;
 	cursor: pointer;
-	transition: background var(--t-norm), transform var(--t-fast);
+	transition: opacity var(--t-norm), transform var(--t-fast), box-shadow var(--t-norm);
+	letter-spacing: 0.8px;
+	text-transform: uppercase;
 }
-.apply-btn:hover { background: #047857; transform: translateY(-1px); }
+.apply-btn:hover { opacity: 0.88; transform: translateY(-1px); box-shadow: var(--sh-gold); }
 
 /* ── Toast ── */
 .toast {
@@ -402,13 +437,13 @@ async function apply() {
 	max-width: 480px;
 	z-index: 200;
 }
-.toast--ok { background: #065f46; color: #fff; }
-.toast--err { background: var(--c-err-600); color: #fff; }
+.toast--ok { background: #1e3a2a; color: #c8e6c9; }
+.toast--err { background: #3a1e1a; color: #ffcdd2; }
 .toast-indicator {
 	width: 28px;
 	height: 28px;
 	border-radius: var(--r-pill);
-	background: rgba(255,255,255,0.18);
+	background: rgba(255,255,255,0.12);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -417,7 +452,7 @@ async function apply() {
 	flex-shrink: 0;
 }
 .toast-msg { font-size: var(--fs-md); font-weight: 600; }
-.toast-meta { font-size: var(--fs-xs); opacity: 0.75; margin-top: 2px; }
+.toast-meta { font-size: var(--fs-xs); opacity: 0.7; margin-top: 2px; }
 
 .toast-enter-active, .toast-leave-active {
 	transition: opacity var(--t-norm) var(--ease-out), transform var(--t-norm) var(--ease-out);
