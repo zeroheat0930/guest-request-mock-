@@ -230,7 +230,7 @@
 		       AVG(CASE WHEN STATUS_CD = 'DONE' THEN TIMESTAMPDIFF(MINUTE, CREATED_AT, UPDATED_AT) END) AS avgMinutes
 		  FROM INV.CCS_TASK
 		 WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd}
-		<if test="deptCd != null and deptCd != ''">
+		<if test="deptCd != null and deptCd != '' and deptCd != '00000'">
 		   AND DEPT_CD = #{deptCd}
 		</if>
 		   AND DATE(CREATED_AT) = CURDATE()

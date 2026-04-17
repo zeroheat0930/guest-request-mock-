@@ -30,7 +30,7 @@
 		<div v-if="err" class="err">{{ err }}</div>
 
 		<div v-if="visibleTasks.length" class="list">
-			<div v-for="t in visibleTasks" :key="t.taskId" class="task-card">
+			<div v-for="t in visibleTasks" :key="t.taskId" class="task-card" @click="selectedTask = t">
 				<div class="row-top">
 					<div class="title">{{ t.title || '(제목 없음)' }}</div>
 					<span :class="['src', sourceClass(t.sourceType)]">{{ t.sourceType }}</span>
@@ -76,6 +76,38 @@
 			:onClose="() => { showRequestModal = false; }"
 			:onSuccess="() => { load(); showRequestModal = false; }"
 		/>
+
+		<!-- Task Detail Modal -->
+		<div v-if="selectedTask" class="modal-overlay" @click.self="selectedTask = null">
+			<div class="modal-card">
+				<div class="modal-head">
+					<h3>{{ selectedTask.title || '(제목 없음)' }}</h3>
+					<button @click="selectedTask = null" class="modal-close">✕</button>
+				</div>
+				<div class="modal-body">
+					<div class="detail-row"><span class="detail-label">객실</span><span>{{ selectedTask.roomNo }}호</span></div>
+					<div class="detail-row"><span class="detail-label">유형</span><span :class="['src', sourceClass(selectedTask.sourceType)]">{{ selectedTask.sourceType }}</span></div>
+					<div class="detail-row"><span class="detail-label">상태</span><span :class="'st-badge st-' + selectedTask.statusCd">{{ selectedTask.statusCd }}</span></div>
+					<div class="detail-row"><span class="detail-label">접수</span><span>{{ fmtTime(selectedTask.createdAt) }}</span></div>
+					<div class="detail-row" v-if="selectedTask.updatedAt && selectedTask.statusCd !== 'REQ'"><span class="detail-label">업데이트</span><span>{{ fmtTime(selectedTask.updatedAt) }}</span></div>
+					<div class="detail-row" v-if="selectedTask.assigneeId"><span class="detail-label">담당자</span><span>{{ selectedTask.assigneeId }}</span></div>
+					<div class="detail-row" v-if="selectedTask.memo"><span class="detail-label">메모</span><span class="detail-memo">{{ selectedTask.memo }}</span></div>
+				</div>
+				<div class="modal-timeline">
+					<div :class="['tl-step', selectedTask.statusCd === 'REQ' || selectedTask.statusCd === 'IN_PROG' || selectedTask.statusCd === 'DONE' ? 'tl-active' : '']">접수</div>
+					<div class="tl-line"></div>
+					<div :class="['tl-step', selectedTask.statusCd === 'IN_PROG' || selectedTask.statusCd === 'DONE' ? 'tl-active' : '']">진행중</div>
+					<div class="tl-line"></div>
+					<div :class="['tl-step', selectedTask.statusCd === 'DONE' ? 'tl-done' : selectedTask.statusCd === 'CANCELED' ? 'tl-canceled' : '']">{{ selectedTask.statusCd === 'CANCELED' ? '취소됨' : '완료' }}</div>
+				</div>
+				<div class="modal-actions">
+					<button v-if="selectedTask.statusCd === 'REQ'" class="primary" :disabled="busyId === selectedTask.taskId" @click="take(selectedTask); selectedTask = null;">내가 받기</button>
+					<button v-if="selectedTask.statusCd === 'IN_PROG'" class="primary" :disabled="busyId === selectedTask.taskId" @click="changeStatus(selectedTask, 'DONE'); selectedTask = null;">완료</button>
+					<button v-if="['REQ','IN_PROG'].includes(selectedTask.statusCd)" class="ghost" :disabled="busyId === selectedTask.taskId" @click="changeStatus(selectedTask, 'CANCELED'); selectedTask = null;">취소</button>
+					<button class="ghost" @click="selectedTask = null">닫기</button>
+				</div>
+			</div>
+		</div>
 	</div>
 </template>
 
@@ -102,6 +134,7 @@ const busy = ref(false);
 const busyId = ref('');
 const staff = ref({});
 const showRequestModal = ref(false);
+const selectedTask = ref(null);
 let pollTimer = null;
 
 function loadStaff() {
@@ -401,4 +434,163 @@ onUnmounted(() => {
 }
 .dept-load-section[open] > summary::before { content: '▼ '; }
 .dept-load-section > :not(summary) { padding: 12px; }
+
+/* ── Task Detail Modal ── */
+.modal-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(10, 14, 26, 0.72);
+	backdrop-filter: blur(3px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 400;
+	padding: 20px;
+}
+.modal-card {
+	background: #fff;
+	border-radius: 16px;
+	border: 1px solid #c9a96e;
+	box-shadow: 0 20px 60px rgba(10, 14, 26, 0.5), 0 0 0 1px rgba(201, 169, 110, 0.2);
+	width: 100%;
+	max-width: 480px;
+	overflow: hidden;
+}
+.modal-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 18px 20px 14px;
+	border-bottom: 1px solid #c9a96e33;
+	background: linear-gradient(135deg, #1a3a6e 0%, #253f6e 100%);
+}
+.modal-head h3 {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 700;
+	color: #e8d5a3;
+	letter-spacing: -0.2px;
+	flex: 1;
+	padding-right: 12px;
+}
+.modal-close {
+	width: 30px;
+	height: 30px;
+	border: 1px solid rgba(201, 169, 110, 0.4);
+	background: rgba(201, 169, 110, 0.12);
+	color: #c9a96e;
+	border-radius: 50%;
+	font-size: 13px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	transition: background 0.15s;
+}
+.modal-close:hover { background: rgba(201, 169, 110, 0.25); }
+
+.modal-body {
+	padding: 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.detail-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	font-size: 14px;
+}
+.detail-label {
+	min-width: 56px;
+	font-size: 11px;
+	font-weight: 700;
+	color: #8492a6;
+	letter-spacing: 0.8px;
+	text-transform: uppercase;
+	padding-top: 2px;
+	flex-shrink: 0;
+}
+.detail-memo {
+	white-space: pre-wrap;
+	color: #4a5568;
+	line-height: 1.5;
+}
+
+.st-badge {
+	padding: 2px 10px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+}
+.st-REQ      { background: #fff4e6; color: #ad6200; }
+.st-IN_PROG  { background: #e6f0ff; color: #1a3a6e; }
+.st-DONE     { background: #e6fff0; color: #276749; }
+.st-CANCELED { background: #f7fafc; color: #8492a6; }
+
+.modal-timeline {
+	display: flex;
+	align-items: center;
+	padding: 12px 20px 14px;
+	border-top: 1px solid #edf2f7;
+	border-bottom: 1px solid #edf2f7;
+	background: #f7fafc;
+}
+.tl-step {
+	font-size: 11px;
+	font-weight: 700;
+	color: #a0aec0;
+	padding: 4px 10px;
+	border-radius: 999px;
+	border: 1.5px solid #e2e8f0;
+	background: #fff;
+	white-space: nowrap;
+}
+.tl-step.tl-active {
+	color: #1a3a6e;
+	border-color: #1a3a6e;
+	background: #e6f0ff;
+}
+.tl-step.tl-done {
+	color: #276749;
+	border-color: #276749;
+	background: #e6fff0;
+}
+.tl-step.tl-canceled {
+	color: #8492a6;
+	border-color: #cbd5e0;
+	background: #f7fafc;
+}
+.tl-line {
+	flex: 1;
+	height: 2px;
+	background: #e2e8f0;
+	margin: 0 4px;
+}
+
+.modal-actions {
+	display: flex;
+	gap: 8px;
+	padding: 14px 20px;
+	flex-wrap: wrap;
+}
+.modal-actions button {
+	padding: 9px 16px;
+	border-radius: 7px;
+	font-size: 13px;
+	font-weight: 700;
+	cursor: pointer;
+	border: 1px solid #cbd5e0;
+	background: #f7fafc;
+	color: #4a5568;
+	transition: background 0.12s;
+}
+.modal-actions button.primary {
+	background: #1a3a6e;
+	color: #fff;
+	border-color: #1a3a6e;
+}
+.modal-actions button.primary:hover { background: #152e58; }
+.modal-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
