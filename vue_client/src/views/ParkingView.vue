@@ -1,32 +1,21 @@
 <template>
 	<div class="pk">
 		<div class="page-header">
-			<div class="page-header__icon">
-				<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<rect x="1" y="3" width="15" height="13" rx="2"/>
-					<path d="M16 8h4l3 3v5h-7V8z"/>
-					<circle cx="5.5" cy="18.5" r="2.5"/>
-					<circle cx="18.5" cy="18.5" r="2.5"/>
-				</svg>
-			</div>
-			<div>
-				<h2 class="page-title">{{ t('park.title') }}</h2>
-				<p class="page-sub">Vehicle Registration</p>
-			</div>
+			<h2 class="page-title">{{ t('park.title') }}</h2>
+			<p class="page-sub">Vehicle Registration</p>
+		</div>
+
+		<div class="guest-bar">
+			<span class="guest-bar__room">{{ t('guest.room.label', roomNo) }}</span>
 		</div>
 
 		<div class="form-card">
-			<div class="guest-info">
-				<span class="guest-room">{{ t('guest.room.label', roomNo) }}</span>
-
-			</div>
-
 			<div class="form-row">
 				<div class="form-group" style="flex: 1">
 					<label class="field-label">{{ t('park.carNo') }}</label>
 					<input v-model="carNo" type="text" class="field-input" :placeholder="t('park.carNo.placeholder')" maxlength="20" />
 				</div>
-				<div class="form-group" style="flex: 0 0 160px">
+				<div class="form-group" style="flex: 0 0 148px">
 					<label class="field-label">{{ t('park.carTp') }}</label>
 					<div class="select-wrap">
 						<select v-model="carTp" class="field-input">
@@ -48,13 +37,13 @@
 			</div>
 
 			<button class="submit-btn" @click="submit">
-				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.64 3.35 2 2 0 0 1 3.61 1h3a2 2 0 0 1 2 1.72c.127.96.36 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.96-.96a2 2 0 0 1 2.11-.45c.907.34 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
 				{{ t('park.submit') }}
 			</button>
 
 			<Transition name="toast">
 				<div v-if="toast" class="inline-toast" :class="toast.ok ? 'inline-toast--ok' : 'inline-toast--err'">
-					<span class="toast-icon">{{ toast.ok ? '✓' : '!' }}</span>
+					<svg v-if="toast.ok" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+					<svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 					<span>{{ toast.msg }}</span>
 				</div>
 			</Transition>
@@ -69,23 +58,29 @@
 			<LoadingSpinner v-if="loadingList" :text="t('park.loading')" />
 
 			<div v-else-if="list.length === 0" class="empty-state">
-				<div class="empty-icon">🚗</div>
+				<div class="empty-icon-wrap">
+					<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+						<rect x="1" y="3" width="15" height="13" rx="2"/>
+						<path d="M16 8h4l3 3v5h-7V8z"/>
+						<circle cx="5.5" cy="18.5" r="2.5"/>
+						<circle cx="18.5" cy="18.5" r="2.5"/>
+					</svg>
+				</div>
 				<div class="empty-title">{{ t('park.empty') }}</div>
 				<div class="empty-sub">{{ t('park.empty.sub') }}</div>
 			</div>
 
-			<div v-else class="cards">
-				<div v-for="row in list" :key="row.reqNo" class="vehicle-card">
-					<div class="vehicle-icon">🚗</div>
-					<div class="vehicle-body">
-						<div class="vehicle-no">{{ row.carNo }}</div>
-						<div class="vehicle-meta">
+			<div v-else class="vehicle-list">
+				<div v-for="row in list" :key="row.reqNo" class="vehicle-item">
+					<div class="vehicle-item__body">
+						<div class="vehicle-item__no">{{ row.carNo }}</div>
+						<div class="vehicle-item__meta">
 							<span class="badge">{{ carTpLabel(row.carTp) }}</span>
 							<span class="stat-badge">{{ row.procStatNm }}</span>
-							<span class="time">{{ fmtTime(row.reqDt, row.reqTm) }}</span>
 						</div>
-						<div v-if="row.reqMemo" class="vehicle-memo">{{ row.reqMemo }}</div>
+						<div v-if="row.reqMemo" class="vehicle-item__memo">{{ row.reqMemo }}</div>
 					</div>
+					<div class="vehicle-item__time">{{ fmtTime(row.reqDt, row.reqTm) }}</div>
 				</div>
 			</div>
 		</div>
@@ -172,35 +167,37 @@ onMounted(loadList);
 
 /* ── Page Header ── */
 .page-header {
-	display: flex;
-	align-items: center;
-	gap: var(--sp-4);
 	margin-bottom: var(--sp-6);
-}
-.page-header__icon {
-	width: 48px;
-	height: 48px;
-	background: var(--c-brand-700);
-	color: var(--c-brand-300);
-	border-radius: var(--r-md);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	flex-shrink: 0;
 }
 .page-title {
 	font-size: var(--fs-2xl);
-	font-weight: 800;
-	color: var(--c-brand-900);
-	letter-spacing: -0.4px;
-	line-height: 1.2;
+	font-weight: 700;
+	color: var(--c-text);
+	letter-spacing: -0.5px;
+	line-height: 1.25;
+	margin: 0 0 var(--sp-1) 0;
 }
 .page-sub {
 	font-size: var(--fs-sm);
-	color: var(--c-muted);
-	letter-spacing: 0.8px;
-	text-transform: uppercase;
-	margin-top: 2px;
+	color: var(--c-text-soft);
+	margin: 0;
+}
+
+/* ── Guest Bar ── */
+.guest-bar {
+	display: flex;
+	align-items: center;
+	padding: 14px var(--sp-5);
+	background: var(--c-surface);
+	border: 1px solid var(--c-border);
+	border-radius: var(--r-md);
+	margin-bottom: var(--sp-5);
+	box-shadow: var(--sh-xs);
+}
+.guest-bar__room {
+	font-weight: 700;
+	font-size: var(--fs-md);
+	color: var(--c-text);
 }
 
 /* ── Form Card ── */
@@ -209,60 +206,38 @@ onMounted(loadList);
 	border: 1px solid var(--c-border);
 	border-radius: var(--r-xl);
 	padding: var(--sp-8);
-	box-shadow: var(--sh-md);
+	box-shadow: var(--sh-sm);
 	display: flex;
 	flex-direction: column;
 	gap: var(--sp-5);
 	margin-bottom: var(--sp-8);
 }
 
-/* ── Guest Info ── */
-.guest-info {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	padding: 14px 16px;
-	background: var(--c-brand-50, #ebf4ff);
-	border-radius: var(--r-md, 10px);
-	margin-bottom: 16px;
-}
-.guest-room {
-	font-weight: 800;
-	font-size: 16px;
-	color: var(--c-brand-700, #1a3a6e);
-}
-.guest-name {
-	font-size: 14px;
-	color: var(--c-text-soft, #718096);
-}
-
 .form-row { display: flex; gap: var(--sp-4); }
-
 .form-group { display: flex; flex-direction: column; gap: var(--sp-2); }
 .field-label {
 	font-size: var(--fs-sm);
-	font-weight: 700;
+	font-weight: 600;
 	color: var(--c-text-soft);
-	letter-spacing: 0.3px;
-	text-transform: uppercase;
 }
 .optional {
 	font-size: var(--fs-xs);
 	font-weight: 400;
 	color: var(--c-muted);
 	text-transform: none;
-	margin-left: var(--sp-2);
+	margin-left: 4px;
 }
 
 .select-wrap { position: relative; }
 .select-wrap select,
 .field-input {
 	width: 100%;
-	padding: var(--sp-3) var(--sp-4);
-	border: 1.5px solid var(--c-border);
+	height: var(--touch-md);
+	padding: 0 var(--sp-4);
+	border: 1px solid var(--c-border);
 	border-radius: var(--r-md);
 	font-size: var(--fs-md);
-	background: var(--c-bg-soft);
+	background: var(--c-bg);
 	color: var(--c-text);
 	appearance: none;
 	-webkit-appearance: none;
@@ -270,15 +245,20 @@ onMounted(loadList);
 	box-sizing: border-box;
 }
 .select-wrap select { padding-right: var(--sp-10); cursor: pointer; }
+textarea.field-input {
+	height: auto;
+	padding: 14px var(--sp-4);
+	resize: vertical;
+	line-height: 1.6;
+}
 .select-wrap select:focus,
 .field-input:focus {
 	outline: none;
-	border-color: var(--c-brand-500);
-	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+	border-color: var(--c-brand-400);
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 	background: var(--c-surface);
 }
 .field-input::placeholder { color: var(--c-muted); }
-textarea.field-input { resize: vertical; }
 
 .select-arrow {
 	position: absolute;
@@ -294,20 +274,19 @@ textarea.field-input { resize: vertical; }
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: var(--sp-2);
 	width: 100%;
-	padding: var(--sp-4) var(--sp-6);
-	background: var(--c-brand-700);
+	height: var(--touch-lg);
+	background: var(--c-brand-500);
 	color: #fff;
 	border: none;
 	border-radius: var(--r-md);
 	font-size: var(--fs-lg);
-	font-weight: 800;
+	font-weight: 700;
 	cursor: pointer;
 	transition: background var(--t-norm) var(--ease-out), box-shadow var(--t-norm) var(--ease-out), transform var(--t-fast);
 }
 .submit-btn:hover {
-	background: var(--c-brand-900);
+	background: var(--c-brand-600);
 	box-shadow: var(--sh-brand);
 	transform: translateY(-1px);
 }
@@ -316,35 +295,20 @@ textarea.field-input { resize: vertical; }
 .inline-toast {
 	display: flex;
 	align-items: center;
-	gap: var(--sp-3);
-	padding: var(--sp-3) var(--sp-4);
+	gap: var(--sp-2);
+	padding: 12px var(--sp-4);
 	border-radius: var(--r-md);
-	font-size: var(--fs-md);
+	font-size: var(--fs-sm);
 	font-weight: 600;
 }
 .inline-toast--ok { background: var(--c-ok-50); color: #065f46; }
 .inline-toast--err { background: var(--c-err-50); color: var(--c-err-600); }
-.toast-icon {
-	width: 22px;
-	height: 22px;
-	border-radius: var(--r-pill);
-	background: currentColor;
-	color: #fff;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: var(--fs-xs);
-	font-weight: 900;
-	flex-shrink: 0;
-}
-.inline-toast--ok .toast-icon { background: #065f46; }
-.inline-toast--err .toast-icon { background: var(--c-err-600); }
 
 .toast-enter-active, .toast-leave-active {
 	transition: opacity var(--t-norm) var(--ease-out), transform var(--t-norm) var(--ease-out);
 }
-.toast-enter-from { opacity: 0; transform: translateY(8px); }
-.toast-leave-to   { opacity: 0; transform: translateY(8px); }
+.toast-enter-from { opacity: 0; transform: translateY(6px); }
+.toast-leave-to   { opacity: 0; transform: translateY(6px); }
 
 /* ── List section ── */
 .list-section { display: flex; flex-direction: column; gap: var(--sp-4); }
@@ -355,13 +319,15 @@ textarea.field-input { resize: vertical; }
 }
 .list-title {
 	font-size: var(--fs-lg);
-	font-weight: 800;
-	color: var(--c-brand-900);
+	font-weight: 700;
+	color: var(--c-text);
+	margin: 0;
 }
 .list-count {
-	background: var(--c-brand-50);
-	color: var(--c-brand-700);
-	font-size: var(--fs-sm);
+	background: var(--c-bg-soft);
+	color: var(--c-text-soft);
+	border: 1px solid var(--c-border);
+	font-size: var(--fs-xs);
 	font-weight: 700;
 	padding: 2px var(--sp-3);
 	border-radius: var(--r-pill);
@@ -370,7 +336,7 @@ textarea.field-input { resize: vertical; }
 /* ── Empty state ── */
 .empty-state {
 	background: var(--c-surface);
-	border: 1.5px dashed var(--c-border);
+	border: 1px solid var(--c-border);
 	border-radius: var(--r-xl);
 	padding: var(--sp-10) var(--sp-8);
 	text-align: center;
@@ -379,47 +345,48 @@ textarea.field-input { resize: vertical; }
 	align-items: center;
 	gap: var(--sp-2);
 }
-.empty-icon { font-size: 48px; line-height: 1; margin-bottom: var(--sp-2); }
-.empty-title { font-size: var(--fs-lg); font-weight: 700; color: var(--c-text-soft); }
-.empty-sub { font-size: var(--fs-sm); color: var(--c-muted); }
-
-/* ── Vehicle cards ── */
-.cards { display: flex; flex-direction: column; gap: var(--sp-3); }
-.vehicle-card {
-	background: var(--c-surface);
+.empty-icon-wrap {
+	width: 64px;
+	height: 64px;
+	border-radius: var(--r-xl);
+	background: var(--c-bg);
 	border: 1px solid var(--c-border);
-	border-radius: var(--r-lg);
-	padding: var(--sp-4) var(--sp-5);
-	box-shadow: var(--sh-sm);
-	display: flex;
-	align-items: flex-start;
-	gap: var(--sp-4);
-	transition: box-shadow var(--t-norm) var(--ease-out), transform var(--t-fast);
-}
-.vehicle-card:hover { box-shadow: var(--sh-md); transform: translateY(-1px); }
-
-.vehicle-icon {
-	font-size: 28px;
-	line-height: 1;
-	background: var(--c-brand-50);
-	width: 48px;
-	height: 48px;
-	border-radius: var(--r-md);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	flex-shrink: 0;
-}
-.vehicle-body { flex: 1; min-width: 0; }
-.vehicle-no {
-	font-family: 'Menlo', 'Consolas', monospace;
-	font-size: var(--fs-xl);
-	font-weight: 700;
-	color: var(--c-brand-900);
-	letter-spacing: 1px;
+	color: var(--c-muted);
 	margin-bottom: var(--sp-2);
 }
-.vehicle-meta {
+.empty-title { font-size: var(--fs-md); font-weight: 600; color: var(--c-text-soft); }
+.empty-sub { font-size: var(--fs-sm); color: var(--c-muted); }
+
+/* ── Vehicle list ── */
+.vehicle-list {
+	background: var(--c-surface);
+	border: 1px solid var(--c-border);
+	border-radius: var(--r-xl);
+	overflow: hidden;
+	box-shadow: var(--sh-sm);
+}
+.vehicle-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--sp-4);
+	padding: var(--sp-5) var(--sp-6);
+	border-bottom: 1px solid var(--c-border);
+}
+.vehicle-item:last-child { border-bottom: none; }
+.vehicle-item__body { flex: 1; min-width: 0; }
+.vehicle-item__no {
+	font-size: var(--fs-xl);
+	font-weight: 700;
+	color: var(--c-text);
+	letter-spacing: 0.5px;
+	margin-bottom: var(--sp-2);
+	font-variant-numeric: tabular-nums;
+}
+.vehicle-item__meta {
 	display: flex;
 	gap: var(--sp-2);
 	align-items: center;
@@ -432,7 +399,7 @@ textarea.field-input { resize: vertical; }
 	padding: 2px var(--sp-3);
 	border-radius: var(--r-pill);
 	font-size: var(--fs-xs);
-	font-weight: 700;
+	font-weight: 600;
 }
 .stat-badge {
 	background: var(--c-ok-50);
@@ -440,17 +407,23 @@ textarea.field-input { resize: vertical; }
 	padding: 2px var(--sp-3);
 	border-radius: var(--r-pill);
 	font-size: var(--fs-xs);
-	font-weight: 700;
+	font-weight: 600;
 }
-.time { font-size: var(--fs-xs); color: var(--c-muted); }
-.vehicle-memo {
+.vehicle-item__memo {
 	margin-top: var(--sp-2);
 	font-size: var(--fs-sm);
 	color: var(--c-text-soft);
+}
+.vehicle-item__time {
+	font-size: var(--fs-xs);
+	color: var(--c-muted);
+	white-space: nowrap;
+	flex-shrink: 0;
 }
 
 @media (max-width: 480px) {
 	.form-card { padding: var(--sp-5); }
 	.form-row { flex-direction: column; }
+	.vehicle-item { flex-direction: column; align-items: flex-start; gap: var(--sp-2); }
 }
 </style>

@@ -1,27 +1,15 @@
 <template>
 	<div class="amenity">
 		<div class="page-header">
-			<div class="page-header__icon">
-				<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
-					<path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
-					<line x1="6" y1="1" x2="6" y2="4"/>
-					<line x1="10" y1="1" x2="10" y2="4"/>
-					<line x1="14" y1="1" x2="14" y2="4"/>
-				</svg>
-			</div>
-			<div>
-				<h2 class="page-title">{{ t('amenity.title') }}</h2>
-				<p class="page-sub">{{ t('amenity.sub') }}</p>
-			</div>
+			<h2 class="page-title">{{ t('amenity.title') }}</h2>
+			<p class="page-sub">{{ t('amenity.sub') }}</p>
+		</div>
+
+		<div class="guest-bar">
+			<span class="guest-bar__room">{{ t('guest.room.label', roomNo) }}</span>
 		</div>
 
 		<div class="form-card">
-			<div class="guest-info">
-				<span class="guest-room">{{ t('guest.room.label', roomNo) }}</span>
-
-			</div>
-
 			<LoadingSpinner v-if="loading" :text="t('amenity.loading')" />
 			<div v-else class="items">
 				<div class="items-header">
@@ -34,14 +22,14 @@
 						<span class="item-name-en">{{ getLang() === 'ko' ? item.itemNmEng : item.itemNm }}</span>
 					</div>
 					<div class="item-controls">
-						<span class="item-max">{{ t('amenity.max') }} {{ item.maxQty }}</span>
+						<span class="item-max">max {{ item.maxQty }}</span>
 						<div class="qty-wrap">
 							<button class="qty-btn" @click="decQty(item)" :disabled="qtyMap[item.itemCd] <= 0" aria-label="감소">
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
 							</button>
 							<span class="qty-val">{{ qtyMap[item.itemCd] }}</span>
 							<button class="qty-btn" @click="incQty(item)" :disabled="qtyMap[item.itemCd] >= item.maxQty" aria-label="증가">
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 							</button>
 						</div>
 					</div>
@@ -54,19 +42,16 @@
 			</div>
 
 			<button class="submit-btn" @click="submit">
-				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-				</svg>
 				{{ t('amenity.submit') }}
 			</button>
 		</div>
 
 		<Transition name="toast">
 			<div v-if="result" class="toast" :class="result.status === 0 ? 'toast--ok' : 'toast--err'">
-				<span class="toast-icon">{{ result.status === 0 ? '✓' : '!' }}</span>
+				<div class="toast-indicator">{{ result.status === 0 ? '✓' : '!' }}</div>
 				<div>
 					<div class="toast-msg">{{ result.message }}</div>
-					<div v-if="result.map && result.map.reqNo" class="toast-meta">요청번호: {{ result.map.reqNo }}</div>
+					<div v-if="result.map && result.map.reqNo" class="toast-meta">요청번호 {{ result.map.reqNo }}</div>
 				</div>
 			</div>
 		</Transition>
@@ -142,55 +127,38 @@ async function submit() {
 
 /* ── Page Header ── */
 .page-header {
-	display: flex;
-	align-items: center;
-	gap: var(--sp-4);
 	margin-bottom: var(--sp-6);
-}
-.page-header__icon {
-	width: 48px;
-	height: 48px;
-	background: var(--c-brand-700);
-	color: var(--c-brand-300);
-	border-radius: var(--r-md);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	flex-shrink: 0;
 }
 .page-title {
 	font-size: var(--fs-2xl);
-	font-weight: 800;
-	color: var(--c-brand-900);
-	letter-spacing: -0.4px;
-	line-height: 1.2;
+	font-weight: 700;
+	color: var(--c-text);
+	letter-spacing: -0.5px;
+	line-height: 1.25;
+	margin: 0 0 var(--sp-1) 0;
 }
 .page-sub {
 	font-size: var(--fs-sm);
-	color: var(--c-muted);
-	letter-spacing: 0.8px;
-	text-transform: uppercase;
-	margin-top: 2px;
+	color: var(--c-text-soft);
+	margin: 0;
 }
 
-/* ── Guest Info ── */
-.guest-info {
+/* ── Guest Bar ── */
+.guest-bar {
 	display: flex;
 	align-items: center;
-	gap: 10px;
-	padding: 14px 16px;
-	background: var(--c-brand-50, #ebf4ff);
-	border-radius: var(--r-md, 10px);
-	margin-bottom: 16px;
+	gap: var(--sp-3);
+	padding: 14px var(--sp-5);
+	background: var(--c-surface);
+	border: 1px solid var(--c-border);
+	border-radius: var(--r-md);
+	margin-bottom: var(--sp-5);
+	box-shadow: var(--sh-xs);
 }
-.guest-room {
-	font-weight: 800;
-	font-size: 16px;
-	color: var(--c-brand-700, #1a3a6e);
-}
-.guest-name {
-	font-size: 14px;
-	color: var(--c-text-soft, #718096);
+.guest-bar__room {
+	font-weight: 700;
+	font-size: var(--fs-md);
+	color: var(--c-text);
 }
 
 /* ── Form Card ── */
@@ -199,7 +167,7 @@ async function submit() {
 	border: 1px solid var(--c-border);
 	border-radius: var(--r-xl);
 	padding: var(--sp-8);
-	box-shadow: var(--sh-md);
+	box-shadow: var(--sh-sm);
 	display: flex;
 	flex-direction: column;
 	gap: var(--sp-6);
@@ -209,64 +177,27 @@ async function submit() {
 .form-group { display: flex; flex-direction: column; gap: var(--sp-2); }
 .field-label {
 	font-size: var(--fs-sm);
-	font-weight: 700;
+	font-weight: 600;
 	color: var(--c-text-soft);
-	letter-spacing: 0.3px;
-	text-transform: uppercase;
-}
-.optional {
-	font-size: var(--fs-xs);
-	font-weight: 400;
-	color: var(--c-muted);
-	margin-left: var(--sp-2);
-	text-transform: none;
-}
-
-.select-wrap { position: relative; }
-.select-wrap select {
-	width: 100%;
-	padding: var(--sp-3) var(--sp-10) var(--sp-3) var(--sp-4);
-	border: 1.5px solid var(--c-border);
-	border-radius: var(--r-md);
-	font-size: var(--fs-md);
-	background: var(--c-bg-soft);
-	color: var(--c-text);
-	appearance: none;
-	-webkit-appearance: none;
-	cursor: pointer;
-	transition: border-color var(--t-fast) var(--ease-out), box-shadow var(--t-fast) var(--ease-out);
-}
-.select-wrap select:focus {
-	outline: none;
-	border-color: var(--c-brand-500);
-	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-	background: var(--c-surface);
-}
-.select-arrow {
-	position: absolute;
-	right: var(--sp-4);
-	top: 50%;
-	transform: translateY(-50%);
-	color: var(--c-muted);
-	pointer-events: none;
-	display: flex;
 }
 
 textarea {
 	width: 100%;
-	padding: var(--sp-3) var(--sp-4);
-	border: 1.5px solid var(--c-border);
+	padding: 14px var(--sp-4);
+	border: 1px solid var(--c-border);
 	border-radius: var(--r-md);
 	font-size: var(--fs-md);
-	background: var(--c-bg-soft);
+	background: var(--c-bg);
 	color: var(--c-text);
 	resize: vertical;
 	transition: border-color var(--t-fast) var(--ease-out), box-shadow var(--t-fast) var(--ease-out);
+	box-sizing: border-box;
+	line-height: 1.6;
 }
 textarea:focus {
 	outline: none;
-	border-color: var(--c-brand-500);
-	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+	border-color: var(--c-brand-400);
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 	background: var(--c-surface);
 }
 textarea::placeholder { color: var(--c-muted); }
@@ -276,14 +207,12 @@ textarea::placeholder { color: var(--c-muted); }
 	display: flex;
 	justify-content: space-between;
 	align-items: baseline;
-	margin-bottom: var(--sp-3);
+	margin-bottom: var(--sp-4);
 }
 .items-label {
 	font-size: var(--fs-sm);
-	font-weight: 700;
+	font-weight: 600;
 	color: var(--c-text-soft);
-	letter-spacing: 0.3px;
-	text-transform: uppercase;
 }
 .items-hint { font-size: var(--fs-xs); color: var(--c-muted); }
 
@@ -292,11 +221,11 @@ textarea::placeholder { color: var(--c-muted); }
 	align-items: center;
 	justify-content: space-between;
 	gap: var(--sp-4);
-	padding: var(--sp-4) var(--sp-5);
-	border: 1.5px solid var(--c-border);
+	padding: var(--sp-5) var(--sp-5);
+	border: 1px solid var(--c-border);
 	border-radius: var(--r-md);
-	background: var(--c-bg-soft);
-	margin-bottom: var(--sp-2);
+	background: var(--c-bg);
+	margin-bottom: var(--sp-3);
 	transition: border-color var(--t-norm) var(--ease-out), background var(--t-norm) var(--ease-out), box-shadow var(--t-norm) var(--ease-out);
 }
 .item-card:last-child { margin-bottom: 0; }
@@ -305,42 +234,46 @@ textarea::placeholder { color: var(--c-muted); }
 	background: var(--c-brand-50);
 	box-shadow: var(--sh-sm);
 }
-.item-info { display: flex; flex-direction: column; gap: 2px; }
-.item-name { font-size: var(--fs-md); font-weight: 700; color: var(--c-text); }
+.item-info { display: flex; flex-direction: column; gap: 3px; }
+.item-name { font-size: var(--fs-lg); font-weight: 600; color: var(--c-text); }
 .item-name-en { font-size: var(--fs-xs); color: var(--c-muted); }
 
 .item-controls { display: flex; align-items: center; gap: var(--sp-4); flex-shrink: 0; }
 .item-max { font-size: var(--fs-xs); color: var(--c-muted); }
+
 .qty-wrap {
 	display: flex;
 	align-items: center;
 	gap: var(--sp-2);
-	background: var(--c-surface);
-	border: 1.5px solid var(--c-border);
-	border-radius: var(--r-pill);
-	padding: 4px;
 }
 .qty-btn {
-	width: 30px;
-	height: 30px;
-	border: none;
-	background: transparent;
+	width: 40px;
+	height: 40px;
+	border: 1px solid var(--c-border);
+	background: var(--c-surface);
 	color: var(--c-text-soft);
 	border-radius: var(--r-pill);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transition: background var(--t-fast), color var(--t-fast);
+	cursor: pointer;
+	transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+	flex-shrink: 0;
 }
 .qty-btn:not(:disabled):hover {
-	background: var(--c-brand-700);
+	background: var(--c-brand-500);
+	border-color: var(--c-brand-500);
 	color: #fff;
+}
+.qty-btn:not(:disabled):active {
+	background: var(--c-brand-700);
+	border-color: var(--c-brand-700);
 }
 .qty-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .qty-val {
-	min-width: 28px;
+	min-width: 32px;
 	text-align: center;
-	font-size: var(--fs-md);
+	font-size: var(--fs-lg);
 	font-weight: 700;
 	color: var(--c-text);
 }
@@ -350,25 +283,24 @@ textarea::placeholder { color: var(--c-muted); }
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: var(--sp-2);
 	width: 100%;
-	padding: var(--sp-4) var(--sp-6);
-	background: var(--c-brand-700);
+	height: var(--touch-lg);
+	background: var(--c-brand-500);
 	color: #fff;
 	border: none;
 	border-radius: var(--r-md);
 	font-size: var(--fs-lg);
-	font-weight: 800;
-	letter-spacing: 0.2px;
+	font-weight: 700;
 	cursor: pointer;
 	transition: background var(--t-norm) var(--ease-out), box-shadow var(--t-norm) var(--ease-out), transform var(--t-fast) var(--ease-out);
+	letter-spacing: 0.1px;
 }
 .submit-btn:hover {
-	background: var(--c-brand-900);
+	background: var(--c-brand-600);
 	box-shadow: var(--sh-brand);
 	transform: translateY(-1px);
 }
-.submit-btn:active { transform: translateY(0); }
+.submit-btn:active { transform: translateY(0); box-shadow: none; }
 
 /* ── Toast ── */
 .toast {
@@ -388,19 +320,19 @@ textarea::placeholder { color: var(--c-muted); }
 }
 .toast--ok { background: #065f46; color: #fff; }
 .toast--err { background: var(--c-err-600); color: #fff; }
-.toast-icon {
+.toast-indicator {
 	width: 28px;
 	height: 28px;
 	border-radius: var(--r-pill);
-	background: rgba(255,255,255,0.2);
+	background: rgba(255,255,255,0.18);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: var(--fs-md);
+	font-size: 13px;
 	font-weight: 800;
 	flex-shrink: 0;
 }
-.toast-msg { font-size: var(--fs-md); font-weight: 700; }
+.toast-msg { font-size: var(--fs-md); font-weight: 600; }
 .toast-meta { font-size: var(--fs-xs); opacity: 0.75; margin-top: 2px; }
 
 .toast-enter-active, .toast-leave-active {
@@ -411,7 +343,7 @@ textarea::placeholder { color: var(--c-muted); }
 
 @media (max-width: 480px) {
 	.form-card { padding: var(--sp-5); }
-	.item-card { flex-direction: column; align-items: flex-start; }
+	.item-card { flex-direction: column; align-items: flex-start; gap: var(--sp-3); }
 	.item-controls { width: 100%; justify-content: space-between; }
 }
 </style>

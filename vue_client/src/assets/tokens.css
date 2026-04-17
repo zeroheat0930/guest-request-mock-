@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════
  * 다올 컨시어지 디자인 토큰 — 두 번들(index.html, staff.html)이 공유.
- * 변경 시 전체 컬러/간격이 일괄 반영되도록 CSS 변수로 centralize.
+ * 테이블오더 스타일 — 태블릿 최적화, 깔끔하고 여백이 풍부한 UI
  * ═══════════════════════════════════════════════════════════════════ */
 
 :root {
@@ -11,77 +11,87 @@
 	--c-brand-600: #2456a0;
 	--c-brand-500: #2563eb;
 	--c-brand-400: #3b82f6;
-	--c-brand-300: #60a5fa;
+	--c-brand-300: #93c5fd;
+	--c-brand-100: #dbeafe;
 	--c-brand-50:  #eff6ff;
 
 	--c-accent-500: #3b5bdb;
 	--c-accent-400: #5c7cfa;
 
-	/* ── Neutrals ── */
-	--c-bg:        #f5f7fa;
-	--c-bg-soft:   #eef2f7;
-	--c-surface:   #ffffff;
-	--c-border:    #e2e8f0;
-	--c-border-strong: #cbd5e0;
-	--c-muted:     #a0aec0;
-	--c-text-dim:  #8492a6;
-	--c-text:      #1a202c;
-	--c-text-soft: #4a5568;
+	/* ── Neutrals (테이블오더 톤) ── */
+	--c-bg:           #f9fafb;
+	--c-bg-soft:      #f3f4f6;
+	--c-surface:      #ffffff;
+	--c-border:       #e5e7eb;
+	--c-border-strong:#d1d5db;
+	--c-muted:        #9ca3af;
+	--c-text-dim:     #6b7280;
+	--c-text-soft:    #6b7280;
+	--c-text:         #111827;
 
 	/* ── Status ── */
-	--c-ok-500:   #22c55e;
-	--c-ok-50:    #f0fff4;
-	--c-warn-500: #eab308;
-	--c-warn-50:  #fefce8;
-	--c-err-500:  #e53e3e;
-	--c-err-600:  #c53030;
-	--c-err-50:   #fff5f5;
+	--c-ok-500:   #10b981;
+	--c-ok-50:    #ecfdf5;
+	--c-warn-500: #f59e0b;
+	--c-warn-50:  #fffbeb;
+	--c-err-500:  #ef4444;
+	--c-err-600:  #dc2626;
+	--c-err-50:   #fef2f2;
 
-	/* ── Radii ── */
-	--r-sm: 6px;
-	--r-md: 10px;
-	--r-lg: 14px;
-	--r-xl: 20px;
+	/* ── Radii (테이블오더 라운드) ── */
+	--r-sm:   8px;
+	--r-md:   12px;
+	--r-lg:   16px;
+	--r-xl:   20px;
+	--r-2xl:  24px;
 	--r-pill: 999px;
 
-	/* ── Shadows ── */
-	--sh-sm: 0 1px 2px rgba(15, 39, 72, 0.06);
-	--sh-md: 0 2px 8px rgba(15, 39, 72, 0.08);
-	--sh-lg: 0 8px 24px rgba(15, 39, 72, 0.12);
-	--sh-xl: 0 20px 60px rgba(15, 39, 72, 0.16);
-	--sh-brand: 0 6px 18px rgba(37, 99, 235, 0.32);
+	/* ── Shadows (소프트) ── */
+	--sh-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+	--sh-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+	--sh-md: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.04);
+	--sh-lg: 0 10px 25px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.05);
+	--sh-xl: 0 20px 50px rgba(0, 0, 0, 0.10), 0 8px 20px rgba(0, 0, 0, 0.06);
+	--sh-brand: 0 8px 20px rgba(37, 99, 235, 0.28);
 
-	/* ── Spacing (8px grid) ── */
-	--sp-1: 4px;
-	--sp-2: 8px;
-	--sp-3: 12px;
-	--sp-4: 16px;
-	--sp-5: 20px;
-	--sp-6: 24px;
-	--sp-8: 32px;
+	/* ── Spacing (8px grid, 태블릿 여백 확대) ── */
+	--sp-1:  4px;
+	--sp-2:  8px;
+	--sp-3:  12px;
+	--sp-4:  16px;
+	--sp-5:  20px;
+	--sp-6:  24px;
+	--sp-7:  28px;
+	--sp-8:  32px;
 	--sp-10: 40px;
+	--sp-12: 48px;
 
 	/* ── Typography ── */
-	--fs-xs:  11px;
+	--fs-xs:  12px;
 	--fs-sm:  13px;
-	--fs-md:  14px;
+	--fs-md:  15px;
 	--fs-lg:  16px;
 	--fs-xl:  20px;
 	--fs-2xl: 24px;
-	--fs-3xl: 30px;
+	--fs-3xl: 32px;
+
+	/* ── Touch targets (태블릿) ── */
+	--touch-sm:  44px;
+	--touch-md:  52px;
+	--touch-lg:  56px;
 
 	/* ── Motion ── */
 	--ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-	--t-fast: 120ms;
-	--t-norm: 200ms;
-	--t-slow: 320ms;
+	--t-fast: 100ms;
+	--t-norm: 180ms;
+	--t-slow: 300ms;
 }
 
 /* ── Dark-friendly glass (재활용용) ── */
 .glass-dark {
-	background: rgba(15, 39, 72, 0.92);
-	backdrop-filter: blur(12px);
-	-webkit-backdrop-filter: blur(12px);
+	background: rgba(15, 39, 72, 0.94);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
 }
 
 /* ── 공통 페이지 전환 ── */
@@ -89,5 +99,5 @@
 .page-leave-active {
 	transition: opacity var(--t-norm) var(--ease-out), transform var(--t-norm) var(--ease-out);
 }
-.page-enter-from { opacity: 0; transform: translateY(8px); }
-.page-leave-to   { opacity: 0; transform: translateY(-4px); }
+.page-enter-from { opacity: 0; transform: translateY(6px); }
+.page-leave-to   { opacity: 0; transform: translateY(-3px); }
