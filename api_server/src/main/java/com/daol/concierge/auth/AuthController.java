@@ -39,4 +39,14 @@ public class AuthController extends BaseController {
 	public ApiResponse issueRoomToken(RequestParams requestParams) {
 		return Responses.MapResponse.of(authService.issueRoomToken(requestParams.getParams()));
 	}
+
+	/**
+	 * 프로퍼티/컴플렉스 공개 정보 — 인증 전 랜딩 화면에서 사용
+	 * GET /api/auth/property-info → { cmpxNm, ... }
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/property-info", method = RequestMethod.GET, produces = APPLICATION_JSON)
+	public ApiResponse propertyInfo() {
+		return Responses.MapResponse.of(authService.getPropertyInfo());
+	}
 }

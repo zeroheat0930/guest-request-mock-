@@ -104,6 +104,15 @@ public class AuthService {
 		return out;
 	}
 
+	public Map<String, Object> getPropertyInfo() {
+		Map<String, Object> complex = pmsMapper.selectComplex(tenantPropCd, tenantCmpxCd);
+		Map<String, Object> out = new LinkedHashMap<>();
+		out.put("cmpxNm", complex != null ? str(complex.get("cmpxNm")) : null);
+		out.put("propCd", tenantPropCd);
+		out.put("cmpxCd", tenantCmpxCd);
+		return out;
+	}
+
 	private static String trim(Object v) {
 		if (!(v instanceof String)) return null;
 		String s = ((String) v).trim();

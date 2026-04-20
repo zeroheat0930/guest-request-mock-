@@ -1,15 +1,28 @@
 <template>
 	<NetworkStatus />
 	<div v-if="authError && showLnb" class="room-login-shell">
+		<div class="room-login-bg"></div>
 		<div class="room-login-card">
-			<div class="room-login-logo">
-				<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+			<div class="room-login-logomark">
+				<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
 					<polyline points="9 22 9 12 15 12 15 22"/>
 				</svg>
 			</div>
+			<div class="room-login-brand-sub">HOTEL CONCIERGE</div>
 			<h1 class="room-login-title">{{ t('brand.name') }}</h1>
-			<p class="room-login-sub">{{ authError }}</p>
+			<div class="room-login-divider"></div>
+			<div class="room-login-icon">
+				<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+					<rect x="3" y="3" width="18" height="18" rx="2"/>
+					<path d="M7 7h3v3H7z"/><path d="M14 7h3v3h-3z"/><path d="M7 14h3v3H7z"/><path d="M14 14h3v3h-3z"/>
+				</svg>
+			</div>
+			<p class="room-login-msg">{{ authError }}</p>
+			<p class="room-login-hint">Please scan the QR code provided at check-in<br>or use the in-room tablet.</p>
+		</div>
+		<div v-if="propertyName" class="room-login-footer">
+			<span>{{ propertyName }}</span>
 		</div>
 	</div>
 
@@ -69,6 +82,8 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { loadFeatures, enabledSortedFeatures, featuresLoaded } from './features/featureStore.js';
 import { getStoredToken, authenticateByRoom } from './auth/authBootstrap.js';
+import axios from 'axios';
+import { API_BASE } from './api/client.js';
 import LoadingSpinner from './components/LoadingSpinner.vue';
 import NetworkStatus from './components/NetworkStatus.vue';
 import { useRouter, useRoute } from 'vue-router';
@@ -83,6 +98,7 @@ const guestRoomNo = ref('');
 const guestName = ref('');
 const authError = ref('');
 const ready = ref(false);
+const propertyName = ref('');
 
 let tokenCheckTimer = null;
 
@@ -109,6 +125,10 @@ onMounted(async () => {
 		}
 	} else {
 		authError.value = t('auth.scan');
+		try {
+			const pRes = await axios.get(`${API_BASE}/auth/property-info`, { timeout: 5000 });
+			if (pRes.data?.map?.cmpxNm) propertyName.value = pRes.data.map.cmpxNm;
+		} catch {}
 		return;
 	}
 
@@ -140,6 +160,96 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* ═══════════ AUTH LANDING ═══════════ */
+.room-login-shell {
+	position: fixed;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	background: var(--c-midnight);
+	overflow: hidden;
+	z-index: 100;
+}
+.room-login-bg {
+	position: absolute;
+	inset: 0;
+	background:
+		radial-gradient(ellipse 80% 60% at 50% 20%, rgba(201, 169, 110, 0.08) 0%, transparent 70%),
+		radial-gradient(ellipse 60% 50% at 80% 80%, rgba(22, 33, 62, 0.6) 0%, transparent 70%);
+	pointer-events: none;
+}
+.room-login-card {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	padding: var(--sp-12) var(--sp-10);
+	max-width: 400px;
+	width: 90%;
+}
+.room-login-logomark {
+	width: 64px;
+	height: 64px;
+	border: 1px solid rgba(201, 169, 110, 0.25);
+	border-radius: var(--r-lg);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--c-gold);
+	background: rgba(201, 169, 110, 0.06);
+	margin-bottom: var(--sp-6);
+}
+.room-login-brand-sub {
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 3px;
+	color: rgba(201, 169, 110, 0.45);
+	text-transform: uppercase;
+	margin-bottom: var(--sp-2);
+}
+.room-login-title {
+	font-family: 'Georgia', 'Times New Roman', serif;
+	font-size: 28px;
+	font-weight: 400;
+	color: var(--c-gold-light);
+	letter-spacing: 0.5px;
+	margin: 0;
+}
+.room-login-divider {
+	width: 40px;
+	height: 1px;
+	background: linear-gradient(90deg, transparent, var(--c-gold), transparent);
+	margin: var(--sp-7) 0;
+}
+.room-login-icon {
+	color: rgba(201, 169, 110, 0.3);
+	margin-bottom: var(--sp-6);
+}
+.room-login-msg {
+	font-size: 15px;
+	font-weight: 500;
+	color: var(--c-text-light);
+	margin: 0 0 var(--sp-3);
+	line-height: 1.6;
+}
+.room-login-hint {
+	font-size: 12.5px;
+	color: rgba(232, 224, 212, 0.3);
+	line-height: 1.7;
+	margin: 0;
+	letter-spacing: 0.2px;
+}
+.room-login-footer {
+	position: absolute;
+	bottom: var(--sp-8);
+	font-size: 11px;
+	color: rgba(232, 224, 212, 0.15);
+	letter-spacing: 1px;
+}
+
 .app-shell { display: flex; height: 100%; background: var(--c-bg); }
 .app-shell.no-lnb .app-body { padding: 0; }
 
