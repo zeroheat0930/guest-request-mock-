@@ -1,0 +1,132 @@
+/* ═══════════════════════════════════════════════════════════════════
+ * 다올 컨시어지 디자인 토큰 — Luxury Hotel Edition
+ * Four Seasons / Ritz-Carlton aesthetic: midnight navy, warm gold, ivory
+ * ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+	/* ── Luxury Gold Palette ── */
+	--c-gold:          #c9a96e;
+	--c-gold-light:    #d4b896;
+	--c-gold-deep:     #b8944f;
+	--c-gold-pale:     rgba(201, 169, 110, 0.08);
+	--c-gold-pale-md:  rgba(201, 169, 110, 0.14);
+	--c-midnight:      #1a1a2e;
+	--c-navy:          #16213e;
+	--c-cream:         #f5f0e8;
+	--c-ivory:         #faf8f5;
+
+	/* ── Brand tokens remapped to gold/navy ── */
+	--c-brand-900: #1a1a2e;
+	--c-brand-800: #16213e;
+	--c-brand-700: #a07d3a;
+	--c-brand-600: #b8944f;
+	--c-brand-500: #c9a96e;
+	--c-brand-400: #c9a96e;
+	--c-brand-300: #d4b896;
+	--c-brand-100: rgba(201, 169, 110, 0.12);
+	--c-brand-50:  rgba(201, 169, 110, 0.06);
+
+	--c-accent-500: #c9a96e;
+	--c-accent-400: #d4b896;
+
+	/* ── Neutrals — warm-tinted ── */
+	--c-bg:           #faf8f5;
+	--c-bg-soft:      #f5f0e8;
+	--c-surface:      #ffffff;
+	--c-border:       rgba(201, 169, 110, 0.18);
+	--c-border-gold:  rgba(201, 169, 110, 0.22);
+	--c-border-strong: rgba(201, 169, 110, 0.32);
+	--c-muted:        #b0a898;
+	--c-text-dim:     #8c8c8c;
+	--c-text-soft:    #8c8c8c;
+	--c-text:         #2d2d2d;
+	--c-text-light:   #e8e0d4;
+
+	/* ── Status — muted, luxury-appropriate ── */
+	--c-ok-500:   #5a8a6a;
+	--c-ok-50:    #f0f5f1;
+	--c-warn-500: #c9a96e;
+	--c-warn-50:  rgba(201, 169, 110, 0.08);
+	--c-err-500:  #c0614e;
+	--c-err-600:  #a84e3c;
+	--c-err-50:   #fdf0ed;
+
+	/* ── Radii ── */
+	--r-sm:   6px;
+	--r-md:   10px;
+	--r-lg:   14px;
+	--r-xl:   18px;
+	--r-2xl:  24px;
+	--r-pill: 999px;
+
+	/* ── Shadows — warm-tinted, very subtle ── */
+	--sh-xs: 0 1px 3px rgba(0, 0, 0, 0.04);
+	--sh-sm: 0 2px 8px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03);
+	--sh-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.04);
+	--sh-lg: 0 8px 28px rgba(0, 0, 0, 0.08), 0 3px 10px rgba(0, 0, 0, 0.04);
+	--sh-xl: 0 16px 48px rgba(0, 0, 0, 0.10), 0 6px 18px rgba(0, 0, 0, 0.06);
+	--sh-gold: 0 6px 20px rgba(201, 169, 110, 0.28);
+	--sh-brand: 0 6px 20px rgba(201, 169, 110, 0.28);
+
+	/* ── Spacing (8px grid) ── */
+	--sp-1:  4px;
+	--sp-2:  8px;
+	--sp-3:  12px;
+	--sp-4:  16px;
+	--sp-5:  20px;
+	--sp-6:  24px;
+	--sp-7:  28px;
+	--sp-8:  32px;
+	--sp-10: 40px;
+	--sp-12: 48px;
+
+	/* ── Typography ── */
+	--fs-xs:  12px;
+	--fs-sm:  13px;
+	--fs-md:  15px;
+	--fs-lg:  16px;
+	--fs-xl:  20px;
+	--fs-2xl: 24px;
+	--fs-3xl: 32px;
+
+	/* ── Touch targets ── */
+	--touch-sm:  44px;
+	--touch-md:  52px;
+	--touch-lg:  56px;
+
+	/* ── Motion ── */
+	--ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+	--t-fast: 120ms;
+	--t-norm: 200ms;
+	--t-slow: 320ms;
+}
+
+/* ── Luxury dark sidebar glass ── */
+.glass-dark {
+	background: rgba(26, 26, 46, 0.96);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+}
+
+/* ── Gold gradient utility ── */
+.btn-gold {
+	background: linear-gradient(135deg, #c9a96e, #d4b896);
+	color: #1a1a2e;
+	border: none;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+}
+
+/* ── Serif heading utility ── */
+.title-serif {
+	font-family: 'Georgia', 'Times New Roman', serif;
+	letter-spacing: -0.3px;
+}
+
+/* ── 공통 페이지 전환 ── */
+.page-enter-active,
+.page-leave-active {
+	transition: opacity var(--t-norm) var(--ease-out), transform var(--t-norm) var(--ease-out);
+}
+.page-enter-from { opacity: 0; transform: translateY(8px); }
+.page-leave-to   { opacity: 0; transform: translateY(-4px); }

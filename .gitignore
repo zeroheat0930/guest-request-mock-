@@ -9,12 +9,35 @@ api_server/.mvn/
 api_server/.idea/
 api_server/*.iml
 
+# Local H2 database files
+api_server/data/
+
 # OS
 .DS_Store
 Thumbs.db
 
-# Local env
+# Local env / secrets
 vue_client/.env.local
+api_server/env.local.bat
 
 # OMC tooling state
 .omc/
+
+# Local IDE / Claude Code state
+.claude/
+.idea/
+
+# docker-compose 로컬 시크릿
+/.env
+
+# Capacitor: 네이티브 빌드 산출물/IDE state (android/.gitignore 로 대부분 커버됨, 보강)
+vue_client/android/.gradle/
+vue_client/android/.idea/
+vue_client/android/build/
+vue_client/android/app/build/
+vue_client/android/local.properties
+vue_client/android/capacitor-cordova-android-plugins/build/
+# 매 sync 마다 dist 에서 새로 쓰는 파일 — 빌드 아티팩트 취급
+vue_client/android/app/src/main/assets/public/
+vue_client/android/app/src/main/assets/capacitor.config.json
+vue_client/android/app/src/main/assets/capacitor.plugins.json

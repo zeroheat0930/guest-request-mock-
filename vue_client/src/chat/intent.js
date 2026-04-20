@@ -2,17 +2,14 @@
  * 자연어 → {intent, reply, payload} 의도 파서.
  *
  * 두 가지 모드:
- * 1. **Rule mode** (기본): 키워드 룰 기반. API 키 필요 없음, 오프라인 동작, 데모 안전.
- * 2. **LLM mode**: VITE_ANTHROPIC_API_KEY가 .env.local에 있으면 Claude API 호출.
- *    실패 시 자동으로 rule 모드로 폴백.
+ * 1. **Rule mode** (기본): 키워드 룰 기반. 오프라인 동작, 데모 안전.
+ * 2. **LLM mode**: Spring Boot 프록시(`POST /api/ai/chat`) 경유로 Claude API 호출.
+ *    실패 시 자동으로 rule 모드로 폴백. API 키는 서버에만 존재(프론트 번들에 절대 노출 안 됨).
  *
  * intent: 'amenity' | 'housekeeping' | 'late_checkout' | 'chat'
  */
 import { t } from '../i18n/messages.js';
-
-const _env = (typeof import.meta !== 'undefined' && import.meta.env) || {};
-const ANTHROPIC_KEY = _env.VITE_ANTHROPIC_API_KEY;
-const ANTHROPIC_MODEL = _env.VITE_ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001';
+import { postAiChat, getAiStatus } from '../api/client.js';
 
 // ─────────────────────────────────────────────
 // 룰 기반 키워드 사전 (4개 언어)
@@ -152,63 +149,50 @@ export function parseIntentRule(text, ctx) {
 }
 
 // ─────────────────────────────────────────────
-// LLM 모드 (Claude API) — 키 있을 때만 사용
+// LLM 모드 (서버 프록시 경유)
 // ─────────────────────────────────────────────
+// 서버가 키 없음(9501)이라고 응답하면 이후 LLM 시도 차단.
+let llmDisabledForSession = false;
+
 async function parseIntentLLM(text, ctx) {
-	const lang = ctx?.perUseLang || 'ko_KR';
-	const sys = `You are a hotel concierge AI. Parse the guest's message into JSON.
-
-Reservation context:
-- rsvNo: ${ctx?.rsvNo}
-- roomNo: ${ctx?.roomNo}
-- current checkout time: ${ctx?.chkOutTm}
-- guest language: ${lang}
-
-Output STRICT JSON only (no prose, no markdown):
-{
-  "intent": "amenity" | "housekeeping" | "late_checkout" | "chat",
-  "reply": "<short reply in ${lang}>",
-  "payload": {
-    // for amenity: { "itemList": [{"itemCd":"AM001","qty":2}], "reqMemo":"..." }
-    //   item codes: AM001=towel, AM002=water, AM003=soap, AM004=shampoo, AM005=toothbrush
-    // for housekeeping: { "hkStatCd":"MU"|"DND"|"CLR", "reqMemo":"..." }
-    // for late_checkout: { "reqOutTm":"HHMM" }
-    // for chat: {}
-  }
-}`;
-
-	const res = await fetch('https://api.anthropic.com/v1/messages', {
-		method: 'POST',
-		headers: {
-			'content-type': 'application/json',
-			'x-api-key': ANTHROPIC_KEY,
-			'anthropic-version': '2023-06-01',
-			'anthropic-dangerous-direct-browser-access': 'true'
-		},
-		body: JSON.stringify({
-			model: ANTHROPIC_MODEL,
-			max_tokens: 512,
-			system: sys,
-			messages: [{ role: 'user', content: text }]
-		})
-	});
-	if (!res.ok) throw new Error(`Claude API ${res.status}`);
-	const data = await res.json();
-	const raw = data.content?.[0]?.text || '{}';
-	const jsonMatch = raw.match(/\{[\s\S]*\}/);
-	if (!jsonMatch) throw new Error('LLM did not return JSON');
-	return JSON.parse(jsonMatch[0]);
+	const res = await postAiChat({ text, ctx });
+	if (res.status !== 0) {
+		const err = new Error(`[${res.status}] ${res.message}`);
+		err.status = res.status;
+		throw err;
+	}
+	return res.map;
 }
 
 export async function parseIntent(text, ctx) {
-	if (ANTHROPIC_KEY) {
+	if (!llmDisabledForSession) {
 		try {
 			return await parseIntentLLM(text, ctx);
 		} catch (e) {
-			console.warn('[chat] LLM 실패, 룰 폴백:', e.message);
+			if (e.status === -500) {
+				// 서버에 키가 없음 → 이번 세션 내내 룰로만 동작
+				llmDisabledForSession = true;
+				console.info('[chat] 서버 LLM 키 미설정, 룰 모드로 고정');
+			} else {
+				console.warn('[chat] LLM 호출 실패, 룰 폴백:', e.message);
+			}
 		}
 	}
 	return parseIntentRule(text, ctx);
 }
 
-export const llmEnabled = !!ANTHROPIC_KEY;
+/**
+ * 서버의 /api/ai/status 를 읽어서 LLM 배지 표시 여부 결정.
+ * 서버가 꺼져 있거나 키 미설정이면 false.
+ */
+export async function checkLlmStatus() {
+	try {
+		const res = await getAiStatus();
+		const enabled = res?.map?.enabled === true;
+		if (!enabled) llmDisabledForSession = true;
+		return enabled;
+	} catch {
+		llmDisabledForSession = true;
+		return false;
+	}
+}

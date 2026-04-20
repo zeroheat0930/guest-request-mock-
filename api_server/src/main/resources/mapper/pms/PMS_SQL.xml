@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daol.concierge.pms.mapper.PmsMapper">
+
+	<select id="selectReservation" resultType="map">
+		SELECT A.PROP_CD   AS propCd,  A.CMPX_CD  AS cmpxCd,  A.RESV_NO    AS resvNo,
+		       A.RESV_STAT AS resvStat, A.RESV_USER_NM AS resvUserNm,
+		       A.RM_NO     AS rmNo,    A.RM_TP_CD AS rmTpCd,
+		       A.ARR_DT    AS arrDt,   A.DEP_DT   AS depDt,   A.DEP_HOUR   AS depHour,
+		       A.CHK_IN_HOUR  AS chkInHour,  A.CHK_OUT_HOUR AS chkOutHour,
+		       A.PER_NM    AS perNm,   A.PER_USE_LANG AS perUseLang,
+		       A.PER_ADULT_QTY AS perAdultQty, A.PER_CHILD_QTY AS perChildQty,
+		       A.PER_PASS_NO AS perPassNo, A.CAR_NO AS carNo, A.USE_YN AS useYn
+		  FROM PMS.PMS_RESERVATION A
+		 WHERE A.PROP_CD = #{propCd}
+		   AND A.CMPX_CD = #{cmpxCd}
+		   AND A.RESV_NO = #{resvNo}
+		   AND A.USE_YN  = 'Y'
+	</select>
+
+	<select id="selectCheckedInReservations" resultType="map">
+		SELECT A.PROP_CD AS propCd, A.CMPX_CD AS cmpxCd, A.RESV_NO AS resvNo,
+		       A.RESV_STAT AS resvStat, A.RM_NO AS rmNo,
+		       A.PER_NM AS perNm, A.PER_USE_LANG AS perUseLang,
+		       A.ARR_DT AS arrDt, A.DEP_DT AS depDt, A.CHK_IN_HOUR AS chkInHour
+		  FROM PMS.PMS_RESERVATION A
+		 WHERE A.PROP_CD  = #{propCd}
+		   AND A.CMPX_CD  = #{cmpxCd}
+		   AND A.RESV_STAT = 'I'
+		   AND A.USE_YN   = 'Y'
+		 ORDER BY A.CHK_IN_HOUR DESC
+	</select>
+
+	<select id="selectReservationList" resultType="map">
+		SELECT A.PROP_CD AS propCd, A.CMPX_CD AS cmpxCd, A.RESV_NO AS resvNo,
+		       A.RESV_STAT AS resvStat, A.RM_NO AS rmNo,
+		       A.PER_NM AS perNm, A.PER_USE_LANG AS perUseLang,
+		       A.ARR_DT AS arrDt, A.DEP_DT AS depDt,
+		       A.CHK_IN_HOUR AS chkInHour, A.CHK_OUT_HOUR AS chkOutHour
+		  FROM PMS.PMS_RESERVATION A
+		 WHERE A.PROP_CD = #{propCd}
+		   AND A.CMPX_CD = #{cmpxCd}
+		   AND A.USE_YN  = 'Y'
+		 ORDER BY A.RESV_NO DESC
+		 LIMIT 100
+	</select>
+
+	<!-- 방 번호로 투숙객 조회 (가장 최근) -->
+	<!-- ⚠️ TODO: 상용화 시 반드시 RESV_STAT = 'I' 만 허용으로 변경할 것!
+	     현재 시연용으로 'R'(예약)도 포함. PMS 영업일자 문제로 체크인 불가 상태. -->
+	<select id="selectCheckedInByRoom" resultType="map">
+		SELECT A.PROP_CD AS propCd, A.CMPX_CD AS cmpxCd, A.RESV_NO AS resvNo,
+		       A.RESV_STAT AS resvStat, A.RM_NO AS rmNo,
+		       A.PER_NM AS perNm, A.PER_USE_LANG AS perUseLang,
+		       A.ARR_DT AS arrDt, A.DEP_DT AS depDt,
+		       A.CHK_IN_HOUR AS chkInHour
+		  FROM PMS.PMS_RESERVATION A
+		 WHERE A.PROP_CD   = #{propCd}
+		   AND A.CMPX_CD   = #{cmpxCd}
+		   AND A.RM_NO     = #{rmNo}
+		   AND A.RESV_STAT IN ('I', 'R')
+		   AND A.USE_YN    = 'Y'
+		 ORDER BY A.CHK_IN_HOUR DESC
+		 LIMIT 1
+	</select>
+
+	<select id="selectComplexConf" resultType="map">
+		SELECT A.PROP_CD AS propCd, A.CMPX_CD AS cmpxCd,
+		       A.CHECK_IN_TIME AS checkInTime,
+		       A.CHECK_IN_TIME_TO AS checkInTimeTo,
+		       A.CHECK_OUT_CLOSE_TIME AS checkOutCloseTime
+		  FROM PMS.PMS_COMPLEX_CONF_R A
+		 WHERE A.PROP_CD = #{propCd}
+		   AND A.CMPX_CD = #{cmpxCd}
+	</select>
+
+	<select id="selectComplex" resultType="map">
+		SELECT A.PROP_CD AS propCd, A.CMPX_CD AS cmpxCd,
+		       A.CMPX_TP AS cmpxTp, A.CMPX_NM AS cmpxNm,
+		       A.CMPX_ZIP_CD AS cmpxZipCd, A.CMPX_ADDR AS cmpxAddr,
+		       A.CMPX_DTL_ADDR AS cmpxDtlAddr, A.CMPX_REPR_TEL AS cmpxReprTel,
+		       A.USE_YN AS useYn
+		  FROM PMS.PMS_COMPLEX A
+		 WHERE A.PROP_CD = #{propCd}
+		   AND A.CMPX_CD = #{cmpxCd}
+	</select>
+
+	<select id="selectUser" resultType="map">
+		SELECT A.USER_ID AS userId, A.PROP_CD AS propCd, A.CMPX_CD AS cmpxCd,
+		       A.USER_NM AS userNm, A.USER_PW AS userPw, A.USER_TP AS userTp,
+		       A.DEPT_CD AS deptCd, A.USER_LOCALE AS userLocale,
+		       A.USER_TEL_NO AS userTelNo, A.USER_EMAIL AS userEmail,
+		       A.USER_MOBILE AS userMobile, A.USER_WK_STAT AS userWkStat,
+		       A.USE_YN AS useYn
+		  FROM PMS.PMS_USER_MTR A
+		 WHERE A.USER_ID = #{userId}
+		   AND A.USE_YN  = 'Y'
+	</select>
+
+	<select id="selectUsersByDept" resultType="map">
+		SELECT A.USER_ID AS userId, A.USER_NM AS userNm,
+		       A.USER_TP AS userTp, A.DEPT_CD AS deptCd,
+		       A.USER_MOBILE AS userMobile, A.USER_WK_STAT AS userWkStat
+		  FROM PMS.PMS_USER_MTR A
+		 WHERE A.PROP_CD = #{propCd}
+		   AND A.CMPX_CD = #{cmpxCd}
+		<if test="deptCd != null and deptCd != ''">
+		   AND A.DEPT_CD = #{deptCd}
+		</if>
+		   AND A.USE_YN  = 'Y'
+		 ORDER BY A.USER_NM
+	</select>
+
+</mapper>

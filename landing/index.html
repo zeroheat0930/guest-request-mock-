@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>다올 넥스트 · 컨시어지</title>
+<style>
+	* { box-sizing: border-box; margin: 0; padding: 0; }
+	html, body { font-family: -apple-system, 'Segoe UI', 'Noto Sans KR', sans-serif; color: #1a202c; background: #f5f7fa; -webkit-font-smoothing: antialiased; }
+	.wrap { max-width: 780px; margin: 0 auto; padding: 20px 16px 48px; }
+
+	/* HERO */
+	.hero {
+		background: linear-gradient(135deg, #1a3a6e 0%, #3b5bdb 60%, #5c7cfa 100%);
+		color: #fff;
+		border-radius: 20px;
+		padding: 48px 28px;
+		text-align: center;
+		margin-bottom: 24px;
+		box-shadow: 0 12px 32px rgba(26, 58, 110, 0.3);
+	}
+	.hero .badge {
+		display: inline-block;
+		background: rgba(255,255,255,0.22);
+		padding: 6px 16px;
+		border-radius: 999px;
+		font-size: 11px;
+		font-weight: 700;
+		margin-bottom: 18px;
+		letter-spacing: 0.5px;
+	}
+	.hero h1 { font-size: 34px; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.5px; }
+	.hero .tag { font-size: 17px; font-weight: 600; opacity: 0.96; margin-bottom: 10px; }
+	.hero .sub { font-size: 13px; opacity: 0.85; line-height: 1.6; }
+
+	/* CTA */
+	.cta {
+		background: #fff;
+		border-radius: 16px;
+		padding: 32px 24px;
+		margin-bottom: 24px;
+		text-align: center;
+		box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+	}
+	.cta h2 { font-size: 20px; color: #1a3a6e; margin-bottom: 8px; }
+	.cta p { color: #495057; font-size: 14px; line-height: 1.6; margin-bottom: 20px; }
+	.btn-open {
+		display: inline-block;
+		padding: 16px 40px;
+		background: linear-gradient(135deg, #3b5bdb, #5c7cfa);
+		color: #fff;
+		text-decoration: none;
+		border-radius: 12px;
+		font-size: 16px;
+		font-weight: 800;
+		box-shadow: 0 8px 20px rgba(59, 91, 219, 0.35);
+		transition: transform 0.15s;
+	}
+	.btn-open:active { transform: scale(0.97); }
+
+	/* VIDEO */
+	.video-wrap {
+		background: #000;
+		border-radius: 14px;
+		overflow: hidden;
+		aspect-ratio: 16/9;
+		margin-bottom: 24px;
+		box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+	}
+	.video-wrap video { width: 100%; height: 100%; display: block; }
+	.video-placeholder {
+		width: 100%; height: 100%;
+		background: linear-gradient(135deg, #212529, #343a40);
+		color: #adb5bd;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+	.video-placeholder .play {
+		font-size: 44px; color: #5c7cfa;
+		background: rgba(92,124,250,0.15);
+		width: 84px; height: 84px;
+		border-radius: 50%;
+		display: flex; align-items: center; justify-content: center;
+		margin-bottom: 10px;
+	}
+	.video-placeholder p { font-size: 14px; color: #e9ecef; font-weight: 600; }
+	.video-placeholder small { font-size: 11px; color: #868e96; margin-top: 4px; }
+
+	/* CARD */
+	.card {
+		background: #fff;
+		border-radius: 16px;
+		padding: 24px 26px;
+		margin-bottom: 20px;
+		box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+	}
+	.card h2 { font-size: 17px; color: #1a3a6e; margin-bottom: 14px; font-weight: 800; }
+
+	/* META */
+	.meta dl { display: grid; grid-template-columns: 92px 1fr; row-gap: 14px; column-gap: 16px; }
+	.meta dt { font-weight: 700; color: #495057; font-size: 13px; padding-top: 2px; }
+	.meta dd { font-size: 13px; color: #212529; line-height: 1.6; }
+	.meta ul { padding-left: 16px; }
+	.meta ul.plain { list-style: none; padding-left: 0; }
+	.meta li { margin-bottom: 4px; }
+	.en { color: #868e96; font-weight: 500; font-size: 12px; margin-left: 4px; }
+	.todo { color: #fa5252; background: #fff5f5; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+
+	/* FEATURES */
+	.features-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 10px;
+	}
+	.feat {
+		background: #f8f9fa;
+		padding: 14px;
+		border-radius: 10px;
+	}
+	.feat.hi { background: linear-gradient(135deg, #e7f5ff, #d0ebff); border: 2px solid #5c7cfa; }
+	.feat .ic { font-size: 26px; margin-bottom: 6px; }
+	.feat h3 { font-size: 13px; color: #1a3a6e; margin-bottom: 2px; }
+	.feat p { font-size: 11px; color: #495057; line-height: 1.4; }
+
+	/* STACK */
+	.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+	.chips span {
+		background: #e7f5ff;
+		color: #1864ab;
+		padding: 5px 11px;
+		border-radius: 999px;
+		font-size: 11px;
+		font-weight: 700;
+	}
+	.stack-col { margin-bottom: 12px; }
+	.stack-col h4 { font-size: 11px; color: #868e96; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+
+	/* FOOT */
+	.foot { text-align: center; padding: 20px 0 8px; color: #868e96; }
+	.foot p { font-size: 12px; margin-bottom: 3px; }
+	.foot .small { font-size: 10px; color: #adb5bd; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+	<header class="hero">
+		<div class="badge">🏆 사내 AI 활용 공모전</div>
+		<h1>🏨 다올 컨시어지</h1>
+		<p class="tag">객실 QR 한 번으로, PMS까지 1초</p>
+		<p class="sub">투숙객이 말하는 언어 그대로 — 한/영/일/중 자연어로 요청하면 PMS 로 즉시 전달<br>객실 QR 인증으로 투숙객 본인 확인, 별도 로그인 없이 즉시 사용</p>
+	</header>
+
+	<!-- CTA: Open App -->
+	<section class="cta">
+		<h2>📱 컨시어지 앱 열기</h2>
+		<p>당신이 투숙객입니다. 객실 QR을 스캔하거나 아래 버튼으로 체험해 보세요.<br>어메니티 요청·하우스키핑·레이트 체크아웃을 편한 언어로 처리합니다.</p>
+		<a class="btn-open" href="http://localhost:5173/#/" target="_blank" rel="noopener">앱 시작하기 →</a>
+	</section>
+
+	<!-- Video -->
+	<div class="video-wrap">
+		<!-- TODO: 영상 녹화 후 교체
+		<video controls autoplay muted loop>
+			<source src="demo.mp4" type="video/mp4" />
+		</video>
+		-->
+		<div class="video-placeholder">
+			<div class="play">▶</div>
+			<p>시연 영상 (촬영 후 교체)</p>
+			<small>60초 / QR → 챗봇 → PMS 요청 플로우</small>
+		</div>
+	</div>
+
+	<!-- Meta -->
+	<section class="card meta">
+		<h2>📋 제출 정보</h2>
+		<dl>
+			<dt>팀명</dt>
+			<dd><b>다올 넥스트</b><span class="en">(Daol Next)</span></dd>
+
+			<dt>팀원</dt>
+			<dd>정동준 대리 · 윤정환 대리 · 김나영 대리</dd>
+
+			<dt>주제</dt>
+			<dd>호텔 PMS 연동형 투숙객 셀프 요청 시스템 + LLM 기반 다국어 자연어 컨시어지</dd>
+
+			<dt>작품 설명</dt>
+			<dd>
+				객실 QR 또는 태블릿에서 어메니티·하우스키핑·레이트 체크아웃을 셀프 처리.
+				챗봇이 한/영/일/중 자연어를 의도 파싱해 PMS 에 바로 전달합니다.
+				LLM 키 없이도 룰 기반으로 오프라인 동작.
+			</dd>
+
+			<dt>AI 툴</dt>
+			<dd>
+				<ul>
+					<li><b>Claude Code (Opus 4.6, 1M context)</b> — 설계·구현·테스트·리뷰</li>
+					<li><b>Anthropic Claude API</b> — 챗봇 의도 파싱 (룰 엔진 폴백)</li>
+					<li><b>oh-my-claudecode</b> — 멀티 에이전트 오케스트레이션</li>
+				</ul>
+			</dd>
+
+			<dt>결과물</dt>
+			<dd>
+				<ul class="plain">
+					<li>🔗 라이브 앱: <span class="todo">(TODO) 배포 URL</span></li>
+					<li>🔗 소스: <span class="todo">(TODO) GitHub URL</span></li>
+					<li>🎥 영상: 상단 섹션 참조</li>
+				</ul>
+			</dd>
+		</dl>
+	</section>
+
+	<!-- Features -->
+	<section class="card">
+		<h2>✨ 주요 기능</h2>
+		<div class="features-grid">
+			<div class="feat hi">
+				<div class="ic">🤖</div>
+				<h3>AI 다국어 챗봇</h3>
+				<p>한/영/일/중 자연어 → 의도 파싱 → 실제 API</p>
+			</div>
+			<div class="feat hi">
+				<div class="ic">📲</div>
+				<h3>객실 QR 인증</h3>
+				<p>QR 스캔으로 투숙객 본인 확인, 예약번호 기반 JWT 발급</p>
+			</div>
+			<div class="feat">
+				<div class="ic">🛎️</div>
+				<h3>어메니티 요청</h3>
+				<p>수건·생수·샴푸 등 — 요청 후 실시간 처리 상태 확인</p>
+			</div>
+			<div class="feat">
+				<div class="ic">🧹</div>
+				<h3>하우스키핑</h3>
+				<p>MU / DND / CLR 토글 → 직원 대시보드 즉시 반영</p>
+			</div>
+			<div class="feat">
+				<div class="ic">⏰</div>
+				<h3>레이트 체크아웃</h3>
+				<p>시간별 요금 자동 산정</p>
+			</div>
+			<div class="feat">
+				<div class="ic">🗂️</div>
+				<h3>CCS 스태프 대시보드</h3>
+				<p>부서별 작업 카드 + 상세 모달 + 실시간 WebSocket 업데이트</p>
+			</div>
+			<div class="feat">
+				<div class="ic">📍</div>
+				<h3>주변 안내</h3>
+				<p>호텔 좌표 기준 1km 내 맛집·카페·관광</p>
+			</div>
+			<div class="feat">
+				<div class="ic">🚗</div>
+				<h3>주차 차량 등록</h3>
+				<p>차량번호 등록 → 프론트데스크 즉시 알림</p>
+			</div>
+		</div>
+	</section>
+
+	<!-- Architecture -->
+	<section class="card">
+		<h2>🧩 아키텍처 포인트</h2>
+		<div class="features-grid">
+			<div class="feat">
+				<div class="ic">🔌</div>
+				<h3>디스패처 추상화</h3>
+				<p>사내 PMS / 타사 REST / standalone 3종 전환</p>
+			</div>
+			<div class="feat">
+				<div class="ic">🎛️</div>
+				<h3>기능 플래그</h3>
+				<p>프로퍼티별 메뉴 on/off + 어드민 UI</p>
+			</div>
+			<div class="feat">
+				<div class="ic">🔐</div>
+				<h3>객실 QR 기반 인증</h3>
+				<p>예약번호 + 객실번호 기반 JWT · 멀티 프로퍼티 격리</p>
+			</div>
+			<div class="feat">
+				<div class="ic">⚡</div>
+				<h3>실시간 WebSocket</h3>
+				<p>STOMP → 부서별 채널 → 스태프 대시보드 즉시 반영</p>
+			</div>
+			<div class="feat">
+				<div class="ic">📊</div>
+				<h3>CCS 통계 위젯</h3>
+				<p>오늘의 총 작업 수 · 완료율 · 평균 처리시간 (시스템 관리자 전체 조회 지원)</p>
+			</div>
+			<div class="feat">
+				<div class="ic">🔄</div>
+				<h3>상태 폴링</h3>
+				<p>어메니티 요청 후 5초 간격으로 처리 상태 자동 업데이트</p>
+			</div>
+		</div>
+	</section>
+
+	<!-- Stack -->
+	<section class="card">
+		<h2>🛠️ 기술 스택</h2>
+		<div class="stack-col">
+			<h4>프론트</h4>
+			<div class="chips"><span>Vue 3</span><span>Vite</span><span>Vue Router</span><span>Axios</span><span>PWA</span></div>
+		</div>
+		<div class="stack-col">
+			<h4>백엔드</h4>
+			<div class="chips"><span>Spring Boot 3.2</span><span>Java 17</span><span>JPA</span><span>MariaDB</span></div>
+		</div>
+		<div class="stack-col">
+			<h4>AI · 인프라</h4>
+			<div class="chips"><span>Claude API</span><span>Docker</span><span>CI/CD</span></div>
+		</div>
+	</section>
+
+	<footer class="foot">
+		<p>🤖 이 프로젝트는 Claude Code (Opus 4.6) 와 함께 작성되었습니다.</p>
+		<p class="small">사내 AI 활용 공모전 · 2026년 4월</p>
+	</footer>
+
+</div>
+</body>
+</html>

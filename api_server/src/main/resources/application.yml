@@ -6,7 +6,115 @@ server:
 spring:
   application:
     name: concierge-api
+  profiles:
+    default: dev
 
 logging:
   level:
     com.daol.concierge: DEBUG
+
+anthropic:
+  api-key: ${ANTHROPIC_API_KEY:}
+  model: claude-haiku-4-5-20251001
+  endpoint: https://api.anthropic.com/v1/messages
+  version: '2023-06-01'
+
+concierge:
+  # 요청 디스패처 활성화 플래그 (각각 독립적으로 조합 가능)
+  # CCS: 인프로세스 작업 큐(기본 ON), EXTERNAL: 외부 REST stub(기본 OFF)
+  dispatcher:
+    ccs:
+      enabled: ${CONCIERGE_DISPATCHER_CCS:true}
+    external:
+      enabled: ${CONCIERGE_DISPATCHER_EXTERNAL:false}
+
+  # 멀티 테넌시 식별자 — 호텔 체인 내에서 물리 호텔과 부속건물을 구분.
+  # 운영 시 호텔별로 주입(인증/태스크/기능플래그가 이 값으로 스코핑됨).
+  tenant:
+    prop-cd: ${CONCIERGE_TENANT_PROP_CD:0000000001}
+    cmpx-cd: ${CONCIERGE_TENANT_CMPX_CD:00001}
+
+admin:
+  # 관리자 API (X-Admin-Token) 패스워드. 비어 있으면 /api/concierge/admin/** 는 503.
+  password: ${CONCIERGE_ADMIN_PW:}
+
+nearby:
+  # 주변 정보 제공자: mock(기본, 하드코딩 샘플) | kakao(실제 카카오 로컬 API)
+  provider: ${NEARBY_PROVIDER:mock}
+  default-radius-m: ${NEARBY_RADIUS_M:1000}
+
+kakao:
+  # Kakao Developers REST API 키. nearby.provider=kakao 일 때만 필요.
+  rest-api-key: ${KAKAO_REST_API_KEY:}
+
+jwt:
+  # 개발용 고정 시크릿. 프로덕션에선 반드시 JWT_SECRET 환경변수로 주입.
+  secret: ${JWT_SECRET:dev-only-secret-please-change-in-production-32bytes-min!!}
+  # 발급 후 유효 시간(시간 단위). 실제 만료는 이 값과 예약 체크아웃 일자 중 빠른 쪽.
+  hours-valid: 72
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*_SQL.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
+---
+# ───────── dev (사내 MariaDB 직결) ─────────
+# 회사 PMS DB 에 직접 붙는다. 신규 테이블은 INV 스키마, 기존 예약/유저는 PMS 스키마 cross-schema read.
+# 접속: VPN 또는 사내망에서만 211.34.228.191:3336 에 접근 가능.
+# JPA 제거 완료 — MyBatis 단일 경로. 테이블 DDL 은 수동 관리.
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: ${DB_URL:jdbc:mariadb://211.34.228.191:3336/INV?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true}
+    driver-class-name: org.mariadb.jdbc.Driver
+    username: ${DB_USER:}
+    password: ${DB_PASSWORD:}
+
+---
+# ───────── prod (MariaDB) ─────────
+# 회사 PMS 와 동일한 MariaDB 사용. SPRING_PROFILES_ACTIVE=prod 로 기동, 접속정보는 환경변수로.
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DB_URL:jdbc:mariadb://localhost:3306/concierge?useUnicode=true&characterEncoding=utf8}
+    driver-class-name: org.mariadb.jdbc.Driver
+    username: ${DB_USER:concierge}
+    password: ${DB_PASSWORD:}
+
+# ───────── test (H2 비활성화 — 2026-04-16) ─────────
+# H2 의존성 주석 처리로 사용 불가. 추후 testcontainers MariaDB 로 전환 예정.
+# ---
+# spring:
+#   config:
+#     activate:
+#       on-profile: test
+#   datasource:
+#     url: jdbc:h2:mem:concierge-test;MODE=MYSQL;DATABASE_TO_LOWER=TRUE
+#     driver-class-name: org.h2.Driver
+#     username: sa
+#     password:
+#   jpa:
+#     hibernate:
+#       ddl-auto: create-drop

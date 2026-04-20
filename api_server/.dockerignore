@@ -1,0 +1,8 @@
+target/
+.idea/
+*.iml
+data/
+env.local.bat
+run.bat
+.mvn/
+smoke-test.sh

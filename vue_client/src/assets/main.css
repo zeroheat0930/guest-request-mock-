@@ -1,10 +1,42 @@
+@import './tokens.css';
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #app { height: 100%; }
 body {
-	font-family: -apple-system, "Segoe UI", "Noto Sans KR", sans-serif;
-	background: #f5f7fa;
-	color: #1f2d3d;
+	font-family: -apple-system, "SF Pro Display", "Segoe UI", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+	background: var(--c-bg);
+	color: var(--c-text);
 	-webkit-tap-highlight-color: transparent;
+	-webkit-font-smoothing: antialiased;
+	font-feature-settings: 'tnum' on;
 }
+
 button { font-family: inherit; cursor: pointer; }
+button:focus-visible {
+	outline: 2px solid var(--c-brand-400);
+	outline-offset: 2px;
+}
 input, select, textarea { font-family: inherit; }
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+	outline: none;
+	border-color: var(--c-brand-500);
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* 선택 색상도 브랜드로 */
+::selection {
+	background: rgba(37, 99, 235, 0.22);
+	color: var(--c-brand-900);
+}
+
+/* 스크롤바 폴리싱 (desktop) */
+@media (hover: hover) {
+	::-webkit-scrollbar { width: 10px; height: 10px; }
+	::-webkit-scrollbar-track { background: transparent; }
+	::-webkit-scrollbar-thumb {
+		background: var(--c-border);
+		border-radius: var(--r-pill);
+		border: 2px solid var(--c-bg);
+	}
+	::-webkit-scrollbar-thumb:hover { background: var(--c-border-strong); }
+}

@@ -1,34 +1,47 @@
 package com.daol.concierge.core.api;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.Setter;
 
-/**
- * 공통 응답 포맷: { resCd, resMsg, map }
- */
+@Setter
+@Getter
 public class ApiResponse {
+    @JsonProperty("status")
+    private int status;
 
-	private String resCd;
-	private String resMsg;
-	private Map<String, Object> map;
+    @JsonProperty("error")
+    private ApiError error = null;
 
-	public ApiResponse() {
-		this.resCd = "0000";
-		this.resMsg = "SUCCESS";
-		this.map = new HashMap<>();
-	}
+    @JsonProperty("message")
+    private String message;
 
-	public ApiResponse(String resCd, String resMsg) {
-		this.resCd = resCd;
-		this.resMsg = resMsg;
-		this.map = new HashMap<>();
-	}
+    @JsonProperty("redirect")
+    private String redirect = "";
 
-	public String getResCd() { return resCd; }
-	public String getResMsg() { return resMsg; }
-	public Map<String, Object> getMap() { return map; }
+    public ApiResponse() {}
 
-	public void setResCd(String resCd) { this.resCd = resCd; }
-	public void setResMsg(String resMsg) { this.resMsg = resMsg; }
-	public void setMap(Map<String, Object> map) { this.map = map; }
+    public ApiResponse(ApiStatus apiStatus, String message, String errorMessage) {
+        this.status = apiStatus.getCode();
+        this.message = message;
+        if (errorMessage != null && !errorMessage.isEmpty()) {
+            this.error = ApiError.of(errorMessage);
+        }
+    }
+
+    public static ApiResponse of(ApiStatus apiStatus, String message) {
+        return new ApiResponse(apiStatus, message, null);
+    }
+
+    public static ApiResponse error(ApiStatus apiStatus, String errorMessage) {
+        return new ApiResponse(apiStatus, "", errorMessage);
+    }
+
+    public static ApiResponse redirect(String redirect) {
+        ApiResponse r = new ApiResponse();
+        r.setRedirect(redirect);
+        r.setStatus(ApiStatus.REDIRECT.getCode());
+        r.setMessage("redirect");
+        return r;
+    }
 }
