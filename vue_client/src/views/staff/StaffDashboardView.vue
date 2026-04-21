@@ -1,5 +1,24 @@
 <template>
 	<div class="staff">
+		<!-- SLA 초과 에스컬레이션 토스트 (관리자 전용) -->
+		<div v-if="escToasts.length" class="esc-toast-stack">
+			<div v-for="t in escToasts" :key="t.id" class="esc-toast" @click="escToasts = escToasts.filter(x => x.id !== t.id)">
+				<div class="esc-toast-head">
+					<span class="esc-toast-icon">🚨</span>
+					<span class="esc-toast-title">SLA 초과</span>
+					<span class="esc-toast-close">×</span>
+				</div>
+				<div class="esc-toast-body">
+					<div class="esc-toast-main">{{ t.title }}</div>
+					<div class="esc-toast-meta">
+						<span v-if="t.rmNo">🏠 {{ t.rmNo }}호</span>
+						<span v-if="t.dept">· {{ t.dept }}</span>
+						<span>· {{ t.elapsed }}/{{ t.sla }}분 ({{ t.elapsed - t.sla }}분 초과)</span>
+					</div>
+				</div>
+			</div>
+		</div>
+
 		<header class="page-head">
 			<div class="page-head-row">
 				<div>
@@ -30,7 +49,12 @@
 		<div v-if="err" class="err">{{ err }}</div>
 
 		<div v-if="visibleTasks.length" class="list">
-			<div v-for="t in visibleTasks" :key="t.taskId" class="task-card" @click="selectedTask = t">
+			<div
+				v-for="t in visibleTasks"
+				:key="t.taskId"
+				:class="['task-card', { overdue: t.overdue }]"
+				@click="selectedTask = t"
+			>
 				<div class="row-top">
 					<div class="title">{{ t.title || '(제목 없음)' }}</div>
 					<span :class="['src', sourceClass(t.sourceType)]">{{ sourceLabel(t.sourceType) }}</span>
@@ -39,6 +63,10 @@
 				<div class="row-meta">
 					<span v-if="t.rmNo">🏠 {{ t.rmNo }}호</span>
 					<span>🕒 {{ fmtTime(t.createdAt) }}</span>
+					<span v-if="isOpenStatus(t.statusCd) && t.slaMin != null"
+						:class="['sla', { 'sla-overdue': t.overdue }]">
+						{{ t.overdue ? '🔥' : '⏱' }} {{ t.elapsedMin }}/{{ t.slaMin }}m
+					</span>
 					<span class="st">{{ statusLabel(t.statusCd) }}</span>
 				</div>
 				<div v-if="t.assigneeId" class="assignee">👤 {{ t.assigneeId }}</div>
@@ -95,6 +123,13 @@
 					<div class="detail-row"><span class="detail-label">객실</span><span>{{ selectedTask.rmNo ? selectedTask.rmNo + '호' : '—' }}</span></div>
 					<div class="detail-row"><span class="detail-label">유형</span><span :class="['src', sourceClass(selectedTask.sourceType)]">{{ sourceLabel(selectedTask.sourceType) }}</span></div>
 					<div class="detail-row"><span class="detail-label">상태</span><span :class="'st-badge st-' + selectedTask.statusCd">{{ statusLabel(selectedTask.statusCd) }}</span></div>
+					<div class="detail-row" v-if="isOpenStatus(selectedTask.statusCd) && selectedTask.slaMin != null">
+						<span class="detail-label">SLA</span>
+						<span :class="['sla', { 'sla-overdue': selectedTask.overdue }]">
+							{{ selectedTask.overdue ? '🔥' : '⏱' }} 경과 {{ selectedTask.elapsedMin }}분 / 기준 {{ selectedTask.slaMin }}분
+							<strong v-if="selectedTask.overdue"> · {{ selectedTask.elapsedMin - selectedTask.slaMin }}분 초과</strong>
+						</span>
+					</div>
 					<div class="detail-row"><span class="detail-label">접수</span><span>{{ fmtTime(selectedTask.createdAt) }}</span></div>
 					<div class="detail-row" v-if="selectedTask.updatedAt && selectedTask.statusCd !== 'REQ'"><span class="detail-label">업데이트</span><span>{{ fmtTime(selectedTask.updatedAt) }}</span></div>
 					<div class="detail-row" v-if="selectedTask.assigneeId"><span class="detail-label">담당자</span><span>{{ selectedTask.assigneeId }}</span></div>
@@ -151,7 +186,28 @@ const busyId = ref('');
 const staff = ref({});
 const showRequestModal = ref(false);
 const selectedTask = ref(null);
+const escToasts = ref([]); // SLA 초과 에스컬레이션 토스트
 let pollTimer = null;
+
+function pushEscToast(task) {
+	const id = task.taskId || ('esc' + Date.now());
+	const toast = {
+		id,
+		title: task.title || '작업 SLA 초과',
+		rmNo: task.rmNo,
+		elapsed: task.elapsedMin,
+		sla: task.slaMin,
+		dept: task.deptCd
+	};
+	// 중복 방지 — 같은 taskId 면 갱신
+	const idx = escToasts.value.findIndex(t => t.id === id);
+	if (idx >= 0) escToasts.value.splice(idx, 1);
+	escToasts.value.unshift(toast);
+	if (escToasts.value.length > 4) escToasts.value.pop();
+	setTimeout(() => {
+		escToasts.value = escToasts.value.filter(t => t.id !== id);
+	}, 8000);
+}
 
 // PMS USER_TP 00001~00003: 시스템/프로퍼티/컴플렉스 관리자 — viewer mode
 const isAdminViewer = computed(() =>
@@ -191,6 +247,10 @@ const visibleTasks = computed(() => {
 	if (!conf) return [];
 	return tasks.value.filter(t => tabMatch(t, conf));
 });
+
+function isOpenStatus(s) {
+	return s === 'REQ' || s === 'ASSIGNED' || s === 'IN_PROG';
+}
 
 function sourceClass(s) {
 	if (s === 'CHAT') return 'src-chat';
@@ -307,6 +367,16 @@ onMounted(() => {
 				return;
 			}
 			client.subscribe(topic, () => load());
+			// SLA 에스컬레이션 — 관리자/컴플렉스 관리자만 구독
+			if (isAdminViewer.value && propCd) {
+				client.subscribe('/topic/ccs/esc/' + propCd, (msg) => {
+					try {
+						const task = JSON.parse(msg.body);
+						pushEscToast(task);
+					} catch {}
+					load();
+				});
+			}
 		});
 	});
 	// WebSocket 주 경로 — 폴링은 연결 실패 시 백업 (30s 간격)
@@ -669,6 +739,89 @@ onUnmounted(() => {
 }
 .modal-actions button.primary:hover { background: #152e58; }
 .modal-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ═══ SLA overdue ═══ */
+.task-card.overdue {
+	border: 2px solid #e53e3e;
+	box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.1), 0 1px 4px rgba(229, 62, 62, 0.15);
+	animation: overdue-pulse 2s ease-in-out infinite;
+}
+@keyframes overdue-pulse {
+	0%, 100% { box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.1), 0 1px 4px rgba(229, 62, 62, 0.15); }
+	50%      { box-shadow: 0 0 0 8px rgba(229, 62, 62, 0.18), 0 1px 4px rgba(229, 62, 62, 0.25); }
+}
+.row-meta .sla {
+	color: #4a5568;
+	font-weight: 600;
+}
+.row-meta .sla.sla-overdue {
+	color: #c53030;
+	font-weight: 700;
+}
+.detail-row .sla.sla-overdue {
+	color: #c53030;
+	font-weight: 700;
+}
+
+/* ═══ SLA 에스컬레이션 토스트 ═══ */
+.esc-toast-stack {
+	position: fixed;
+	top: 20px;
+	right: 20px;
+	z-index: 500;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	pointer-events: none;
+}
+.esc-toast {
+	pointer-events: auto;
+	min-width: 280px;
+	max-width: 360px;
+	background: linear-gradient(135deg, #742a2a 0%, #9b2c2c 100%);
+	color: #fff;
+	border-radius: 12px;
+	border: 1px solid rgba(229, 62, 62, 0.6);
+	box-shadow: 0 8px 24px rgba(197, 48, 48, 0.35);
+	padding: 12px 14px;
+	cursor: pointer;
+	animation: esc-in 0.3s ease-out;
+}
+@keyframes esc-in {
+	from { opacity: 0; transform: translateX(30px); }
+	to   { opacity: 1; transform: translateX(0); }
+}
+.esc-toast-head {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.8px;
+	text-transform: uppercase;
+	opacity: 0.9;
+	margin-bottom: 8px;
+}
+.esc-toast-icon { font-size: 14px; }
+.esc-toast-title { flex: 1; }
+.esc-toast-close { font-size: 18px; opacity: 0.7; line-height: 1; }
+.esc-toast-main {
+	font-size: 14px;
+	font-weight: 700;
+	margin-bottom: 4px;
+	line-height: 1.3;
+}
+.esc-toast-meta {
+	font-size: 12px;
+	opacity: 0.8;
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+@media (max-width: 720px) {
+	.esc-toast-stack { top: 10px; right: 10px; left: 10px; }
+	.esc-toast { min-width: 0; max-width: 100%; }
+}
 
 /* ═══ Mobile (< 720px) ═══ */
 @media (max-width: 720px) {

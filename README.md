@@ -282,6 +282,39 @@ Base: `http://localhost:8080/api`
 
 ## 🗓️ 진행 로그
 
+### 2026-04-21 심야 — CCS 본연 기능 확장 로드맵 수립 + ① SLA 에스컬레이션 구현
+
+**배경 정정**: 이전에 HSKP 플로어 그리드를 CCS 에 붙이려 했으나, WINPAC 모듈 구분 재확인 결과 **HSKP 는 PMS 본업 모듈**(15+ 테이블, 43 JSP, 25 코드그룹 이미 구현)이고 CCS 와 별개. CCS 본연의 기능은 WINPAC 기준 아래 5개:
+
+#### CCS 5대 본연 기능 (WINPAC 벤치마크)
+
+| # | 기능 | 상태 |
+|---|------|------|
+| **①** | **업무 에스컬레이션 (SLA Overdue)** | ✅ 2026-04-21 구현 |
+| ② | 분실물 센터 (Lost & Found) | 🗓️ 예정 |
+| ③ | 고객 불만 관리 (Complaint) | 🗓️ 예정 |
+| ④ | 대여 품목 (Rental Items) | 🗓️ 예정 |
+| ⑤ | 당직 관리자 로그 (Duty Manager Log) | 🗓️ 예정 |
+
+> **스코프 아웃**: HSKP (객실 상태 그리드 / 룸메이드 / 청소 이력) / HES (Work Order / 예방정비) — PMS 본업 모듈로 이미 구현 존재. CCS 는 필요 시 PMS `PMS_ROOM_NUMBER.HK_STAT` 등을 **조회만** 한다.
+
+#### ① SLA 에스컬레이션 — 구현 상세
+
+**백엔드**
+- `CcsSlaRules.java` 신규 — sourceType 별 기본 SLA 분:
+  - `COMPLAINT: 10`, `AMENITY: 15`, `PARKING: 20`, `LATE_CO/CHAT: 30`, `HK_*: 45`, `STAFF_REQ: 60`, 기본 30
+- `CcsTaskService.enrichSla(task)` — 응답 태스크에 `slaMin` / `elapsedMin` / `overdue` 필드 주입
+- `listForDept` / `publish` 경로에서 자동 호출
+- `publish` 가 `overdue=true` 일 때 **`/topic/ccs/esc/{propCd}`** 별도 토픽으로 브로드캐스트
+
+**프론트**
+- 태스크 카드 `.overdue` 클래스 — 빨강 테두리 + 박스섀도 펄스 애니메이션
+- row-meta 에 SLA 타이머: `⏱ 10/15m` / `🔥 25/15m` (초과 시 빨강)
+- 모달에 경과/기준/초과분 상세
+- 관리자(userTp 00001~00003)만 `/topic/ccs/esc/{propCd}` 구독 — 우상단 **빨강 토스트** 자동 표시 (8초), 클릭 시 닫기
+
+**스태프 번들**: 60.66 KB (전 대비 +0.66 KB — SLA 로직 + 토스트)
+
 ### 2026-04-21 저녁 — 메인보드 UX + 모바일 반응형 + 랜딩 호스트 설정
 
 **9) 게스트 앱 홈(메인보드) 도입** — 기존엔 `/` 가 곧바로 `/amenity` 로 리다이렉트돼 투숙객이 "무엇이 있는지" 한눈에 못 보던 UX. 호텔 컨시어지 철학에 맞게 **럭셔리 메인보드** 신설.
