@@ -81,4 +81,15 @@ onUnmounted(() => {
 	color: #8492a6;
 	margin-top: 6px;
 }
+
+@media (max-width: 720px) {
+	.stats-widget { gap: 8px; }
+	.stat-card {
+		padding: 12px 8px;
+		min-width: 0;
+		flex: 1 1 0;
+	}
+	.stat-num { font-size: 24px; }
+	.stat-label { font-size: 10.5px; line-height: 1.3; }
+}
 </style>
