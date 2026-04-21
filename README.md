@@ -280,6 +280,95 @@ Base: `http://localhost:8080/api`
 
 ---
 
+## 🗺️ 상용화 1.0 로드맵 (2026-04-21 수립)
+
+**비전**: 컨시어지(게스트앱) + CCS(스태프앱) 통합 제품을 **타 호텔에 판매 가능한 독립 SaaS** 로 완성. PMS 종속성은 선택적 어댑터로만 존재.
+
+### 현재 자산 솔직 평가
+
+| 견고한 것 ✅ | 부족한 것 ❌ |
+|---|---|
+| 멀티 테넌시 (propCd/cmpxCd) | 도메인 모듈 구조가 얕음 (`ccs/` 단일 패키지) |
+| 기능 플래그 (프로퍼티별 on/off) | 스태프 UI 한국어 전용 |
+| Dispatcher 추상화 | 핵심 도메인 테스트 커버리지 30% |
+| 역할 기반 권한 (userTp) + WS 토픽 계층 | API 문서화 미완성 |
+| 게스트/스태프 번들 분리 | 감사 로그 부재 |
+| 게스트 앱 4개 국어 i18n | PMS 연동 어댑터 인터페이스 없음 |
+| AI 자연어 라우팅 (차별점 #1) | 관리자 리포트 전무 |
+
+### CCS 5대 본연 기능 구현 상태
+
+| # | 기능 | 상태 | PMS 중복 |
+|---|------|------|------|
+| ① | **업무 에스컬레이션 (SLA)** | ✅ 2026-04-21 구현 | 없음 (CCS 고유) |
+| ② | 분실물 센터 (Lost & Found) | 🗓️ Phase B | PMS_LOSTFOUND 있음 → PmsSyncAdapter 연동 |
+| ③ | 고객 불만 관리 (VOC) | 🗓️ Phase B | PMS_CUST_VOC 있음 → PmsSyncAdapter 연동 |
+| ④ | 대여 품목 (Rental) | 🗓️ Phase D | PMS_LOAN 있음 → PmsSyncAdapter 연동 |
+| ⑤ | 당직 관리자 로그 | 🗓️ Phase D | 없음 (PMS Night Audit 은 자동마감만, 일지 X) |
+
+> **스코프 아웃**: HSKP (플로어 그리드 / 룸메이드 / 청소 이력) / HES (Work Order) — PMS 본업 모듈에 이미 완성도 높게 구현 존재. CCS 는 필요 시 `PMS_ROOM_NUMBER.HK_STAT` 등을 **읽기 전용** 조회.
+
+### Phase 별 상세 계획
+
+#### Phase A — 도메인 골격 리팩토링 (2~3일) 🚧
+**목적**: 새 기능 추가 전 뼈대 정리. 지금 `ccs/` 단일 패키지 구조는 기능 늘수록 결합도 급상승.
+
+```
+com.daol.concierge.ccs/
+├─ (기존) routing/ task/ auth/ websocket/ admin/ stats/   — CCS 코어
+├─ lostfound/     🆕 Service/Controller/Mapper/Dto/SyncAdapter
+├─ voc/           🆕 동상
+├─ rental/        🆕 동상
+├─ duty/          🆕 동상
+└─ sync/          🆕 PmsSyncAdapter 인터페이스 + DAOL 구현체 stub
+```
+
+각 도메인 폴더는 `ccs/task` 와 동일한 계층 구조. `SyncAdapter` 인터페이스는 feature flag (`concierge.pms.sync.enabled`) 로 제어.
+
+#### Phase B — ② 분실물 + ③ 고객 불만 풀구현 (3~4일)
+- **INV 스키마**: `CCS_LOSTFOUND`, `CCS_VOC` 신규 (CCS 자체 소유)
+- **게스트 앱**: "분실물 신고" / "피드백" 탭 추가
+- **AI 자연어 분류**: 게스트가 "엘리베이터에 시계 놓고 왔어요" 입력 → AI → `LOSTFOUND` 도메인 자동 라우팅
+- **스태프 UI**: 분실물 매칭 리스트 / VOC 카테고리별 처리 대시보드 + 만족도 점수(1~5)
+- **PmsSyncAdapter**: DAOL 배포용 stub — 기본 OFF, ON 시 `PMS_LOSTFOUND` / `PMS_CUST_VOC` 동기화
+
+#### Phase C — 스태프 UI i18n 전면화 (1~2일)
+현재 스태프/관리자 화면이 한국어 하드코딩 → 게스트 앱과 동일하게 `t()` 함수 + 4개 국어 사전(`ko`/`en`/`ja`/`zh`). 해외 호텔 파일럿 전제 필수 조건.
+
+#### Phase D — ④ 대여 + ⑤ 당직 로그 풀구현 (2~3일)
+- **대여**: `CCS_RENTAL_ITEM` (카탈로그) + `CCS_RENTAL_ORDER` (신청/반납). 게스트 앱 탭.
+- **당직**: `CCS_DUTY_LOG` (교대 기록/이벤트 타임라인/인수인계). PMS Night Audit 완료 여부만 읽기 전용으로 표시.
+
+#### Phase E — 관리자 리포트 + Swagger + 감사 로그 (2~3일)
+- 일/주/월별 요청 통계 대시보드 (부서/소스타입/SLA 준수율)
+- `@Operation` / `@Schema` annotation 전 엔드포인트
+- 도메인별 audit 테이블 (누가 언제 뭘 변경했는지)
+
+#### Phase F — 심사 대비 (1일)
+- 시연 영상 7단계 스토리 촬영
+- 랜딩 페이지 최종 폴리싱
+- 전체 QA + 버그 픽스
+
+### 타임라인 (심사 2026-05-20 기준)
+
+| 주차 | Phase | 기간 |
+|---|---|---|
+| W1 (4/21~4/27) | A + B 시작 | 5~6일 |
+| W2 (4/28~5/4) | B 완료 + C | 4~5일 |
+| W3 (5/5~5/11) | D + E 시작 | 5일 |
+| W4 (5/12~5/18) | E 완료 + F | 4~5일 |
+| W5 (5/19~5/20) | 리허설 + 제출 | 2일 |
+
+**총 11~16일 작업** (29일 중) — 버퍼 **13~18일** 확보.
+
+### 설계 원칙
+
+1. **CCS-first 데이터 주권** — 각 도메인 INV 스키마에 자체 테이블. PMS 동기화는 `PmsSyncAdapter` 어댑터로만.
+2. **도메인 일관성** — 모든 도메인이 `Service/Controller/Mapper/Dto/SyncAdapter` 동일 구조.
+3. **Feature flag 우선** — 새 기능은 `concierge.feature.<name>.enabled` 플래그 뒤에 숨김. 기본 OFF, 프로퍼티별 어드민에서 ON.
+4. **다국어 우선** — 새 스트링은 반드시 i18n 사전에 등록.
+5. **테스트 우선** — 도메인 서비스는 핵심 경로 유닛테스트.
+
 ## 🗓️ 진행 로그
 
 ### 2026-04-21 심야 — CCS 본연 기능 확장 로드맵 수립 + ① SLA 에스컬레이션 구현
