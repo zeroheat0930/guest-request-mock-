@@ -590,6 +590,9 @@ html, body {
       </p>
       <div class="demo-guests">
         <div class="demo-guest-card" style="max-width:320px;">
+          <div class="demo-guest-qr">
+            <img src="" alt="QR Staff" id="qr-staff" width="140" height="140" style="background:#fff;border-radius:8px;" />
+          </div>
           <div class="demo-guest-info">
             <span class="demo-guest-flag">🗂️</span>
             <span class="demo-guest-name">CCS Dashboard</span>
@@ -849,7 +852,7 @@ html, body {
 
   var baseUrl = 'http://' + APP_HOST;
 
-  // QR 생성
+  // QR 생성 — 게스트 (룸별)
   var rooms = [
     { id: 'qr-03010', room: '03010' },
     { id: 'qr-00595', room: '00595' }
@@ -861,6 +864,15 @@ html, body {
     var el = document.getElementById(r.id);
     if (el) el.src = qr.createDataURL(4, 8);
   });
+
+  // QR 생성 — 스태프 대시보드
+  var staffEl = document.getElementById('qr-staff');
+  if (staffEl) {
+    var sqr = qrcode(0, 'M');
+    sqr.addData(baseUrl + '/staff.html');
+    sqr.make();
+    staffEl.src = sqr.createDataURL(4, 8);
+  }
 
   // 버튼 href 세팅
   document.querySelectorAll('.link-guest').forEach(function(a) {
