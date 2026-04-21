@@ -24,7 +24,7 @@
 					class="task-card"
 				>
 					<div class="card-title">{{ t.title || '(제목 없음)' }}</div>
-					<div v-if="t.roomNo" class="room-badge">{{ t.roomNo }}호</div>
+					<div v-if="t.rmNo" class="room-badge">{{ t.rmNo }}호</div>
 					<div v-if="t.memo" class="memo">{{ t.memo }}</div>
 					<div class="created-at">{{ fmtTime(t.createdAt) }}</div>
 					<div class="card-actions">

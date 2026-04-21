@@ -30,7 +30,7 @@ public class CcsDispatcher implements RequestDispatcher {
 			taskService.createTask(
 					event.propCd() != null ? event.propCd() : propCd,
 					event.cmpxCd() != null ? event.cmpxCd() : cmpxCd,
-					"GUEST_REQ", event.reqNo(), deptCd,
+					event.eventTp(), event.reqNo(), deptCd,
 					event.eventTitle(), event.reqMemo(), event.roomNo());
 		} catch (Exception e) {
 			log.warn("[ccs] task 생성 실패 tp={} reqNo={}: {}", event.eventTp(), event.reqNo(), e.getMessage());

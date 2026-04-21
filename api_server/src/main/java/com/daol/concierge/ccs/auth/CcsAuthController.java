@@ -53,17 +53,21 @@ public class CcsAuthController extends BaseController {
 		String propCd = str(user.get("propCd"));
 		String cmpxCd = str(user.get("cmpxCd"));
 		String deptCd = str(user.get("deptCd"));
+		String userTp = str(user.get("userTp"));
 		if (propCd == null) propCd = DEFAULT_PROP_CD;
 		if (cmpxCd == null) cmpxCd = DEFAULT_CMPX_CD;
 
 		String token = jwtService.issue(userId, str(user.get("userNm")),
-				propCd, cmpxCd, deptCd != null ? deptCd : "HK");
+				propCd, cmpxCd, deptCd != null ? deptCd : "HK", userTp);
 
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("token", token);
 		map.put("staffId", userId);
 		map.put("staffNm", str(user.get("userNm")));
 		map.put("deptCd", deptCd);
+		map.put("propCd", propCd);
+		map.put("cmpxCd", cmpxCd);
+		map.put("userTp", userTp);
 		return Responses.MapResponse.of(map);
 	}
 

@@ -282,6 +282,29 @@ Base: `http://localhost:8080/api`
 
 ## 🗓️ 진행 로그
 
+### 2026-04-21 오후 (윈도우 세션 — 역할 기반 WebSocket 토픽 + CCS UI 라벨)
+
+**4) 역할 기반 WebSocket 토픽 아키텍처** — 관리자(dongjunkorea, dept=00000) 가 부서별 토픽(`/topic/ccs/dept/HK` 등) 만 publish 되는 기존 구조에선 실시간 푸시 못 받던 문제. PMS `USER_TP` 체계(00001 시스템 / 00002 프로퍼티 / 00003 컴플렉스 / 00004 일반 / 00007~00008 객실정비) 로 스코프 분기.
+
+- **서버**: `CcsPrincipal` 에 `userTp` 필드 + `isAdminViewer()` 헬퍼 추가. `CcsJwtService.issue()/parse()` 에 `userTp` 클레임. `CcsAuthController` 응답 map 에 `userTp`, `propCd`, `cmpxCd` 포함. `CcsTaskService.publish()` 가 이제 **3중 발행** — `/topic/ccs/dept/{deptCd}` + `/topic/ccs/cmpx/{propCd}/{cmpxCd}` + `/topic/ccs/prop/{propCd}` + 기존 `/topic/ccs/staff/{assigneeId}`
+- **프론트**: `StaffDashboardView` 가 `userTp` 기반으로 subscribe 할 토픽 결정 — 00001/00002 → `/prop/{propCd}`, 00003 → `/cmpx/{propCd}/{cmpxCd}`, 그 외 → `/dept/{deptCd}`. 관리자 역할은 "내가 받기"/"완료" 버튼 숨김 + 담당자 미배정 힌트 표시 (viewer-only UI)
+- 디버그 로그 `[WS-dbg]` / `[WS-gate]` 제거. 에러 핸들러만 유지
+
+**5) 디스패처 sourceType 버그 수정** — `CcsDispatcher:33` 이 모든 게스트 요청을 하드코딩 `"GUEST_REQ"` 로 저장해 AMENITY/LATE_CO/PARKING 구분 불가. `event.eventTp()` 로 교체
+
+**6) CCS 대시보드 라벨/필드 수정**
+
+- 서버 응답 key `rmNo` 와 Vue 템플릿 `roomNo` 불일치 → `rmNo` 로 통일 (카드/모달/러너 PWA 전부)
+- `sourceLabel()` / `statusLabel()` 한국어 라벨 함수 추가 — `AMENITY → 어메니티`, `LATE_CO → 레이트체크아웃`, `PARKING → 주차`, `HK_MU → 객실정비요청`, `REQ → 대기`, `IN_PROG → 진행중`, `DONE → 완료`, `CANCELED → 취소됨` 등
+- 객실 null 일 때 `"—"` 표시로 빈 "호" 방지
+
+**빌드**: `mvn compile` BUILD SUCCESS / `npm run build` 211 modules 0 errors
+
+**실동작 검증 (사내 MariaDB)**:
+- `dongjunkorea` (userTp=00001 시스템관리자) 로그인 → WebSocket 101 Switching Protocols → STOMP CONNECTED → `SUBSCRIBE /topic/ccs/prop/0000000001` 확인
+- 게스트 어메니티 "수건 3개" 요청 → 스태프 대시보드 2초 내 자동 등장 ✅
+- 태스크 카드/모달: 객실 03010호, 유형 어메니티, 상태 대기 — 모두 한국어 라벨 정상
+
 ### 2026-04-21 (윈도우 세션 — WebSocket STOMP 연결 복구 + CCS 로그인 회귀 수정)
 
 **1) WebSocket STOMP 연결 복구** — 커밋 `360e45c` 에서 "WebSocket 미연결" 이라 5초 폴링 fallback 쓰던 상태. 원인 진단 + 수정.

@@ -33,24 +33,24 @@
 			<div v-for="t in visibleTasks" :key="t.taskId" class="task-card" @click="selectedTask = t">
 				<div class="row-top">
 					<div class="title">{{ t.title || '(제목 없음)' }}</div>
-					<span :class="['src', sourceClass(t.sourceType)]">{{ t.sourceType }}</span>
+					<span :class="['src', sourceClass(t.sourceType)]">{{ sourceLabel(t.sourceType) }}</span>
 				</div>
 				<div class="memo" v-if="t.memo">{{ t.memo }}</div>
 				<div class="row-meta">
-					<span v-if="t.roomNo">🏠 {{ t.roomNo }}호</span>
+					<span v-if="t.rmNo">🏠 {{ t.rmNo }}호</span>
 					<span>🕒 {{ fmtTime(t.createdAt) }}</span>
-					<span class="st">{{ t.statusCd }}</span>
+					<span class="st">{{ statusLabel(t.statusCd) }}</span>
 				</div>
 				<div v-if="t.assigneeId" class="assignee">👤 {{ t.assigneeId }}</div>
 				<div class="actions">
 					<button
-						v-if="t.statusCd === 'REQ'"
+						v-if="!isAdminViewer && t.statusCd === 'REQ'"
 						class="primary"
 						:disabled="busyId === t.taskId"
 						@click="take(t)"
 					>내가 받기</button>
 					<button
-						v-if="t.statusCd === 'IN_PROG'"
+						v-if="!isAdminViewer && t.statusCd === 'IN_PROG'"
 						class="primary"
 						:disabled="busyId === t.taskId"
 						@click="changeStatus(t, 'DONE')"
@@ -61,6 +61,7 @@
 						:disabled="busyId === t.taskId"
 						@click="changeStatus(t, 'CANCELED')"
 					>취소</button>
+					<span v-if="isAdminViewer && t.statusCd === 'REQ' && !t.assigneeId" class="admin-hint">담당자 미배정</span>
 				</div>
 			</div>
 		</div>
@@ -85,9 +86,9 @@
 					<button @click="selectedTask = null" class="modal-close">✕</button>
 				</div>
 				<div class="modal-body">
-					<div class="detail-row"><span class="detail-label">객실</span><span>{{ selectedTask.roomNo }}호</span></div>
-					<div class="detail-row"><span class="detail-label">유형</span><span :class="['src', sourceClass(selectedTask.sourceType)]">{{ selectedTask.sourceType }}</span></div>
-					<div class="detail-row"><span class="detail-label">상태</span><span :class="'st-badge st-' + selectedTask.statusCd">{{ selectedTask.statusCd }}</span></div>
+					<div class="detail-row"><span class="detail-label">객실</span><span>{{ selectedTask.rmNo ? selectedTask.rmNo + '호' : '—' }}</span></div>
+					<div class="detail-row"><span class="detail-label">유형</span><span :class="['src', sourceClass(selectedTask.sourceType)]">{{ sourceLabel(selectedTask.sourceType) }}</span></div>
+					<div class="detail-row"><span class="detail-label">상태</span><span :class="'st-badge st-' + selectedTask.statusCd">{{ statusLabel(selectedTask.statusCd) }}</span></div>
 					<div class="detail-row"><span class="detail-label">접수</span><span>{{ fmtTime(selectedTask.createdAt) }}</span></div>
 					<div class="detail-row" v-if="selectedTask.updatedAt && selectedTask.statusCd !== 'REQ'"><span class="detail-label">업데이트</span><span>{{ fmtTime(selectedTask.updatedAt) }}</span></div>
 					<div class="detail-row" v-if="selectedTask.assigneeId"><span class="detail-label">담당자</span><span>{{ selectedTask.assigneeId }}</span></div>
@@ -101,8 +102,8 @@
 					<div :class="['tl-step', selectedTask.statusCd === 'DONE' ? 'tl-done' : selectedTask.statusCd === 'CANCELED' ? 'tl-canceled' : '']">{{ selectedTask.statusCd === 'CANCELED' ? '취소됨' : '완료' }}</div>
 				</div>
 				<div class="modal-actions">
-					<button v-if="selectedTask.statusCd === 'REQ'" class="primary" :disabled="busyId === selectedTask.taskId" @click="take(selectedTask); selectedTask = null;">내가 받기</button>
-					<button v-if="selectedTask.statusCd === 'IN_PROG'" class="primary" :disabled="busyId === selectedTask.taskId" @click="changeStatus(selectedTask, 'DONE'); selectedTask = null;">완료</button>
+					<button v-if="!isAdminViewer && selectedTask.statusCd === 'REQ'" class="primary" :disabled="busyId === selectedTask.taskId" @click="take(selectedTask); selectedTask = null;">내가 받기</button>
+					<button v-if="!isAdminViewer && selectedTask.statusCd === 'IN_PROG'" class="primary" :disabled="busyId === selectedTask.taskId" @click="changeStatus(selectedTask, 'DONE'); selectedTask = null;">완료</button>
 					<button v-if="['REQ','IN_PROG'].includes(selectedTask.statusCd)" class="ghost" :disabled="busyId === selectedTask.taskId" @click="changeStatus(selectedTask, 'CANCELED'); selectedTask = null;">취소</button>
 					<button class="ghost" @click="selectedTask = null">닫기</button>
 				</div>
@@ -137,6 +138,11 @@ const showRequestModal = ref(false);
 const selectedTask = ref(null);
 let pollTimer = null;
 
+// PMS USER_TP 00001~00003: 시스템/프로퍼티/컴플렉스 관리자 — viewer mode
+const isAdminViewer = computed(() =>
+	['00001', '00002', '00003'].includes(staff.value?.userTp)
+);
+
 function loadStaff() {
 	try {
 		const raw = sessionStorage.getItem('ccs.staff');
@@ -169,8 +175,35 @@ const visibleTasks = computed(() => {
 function sourceClass(s) {
 	if (s === 'CHAT') return 'src-chat';
 	if (s === 'AMENITY') return 'src-amenity';
-	if (s === 'HK') return 'src-hk';
+	if (s && s.startsWith('HK')) return 'src-hk';
 	return '';
+}
+
+function sourceLabel(s) {
+	if (!s) return '';
+	if (s === 'AMENITY') return '어메니티';
+	if (s === 'LATE_CO') return '레이트체크아웃';
+	if (s === 'PARKING') return '주차';
+	if (s === 'CHAT') return '챗';
+	if (s === 'STAFF_REQ') return '내부요청';
+	if (s === 'GUEST_REQ') return '게스트요청';
+	if (s.startsWith('HK_')) {
+		const sub = s.substring(3);
+		if (sub === 'MU') return '객실정비요청';
+		if (sub === 'DND') return '방해금지';
+		if (sub === 'CLR') return '해제';
+		return '하우스키핑';
+	}
+	return s;
+}
+
+function statusLabel(s) {
+	if (s === 'REQ') return '대기';
+	if (s === 'ASSIGNED') return '배정됨';
+	if (s === 'IN_PROG') return '진행중';
+	if (s === 'DONE') return '완료';
+	if (s === 'CANCELED') return '취소됨';
+	return s || '';
 }
 
 function fmtTime(s) {
@@ -233,13 +266,28 @@ onMounted(() => {
 	loadStaff();
 	load().then(() => {
 		const token = sessionStorage.getItem('ccs.token');
-		if (token && staff.value?.deptCd) {
-			connectStomp(token, (client) => {
-				client.subscribe('/topic/ccs/dept/' + staff.value.deptCd, () => {
-					load();
-				});
-			});
-		}
+		if (!token) return;
+		connectStomp(token, (client) => {
+			// 역할 기반 토픽 선택:
+			//  - 00001/00002 (시스템/프로퍼티 관리자) → 프로퍼티 전체
+			//  - 00003 (컴플렉스 관리자) → 컴플렉스 전체
+			//  - 그 외 → 내 부서만
+			const userTp = staff.value?.userTp;
+			const propCd = staff.value?.propCd;
+			const cmpxCd = staff.value?.cmpxCd;
+			const deptCd = staff.value?.deptCd;
+			let topic;
+			if ((userTp === '00001' || userTp === '00002') && propCd) {
+				topic = '/topic/ccs/prop/' + propCd;
+			} else if (userTp === '00003' && propCd && cmpxCd) {
+				topic = '/topic/ccs/cmpx/' + propCd + '/' + cmpxCd;
+			} else if (deptCd) {
+				topic = '/topic/ccs/dept/' + deptCd;
+			} else {
+				return;
+			}
+			client.subscribe(topic, () => load());
+		});
 	});
 	// WebSocket 주 경로 — 폴링은 연결 실패 시 백업 (30s 간격)
 	pollTimer = setInterval(load, 30000);
@@ -387,6 +435,13 @@ onUnmounted(() => {
 	border-color: #1a3a6e;
 }
 .actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.admin-hint {
+	font-size: 12px;
+	color: #ad6200;
+	font-style: italic;
+	padding: 6px 0;
+}
 
 .page-head-row {
 	display: flex;

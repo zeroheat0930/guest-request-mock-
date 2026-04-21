@@ -8,24 +8,18 @@ export function connectStomp(token, onConnect) {
     return stompClient;
   }
 
-  const base = resolveWsBase();
-
   stompClient = new Client({
-    brokerURL: base,
-    connectHeaders: {
-      Authorization: 'Bearer ' + token
-    },
+    brokerURL: resolveWsBase(),
+    connectHeaders: { Authorization: 'Bearer ' + token },
     reconnectDelay: 5000,
     onConnect: () => {
       console.log('[WS] STOMP connected');
       if (onConnect) onConnect(stompClient);
     },
-    onDisconnect: () => {
-      console.log('[WS] STOMP disconnected');
-    },
-    onStompError: (frame) => {
-      console.error('[WS] STOMP error', frame.headers['message']);
-    }
+    onDisconnect: () => console.log('[WS] STOMP disconnected'),
+    onStompError: (frame) => console.error('[WS] STOMP error', frame.headers['message']),
+    onWebSocketError: (err) => console.error('[WS] transport error', err),
+    onWebSocketClose: (ev) => console.warn('[WS] closed', ev.code, ev.reason)
   });
 
   stompClient.activate();

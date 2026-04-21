@@ -87,11 +87,24 @@ public class CcsTaskService {
 		return invMapper.selectTasksByDept(propCd, cmpxCd, deptCd, statusCd);
 	}
 
+	/**
+	 * 역할 기반 토픽 구조로 다중 publish:
+	 *  - /topic/ccs/dept/{deptCd}               일반 사용자 / 부서장 / 러너
+	 *  - /topic/ccs/cmpx/{propCd}/{cmpxCd}       컴플렉스 관리자(USER_TP=00003)
+	 *  - /topic/ccs/prop/{propCd}                프로퍼티/시스템 관리자(USER_TP=00001,00002)
+	 *  - /topic/ccs/staff/{assigneeId}            본인 배정 알림
+	 */
 	private void publish(Map<String, Object> task) {
 		if (messagingTemplate == null || task == null) return;
 		String deptCd = str(task.get("deptCd"));
+		String propCd = str(task.get("propCd"));
+		String cmpxCd = str(task.get("cmpxCd"));
 		String assigneeId = str(task.get("assigneeId"));
 		if (deptCd != null) messagingTemplate.convertAndSend("/topic/ccs/dept/" + deptCd, task);
+		if (propCd != null && cmpxCd != null)
+			messagingTemplate.convertAndSend("/topic/ccs/cmpx/" + propCd + "/" + cmpxCd, task);
+		if (propCd != null)
+			messagingTemplate.convertAndSend("/topic/ccs/prop/" + propCd, task);
 		if (assigneeId != null && !assigneeId.isEmpty())
 			messagingTemplate.convertAndSend("/topic/ccs/staff/" + assigneeId, task);
 	}

@@ -25,7 +25,7 @@ public class CcsJwtService {
 		return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
 	}
 
-	public String issue(String staffId, String staffNm, String propCd, String cmpxCd, String deptCd) {
+	public String issue(String staffId, String staffNm, String propCd, String cmpxCd, String deptCd, String userTp) {
 		Instant now = Instant.now();
 		Instant exp = now.plusSeconds(hoursValid * 3600);
 
@@ -38,6 +38,7 @@ public class CcsJwtService {
 				.claim("propCd", propCd)
 				.claim("cmpxCd", cmpxCd)
 				.claim("staffNm", staffNm)
+				.claim("userTp", userTp)
 				.issuedAt(Date.from(now))
 				.expiration(Date.from(exp))
 				.signWith(key())
@@ -58,7 +59,8 @@ public class CcsJwtService {
 					c.get("deptCd", String.class),
 					c.get("propCd", String.class),
 					c.get("cmpxCd", String.class),
-					c.get("staffNm", String.class)
+					c.get("staffNm", String.class),
+					c.get("userTp", String.class)
 			);
 		} catch (JwtException | IllegalArgumentException e) {
 			return null;
