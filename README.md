@@ -282,6 +282,20 @@ Base: `http://localhost:8080/api`
 
 ## 🗓️ 진행 로그
 
+### 2026-04-21 (윈도우 세션 — MyBatis SQL 별칭 제거)
+
+**목표**: PMS 소스 스타일 정렬. `map-underscore-to-camel-case: true` 활용해 매퍼 XML의 중복 `AS camelCase` 별칭 일괄 제거.
+
+**완료**:
+- `INV_SQL.xml` — 7개 테이블 관련 15개 select 의 `AS camelCase` 별칭 제거. 스칼라 집계(`COUNT`/`SUM`/`AVG`)는 컬럼 이름이 없어 `AS CNT`/`TOTAL_CNT`/`DONE_CNT`/`AVG_MINUTES` 유지 — 언더스코어 자동 변환으로 `cnt`/`totalCnt`/`doneCnt`/`avgMinutes` 되어 소비자(`CcsStatsController`) 키 일치
+- `PMS_SQL.xml` — 8개 select 의 `AS camelCase` 별칭 전부 제거
+
+**검증**:
+- 지난 세션 TODO 회귀 확인: `@Transactional` grep 결과 0건(이전 완료), `GrService.insertAmenityReq` 이미 품목당 1행 INSERT 구조(이전 완료)
+- `mvn compile -o` BUILD SUCCESS (1.8s)
+
+**주의**: 컴파일만으론 MyBatis 매퍼 파싱은 검증 불가. 런타임 부팅은 사내망 DB 접속 시 자동 검증됨.
+
 ### 2026-04-16 (맥북 야간 세션 2 — 상용화 보안 수정 + 테스트 + UI 완성)
 
 **완료**:
@@ -375,9 +389,9 @@ Base: `http://localhost:8080/api`
 - ~~AdminCcsView CRUD 완성~~ ✅
 - ~~게스트 UI 폴리싱 (로딩/모바일/토스트/터치)~~ ✅
 - ~~스태프 대시보드 컴포넌트 렌더 (Stats/DeptLoad/RequestModal)~~ ✅
-- SQL 별칭(AS camelCase) 제거 → CommonDAO 경유로 전환
-- @Transactional 제거 → TxAdviceConfig AOP 로 대체
-- AmenityRequest 다건 요청 구조 변경 확인 (1 item per row)
+- ~~SQL 별칭(AS camelCase) 제거~~ ✅ (2026-04-21, `map-underscore-to-camel-case: true` 활용)
+- ~~@Transactional 제거 → TxAdviceConfig AOP 로 대체~~ ✅ (이전 세션 완료 확인)
+- ~~AmenityRequest 다건 요청 구조 변경 확인 (1 item per row)~~ ✅ (이미 품목당 1행 INSERT)
 - 부팅 + 실제 쿼리 동작 검증 (사내망 필요)
 - 스태프 비밀번호 해싱 (PMS 평문 → 독립 인증 테이블 검토)
 - AdminCcsView 부서 CRUD 백엔드 엔드포인트 추가 (POST/PUT/DELETE)
