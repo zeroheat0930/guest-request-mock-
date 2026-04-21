@@ -371,6 +371,25 @@ com.daol.concierge.ccs/
 
 ## 🗓️ 진행 로그
 
+### 2026-04-21 심야 2 — Phase A: PmsSyncAdapter 골격
+
+상용화 1.0 로드맵 Phase A 착수. 새 도메인(분실물/VOC/대여) 이 공통으로 쓸
+**PMS 동기화 어댑터 패턴** 만 먼저 구축. 도메인 본체는 Phase B 에서 채움.
+
+**새 패키지**: `com.daol.concierge.ccs.sync/`
+- `PmsSyncAdapter.java` — 인터페이스. default no-op + `syncLostFound/Voc/Rental` 메서드.
+- `NoopPmsSyncAdapter.java` — 기본 바인딩 (타 호텔 배포용, CCS 독립 운영).
+- `DaolPmsSyncAdapter.java` — DAOL 전용 구현체 (현재 stub, `@ConditionalOnProperty`).
+
+**설정**: `concierge.pms.sync.enabled=${CONCIERGE_PMS_SYNC_ENABLED:false}` — 기본 OFF.
+
+**작동 흐름 (Phase B 에서 완성될 예정)**:
+```
+LostFoundService.create(req)
+ ├─ invMapper.insertLostFound(...)      ← CCS 자체 저장 (primary)
+ └─ pmsSyncAdapter.syncLostFound(saved) ← 활성화 시 PMS 로 fire-and-forget
+```
+
 ### 2026-04-21 심야 — CCS 본연 기능 확장 로드맵 수립 + ① SLA 에스컬레이션 구현
 
 **배경 정정**: 이전에 HSKP 플로어 그리드를 CCS 에 붙이려 했으나, WINPAC 모듈 구분 재확인 결과 **HSKP 는 PMS 본업 모듈**(15+ 테이블, 43 JSP, 25 코드그룹 이미 구현)이고 CCS 와 별개. CCS 본연의 기능은 WINPAC 기준 아래 5개:

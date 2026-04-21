@@ -34,6 +34,12 @@ concierge:
     prop-cd: ${CONCIERGE_TENANT_PROP_CD:0000000001}
     cmpx-cd: ${CONCIERGE_TENANT_CMPX_CD:00001}
 
+  # PMS 동기화 어댑터 — true 이면 DaolPmsSyncAdapter 활성 (분실물/VOC/대여 변경 시
+  # PMS 쪽으로 전파). false 또는 미설정 시 NoopPmsSyncAdapter 바인딩(CCS 독립).
+  pms:
+    sync:
+      enabled: ${CONCIERGE_PMS_SYNC_ENABLED:false}
+
 admin:
   # 관리자 API (X-Admin-Token) 패스워드. 비어 있으면 /api/concierge/admin/** 는 503.
   password: ${CONCIERGE_ADMIN_PW:}
