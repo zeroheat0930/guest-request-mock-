@@ -47,19 +47,25 @@
 						v-if="!isAdminViewer && t.statusCd === 'REQ'"
 						class="primary"
 						:disabled="busyId === t.taskId"
-						@click="take(t)"
+						@click.stop="take(t)"
 					>내가 받기</button>
+					<button
+						v-if="!isAdminViewer && t.statusCd === 'ASSIGNED'"
+						class="primary"
+						:disabled="busyId === t.taskId"
+						@click.stop="changeStatus(t, 'IN_PROG')"
+					>▶ 시작</button>
 					<button
 						v-if="!isAdminViewer && t.statusCd === 'IN_PROG'"
 						class="primary"
 						:disabled="busyId === t.taskId"
-						@click="changeStatus(t, 'DONE')"
-					>완료</button>
+						@click.stop="changeStatus(t, 'DONE')"
+					>✅ 완료</button>
 					<button
-						v-if="['REQ','IN_PROG'].includes(t.statusCd)"
+						v-if="['REQ','ASSIGNED','IN_PROG'].includes(t.statusCd)"
 						class="ghost"
 						:disabled="busyId === t.taskId"
-						@click="changeStatus(t, 'CANCELED')"
+						@click.stop="changeStatus(t, 'CANCELED')"
 					>취소</button>
 					<span v-if="isAdminViewer && t.statusCd === 'REQ' && !t.assigneeId" class="admin-hint">담당자 미배정</span>
 				</div>
@@ -103,8 +109,9 @@
 				</div>
 				<div class="modal-actions">
 					<button v-if="!isAdminViewer && selectedTask.statusCd === 'REQ'" class="primary" :disabled="busyId === selectedTask.taskId" @click="take(selectedTask); selectedTask = null;">내가 받기</button>
-					<button v-if="!isAdminViewer && selectedTask.statusCd === 'IN_PROG'" class="primary" :disabled="busyId === selectedTask.taskId" @click="changeStatus(selectedTask, 'DONE'); selectedTask = null;">완료</button>
-					<button v-if="['REQ','IN_PROG'].includes(selectedTask.statusCd)" class="ghost" :disabled="busyId === selectedTask.taskId" @click="changeStatus(selectedTask, 'CANCELED'); selectedTask = null;">취소</button>
+					<button v-if="!isAdminViewer && selectedTask.statusCd === 'ASSIGNED'" class="primary" :disabled="busyId === selectedTask.taskId" @click="changeStatus(selectedTask, 'IN_PROG'); selectedTask = null;">▶ 시작</button>
+					<button v-if="!isAdminViewer && selectedTask.statusCd === 'IN_PROG'" class="primary" :disabled="busyId === selectedTask.taskId" @click="changeStatus(selectedTask, 'DONE'); selectedTask = null;">✅ 완료</button>
+					<button v-if="['REQ','ASSIGNED','IN_PROG'].includes(selectedTask.statusCd)" class="ghost" :disabled="busyId === selectedTask.taskId" @click="changeStatus(selectedTask, 'CANCELED'); selectedTask = null;">취소</button>
 					<button class="ghost" @click="selectedTask = null">닫기</button>
 				</div>
 			</div>
@@ -122,13 +129,21 @@ import DeptLoadPanel from './DeptLoadPanel.vue';
 import StaffRequestModal from './StaffRequestModal.vue';
 
 const TABS = [
+	{ key: 'mine',  label: '내 작업', statuses: ['ASSIGNED','IN_PROG'], mine: true },
 	{ key: 'wait',  label: '대기',    statuses: ['REQ'] },
 	{ key: 'prog',  label: '진행중',  statuses: ['IN_PROG'] },
 	{ key: 'done',  label: '완료',    statuses: ['DONE'] }
 ];
 
 const router = useRouter();
-const tab = ref('wait');
+// 관리자는 '대기' 부터, 일반 사용자는 '내 작업' 부터 보여줌
+const initialTab = (() => {
+	try {
+		const s = JSON.parse(sessionStorage.getItem('ccs.staff') || '{}');
+		return ['00001','00002','00003'].includes(s?.userTp) ? 'wait' : 'mine';
+	} catch { return 'wait'; }
+})();
+const tab = ref(initialTab);
 const tasks = ref([]);
 const err = ref('');
 const busy = ref(false);
@@ -160,16 +175,21 @@ function gotoLogin() {
 	router.replace('/staff/login');
 }
 
+function tabMatch(t, conf) {
+	if (!conf.statuses.includes(t.statusCd)) return false;
+	if (conf.mine && t.assigneeId !== staff.value?.staffId) return false;
+	return true;
+}
 function countByTab(key) {
 	const conf = TABS.find(t => t.key === key);
 	if (!conf) return 0;
-	return tasks.value.filter(t => conf.statuses.includes(t.statusCd)).length;
+	return tasks.value.filter(t => tabMatch(t, conf)).length;
 }
 
 const visibleTasks = computed(() => {
 	const conf = TABS.find(t => t.key === tab.value);
 	if (!conf) return [];
-	return tasks.value.filter(t => conf.statuses.includes(t.statusCd));
+	return tasks.value.filter(t => tabMatch(t, conf));
 });
 
 function sourceClass(s) {

@@ -25,12 +25,10 @@ import StaffShell from './layouts/StaffShell.vue';
 const route = useRoute();
 
 // 데스크탑 셸을 쓸지 결정.
-// - /runner : 러너 PWA 는 자체 모바일 셸(max-width 500, 상단 다크 바) 가 있어서 감싸지 않음
 // - */login : 로그인 화면은 가운데 카드만 필요 → 플레인 셸
 // - 그 외(/staff, /admin/*) : 좌측 LNB + 유저 정보 + 로그아웃을 가진 StaffShell
 const useShell = computed(() => {
 	const p = route.path;
-	if (p === '/runner') return false;
 	if (p.endsWith('/login')) return false;
 	return true;
 });

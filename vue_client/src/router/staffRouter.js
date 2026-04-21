@@ -6,7 +6,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import StaffLoginView from '../views/staff/StaffLoginView.vue';
 import StaffDashboardView from '../views/staff/StaffDashboardView.vue';
-import RunnerView from '../views/staff/RunnerView.vue';
 import AdminLoginView from '../views/AdminLoginView.vue';
 import AdminFeaturesView from '../views/AdminFeaturesView.vue';
 import AdminCcsView from '../views/AdminCcsView.vue';
@@ -15,7 +14,6 @@ const routes = [
 	{ path: '/',               redirect: '/staff' },
 	{ path: '/staff/login',    component: StaffLoginView,     meta: { staff: true, public: true } },
 	{ path: '/staff',          component: StaffDashboardView, meta: { staff: true } },
-	{ path: '/runner',         component: RunnerView,         meta: { staff: true } },
 	{ path: '/admin/login',    component: AdminLoginView,     meta: { admin: true, public: true } },
 	{ path: '/admin/features', component: AdminFeaturesView,  meta: { admin: true } },
 	{ path: '/admin/ccs',      component: AdminCcsView,       meta: { admin: true } },

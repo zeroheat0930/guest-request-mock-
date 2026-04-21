@@ -15,9 +15,6 @@
 					<router-link to="/staff" class="item">
 						<span class="ic">📋</span><span class="label">대시보드</span>
 					</router-link>
-					<router-link to="/runner" class="item">
-						<span class="ic">🏃</span><span class="label">러너</span>
-					</router-link>
 				</div>
 
 				<div class="group" v-if="hasAdmin">
