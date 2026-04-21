@@ -39,7 +39,14 @@ const useShell = computed(() => {
 <style>
 @import './assets/tokens.css';
 
-html, body, #app { height: 100%; margin: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #app {
+	height: 100%;
+	margin: 0;
+	width: 100%;
+	max-width: 100vw;
+	overflow-x: hidden;
+}
 body {
 	font-family: -apple-system, "SF Pro Display", "Segoe UI", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
 	background: var(--c-bg);
@@ -55,7 +62,13 @@ input, select, textarea { font-family: inherit; }
 </style>
 
 <style scoped>
-.staff-app-root { min-height: 100vh; background: var(--c-bg); }
+.staff-app-root {
+	min-height: 100vh;
+	width: 100%;
+	max-width: 100vw;
+	overflow-x: hidden;
+	background: var(--c-bg);
+}
 .plain-shell {
 	min-height: 100vh;
 	display: flex;
