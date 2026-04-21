@@ -1,21 +1,21 @@
 <template>
 	<div class="dept-load-panel">
 		<div class="panel-head">
-			<h3 class="panel-title">부서 로드</h3>
-			<button class="ghost" :disabled="loading" @click="load">새로고침</button>
+			<h3 class="panel-title">{{ t('deptload.title') }}</h3>
+			<button class="ghost" :disabled="loading" @click="load">{{ t('deptload.refresh') }}</button>
 		</div>
 
 		<div v-if="err" class="err">{{ err }}</div>
 
-		<div v-if="loading && !members.length" class="dim">불러오는 중…</div>
+		<div v-if="loading && !members.length" class="dim">{{ t('staff.loading') }}</div>
 
 		<table v-else-if="members.length" class="load-table">
 			<thead>
 				<tr>
-					<th>직원명</th>
-					<th>대기 (ASSIGNED)</th>
-					<th>진행중 (IN_PROG)</th>
-					<th>합계</th>
+					<th>{{ t('deptload.name') }}</th>
+					<th>{{ t('deptload.assigned') }}</th>
+					<th>{{ t('deptload.inprog') }}</th>
+					<th>{{ t('deptload.total') }}</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -38,13 +38,14 @@
 			</tbody>
 		</table>
 
-		<div v-else class="dim">부서 멤버가 없습니다</div>
+		<div v-else class="dim">{{ t('deptload.empty') }}</div>
 	</div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { fetchCcsDeptLoad } from '../../api/client.js';
+import { t } from '../../i18n/ui.js';
 
 const props = defineProps({
 	deptCd: { type: String, required: true }
@@ -63,7 +64,7 @@ async function load() {
 		const res = await fetchCcsDeptLoad(props.deptCd);
 		members.value = res?.map?.list || res?.list || [];
 	} catch (e) {
-		err.value = `로드 조회 실패: ${e?.message || '서버 오류'}`;
+		err.value = e?.message || t('error.server');
 	} finally {
 		loading.value = false;
 	}

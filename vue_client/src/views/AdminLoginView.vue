@@ -8,7 +8,7 @@
 			</header>
 			<form @submit.prevent="submit" novalidate>
 				<label>
-					<span class="lb">관리자 패스워드</span>
+					<span class="lb">{{ t('admin.login.password') }}</span>
 					<input
 						ref="pwInput"
 						type="password"
@@ -20,12 +20,12 @@
 				</label>
 				<button class="primary" type="submit" :disabled="busy || !pw">
 					<span v-if="busy" class="spinner" />
-					{{ busy ? '확인 중' : '로그인' }}
+					{{ busy ? t('auth.loading') : t('admin.login.submit') }}
 				</button>
 				<div v-if="err" class="err">{{ err }}</div>
 			</form>
 			<p class="hint">
-				환경변수 <code>CONCIERGE_ADMIN_PW</code> 가 서버에 설정돼야 접속 가능합니다.
+				<code>CONCIERGE_ADMIN_PW</code> — {{ t('admin.login.hint') }}
 			</p>
 		</div>
 	</div>
@@ -36,6 +36,7 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
 import { API_BASE } from '../api/client.js';
+import { t } from '../i18n/ui.js';
 
 const TOKEN_KEY = 'concierge.adminToken';
 
@@ -64,11 +65,11 @@ async function submit() {
 	} catch (e) {
 		const status = e.response?.status;
 		if (status === 401) {
-			err.value = '인증 실패';
+			err.value = t('admin.login.fail');
 		} else if (status === 503) {
-			err.value = '관리자 인증이 설정되지 않았습니다';
+			err.value = t('admin.login.notConfigured');
 		} else {
-			err.value = `서버 오류: ${e.response?.data?.message || e.message}`;
+			err.value = e.response?.data?.message || e.message || t('error.server');
 		}
 		pw.value = '';
 		pwInput.value?.focus();

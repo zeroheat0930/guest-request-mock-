@@ -2,18 +2,18 @@
 	<div class="staff">
 		<!-- SLA 초과 에스컬레이션 토스트 (관리자 전용) -->
 		<div v-if="escToasts.length" class="esc-toast-stack">
-			<div v-for="t in escToasts" :key="t.id" class="esc-toast" @click="escToasts = escToasts.filter(x => x.id !== t.id)">
+			<div v-for="et in escToasts" :key="et.id" class="esc-toast" @click="escToasts = escToasts.filter(x => x.id !== et.id)">
 				<div class="esc-toast-head">
 					<span class="esc-toast-icon">🚨</span>
-					<span class="esc-toast-title">SLA 초과</span>
+					<span class="esc-toast-title">{{ tt('staff.sla.overdue') }}</span>
 					<span class="esc-toast-close">×</span>
 				</div>
 				<div class="esc-toast-body">
-					<div class="esc-toast-main">{{ t.title }}</div>
+					<div class="esc-toast-main">{{ et.title }}</div>
 					<div class="esc-toast-meta">
-						<span v-if="t.rmNo">🏠 {{ t.rmNo }}호</span>
-						<span v-if="t.dept">· {{ t.dept }}</span>
-						<span>· {{ t.elapsed }}/{{ t.sla }}분 ({{ t.elapsed - t.sla }}분 초과)</span>
+						<span v-if="et.rmNo">🏠 {{ et.rmNo }}</span>
+						<span v-if="et.dept">· {{ et.dept }}</span>
+						<span>· {{ et.elapsed }}/{{ et.sla }}m ({{ et.elapsed - et.sla }}m {{ tt('staff.sla.exceed') }})</span>
 					</div>
 				</div>
 			</div>
@@ -22,13 +22,13 @@
 		<header class="page-head">
 			<div class="page-head-row">
 				<div>
-					<h2>🛎️ CCS 대시보드</h2>
+					<h2>🛎️ {{ tt('staff.dashboard.title') }}</h2>
 					<p class="page-sub">
 						<strong>{{ staff.staffNm || '—' }}</strong> ·
-						<span class="dept">{{ staff.deptCd || '-' }} 부서</span>
+						<span class="dept">{{ staff.deptCd || '-' }}</span>
 					</p>
 				</div>
-				<button class="btn-new-request" @click="showRequestModal = true">+ 새 요청</button>
+				<button class="btn-new-request" @click="showRequestModal = true">{{ tt('staff.dashboard.newRequest') }}</button>
 			</div>
 		</header>
 
@@ -36,13 +36,13 @@
 
 		<div class="tabs">
 			<button
-				v-for="t in TABS"
-				:key="t.key"
-				:class="['tab', { active: tab === t.key }]"
-				@click="tab = t.key"
+				v-for="tb in TABS"
+				:key="tb.key"
+				:class="['tab', { active: tab === tb.key }]"
+				@click="tab = tb.key"
 			>
-				{{ t.label }}
-				<span class="badge">{{ countByTab(t.key) }}</span>
+				{{ tt(tb.labelKey) }}
+				<span class="badge">{{ countByTab(tb.key) }}</span>
 			</button>
 		</div>
 
@@ -50,59 +50,59 @@
 
 		<div v-if="visibleTasks.length" class="list">
 			<div
-				v-for="t in visibleTasks"
-				:key="t.taskId"
-				:class="['task-card', { overdue: t.overdue }]"
-				@click="selectedTask = t"
+				v-for="tk in visibleTasks"
+				:key="tk.taskId"
+				:class="['task-card', { overdue: tk.overdue }]"
+				@click="selectedTask = tk"
 			>
 				<div class="row-top">
-					<div class="title">{{ t.title || '(제목 없음)' }}</div>
-					<span :class="['src', sourceClass(t.sourceType)]">{{ sourceLabel(t.sourceType) }}</span>
+					<div class="title">{{ tk.title || '—' }}</div>
+					<span :class="['src', sourceClass(tk.sourceType)]">{{ sourceLabel(tk.sourceType) }}</span>
 				</div>
-				<div class="memo" v-if="t.memo">{{ t.memo }}</div>
+				<div class="memo" v-if="tk.memo">{{ tk.memo }}</div>
 				<div class="row-meta">
-					<span v-if="t.rmNo">🏠 {{ t.rmNo }}호</span>
-					<span>🕒 {{ fmtTime(t.createdAt) }}</span>
-					<span v-if="isOpenStatus(t.statusCd) && t.slaMin != null"
-						:class="['sla', { 'sla-overdue': t.overdue }]">
-						{{ t.overdue ? '🔥' : '⏱' }} {{ t.elapsedMin }}/{{ t.slaMin }}m
+					<span v-if="tk.rmNo">🏠 {{ tk.rmNo }}</span>
+					<span>🕒 {{ fmtTime(tk.createdAt) }}</span>
+					<span v-if="isOpenStatus(tk.statusCd) && tk.slaMin != null"
+						:class="['sla', { 'sla-overdue': tk.overdue }]">
+						{{ tk.overdue ? '🔥' : '⏱' }} {{ tk.elapsedMin }}/{{ tk.slaMin }}m
 					</span>
-					<span class="st">{{ statusLabel(t.statusCd) }}</span>
+					<span class="st">{{ statusLabel(tk.statusCd) }}</span>
 				</div>
-				<div v-if="t.assigneeId" class="assignee">👤 {{ t.assigneeId }}</div>
+				<div v-if="tk.assigneeId" class="assignee">👤 {{ tk.assigneeId }}</div>
 				<div class="actions">
 					<button
-						v-if="!isAdminViewer && t.statusCd === 'REQ'"
+						v-if="!isAdminViewer && tk.statusCd === 'REQ'"
 						class="primary"
-						:disabled="busyId === t.taskId"
-						@click.stop="take(t)"
-					>내가 받기</button>
+						:disabled="busyId === tk.taskId"
+						@click.stop="take(tk)"
+					>{{ tt('staff.action.assign') }}</button>
 					<button
-						v-if="!isAdminViewer && t.statusCd === 'ASSIGNED'"
+						v-if="!isAdminViewer && tk.statusCd === 'ASSIGNED'"
 						class="primary"
-						:disabled="busyId === t.taskId"
-						@click.stop="changeStatus(t, 'IN_PROG')"
-					>▶ 시작</button>
+						:disabled="busyId === tk.taskId"
+						@click.stop="changeStatus(tk, 'IN_PROG')"
+					>{{ tt('staff.action.start') }}</button>
 					<button
-						v-if="!isAdminViewer && t.statusCd === 'IN_PROG'"
+						v-if="!isAdminViewer && tk.statusCd === 'IN_PROG'"
 						class="primary"
-						:disabled="busyId === t.taskId"
-						@click.stop="changeStatus(t, 'DONE')"
-					>✅ 완료</button>
+						:disabled="busyId === tk.taskId"
+						@click.stop="changeStatus(tk, 'DONE')"
+					>{{ tt('staff.action.complete') }}</button>
 					<button
-						v-if="['REQ','ASSIGNED','IN_PROG'].includes(t.statusCd)"
+						v-if="['REQ','ASSIGNED','IN_PROG'].includes(tk.statusCd)"
 						class="ghost"
-						:disabled="busyId === t.taskId"
-						@click.stop="changeStatus(t, 'CANCELED')"
-					>취소</button>
-					<span v-if="isAdminViewer && t.statusCd === 'REQ' && !t.assigneeId" class="admin-hint">담당자 미배정</span>
+						:disabled="busyId === tk.taskId"
+						@click.stop="changeStatus(tk, 'CANCELED')"
+					>{{ tt('staff.action.cancel') }}</button>
+					<span v-if="isAdminViewer && tk.statusCd === 'REQ' && !tk.assigneeId" class="admin-hint">{{ tt('staff.adminHint') }}</span>
 				</div>
 			</div>
 		</div>
-		<div v-else class="dim">{{ busy ? '불러오는 중…' : '표시할 작업이 없습니다' }}</div>
+		<div v-else class="dim">{{ busy ? tt('staff.loading') : tt('staff.empty') }}</div>
 
 		<details class="dept-load-section" v-if="staff?.deptCd">
-			<summary>부서원 로드 현황</summary>
+			<summary>{{ tt('staff.deptLoad') }}</summary>
 			<DeptLoadPanel :deptCd="staff.deptCd" />
 		</details>
 
@@ -116,38 +116,38 @@
 		<div v-if="selectedTask" class="modal-overlay" @click.self="selectedTask = null">
 			<div class="modal-card">
 				<div class="modal-head">
-					<h3>{{ selectedTask.title || '(제목 없음)' }}</h3>
+					<h3>{{ selectedTask.title || '—' }}</h3>
 					<button @click="selectedTask = null" class="modal-close">✕</button>
 				</div>
 				<div class="modal-body">
-					<div class="detail-row"><span class="detail-label">객실</span><span>{{ selectedTask.rmNo ? selectedTask.rmNo + '호' : '—' }}</span></div>
-					<div class="detail-row"><span class="detail-label">유형</span><span :class="['src', sourceClass(selectedTask.sourceType)]">{{ sourceLabel(selectedTask.sourceType) }}</span></div>
-					<div class="detail-row"><span class="detail-label">상태</span><span :class="'st-badge st-' + selectedTask.statusCd">{{ statusLabel(selectedTask.statusCd) }}</span></div>
+					<div class="detail-row"><span class="detail-label">{{ tt('staff.detail.room') }}</span><span>{{ selectedTask.rmNo || '—' }}</span></div>
+					<div class="detail-row"><span class="detail-label">{{ tt('staff.detail.type') }}</span><span :class="['src', sourceClass(selectedTask.sourceType)]">{{ sourceLabel(selectedTask.sourceType) }}</span></div>
+					<div class="detail-row"><span class="detail-label">{{ tt('staff.detail.status') }}</span><span :class="'st-badge st-' + selectedTask.statusCd">{{ statusLabel(selectedTask.statusCd) }}</span></div>
 					<div class="detail-row" v-if="isOpenStatus(selectedTask.statusCd) && selectedTask.slaMin != null">
-						<span class="detail-label">SLA</span>
+						<span class="detail-label">{{ tt('staff.detail.sla') }}</span>
 						<span :class="['sla', { 'sla-overdue': selectedTask.overdue }]">
-							{{ selectedTask.overdue ? '🔥' : '⏱' }} 경과 {{ selectedTask.elapsedMin }}분 / 기준 {{ selectedTask.slaMin }}분
-							<strong v-if="selectedTask.overdue"> · {{ selectedTask.elapsedMin - selectedTask.slaMin }}분 초과</strong>
+							{{ selectedTask.overdue ? '🔥' : '⏱' }} {{ selectedTask.elapsedMin }}m / {{ selectedTask.slaMin }}m
+							<strong v-if="selectedTask.overdue"> · {{ selectedTask.elapsedMin - selectedTask.slaMin }}m {{ tt('staff.sla.exceed') }}</strong>
 						</span>
 					</div>
-					<div class="detail-row"><span class="detail-label">접수</span><span>{{ fmtTime(selectedTask.createdAt) }}</span></div>
-					<div class="detail-row" v-if="selectedTask.updatedAt && selectedTask.statusCd !== 'REQ'"><span class="detail-label">업데이트</span><span>{{ fmtTime(selectedTask.updatedAt) }}</span></div>
-					<div class="detail-row" v-if="selectedTask.assigneeId"><span class="detail-label">담당자</span><span>{{ selectedTask.assigneeId }}</span></div>
-					<div class="detail-row" v-if="selectedTask.memo"><span class="detail-label">메모</span><span class="detail-memo">{{ selectedTask.memo }}</span></div>
+					<div class="detail-row"><span class="detail-label">{{ tt('staff.detail.received') }}</span><span>{{ fmtTime(selectedTask.createdAt) }}</span></div>
+					<div class="detail-row" v-if="selectedTask.updatedAt && selectedTask.statusCd !== 'REQ'"><span class="detail-label">{{ tt('staff.detail.updated') }}</span><span>{{ fmtTime(selectedTask.updatedAt) }}</span></div>
+					<div class="detail-row" v-if="selectedTask.assigneeId"><span class="detail-label">{{ tt('staff.detail.assignee') }}</span><span>{{ selectedTask.assigneeId }}</span></div>
+					<div class="detail-row" v-if="selectedTask.memo"><span class="detail-label">{{ tt('staff.detail.memo') }}</span><span class="detail-memo">{{ selectedTask.memo }}</span></div>
 				</div>
 				<div class="modal-timeline">
-					<div :class="['tl-step', selectedTask.statusCd === 'REQ' || selectedTask.statusCd === 'IN_PROG' || selectedTask.statusCd === 'DONE' ? 'tl-active' : '']">접수</div>
+					<div :class="['tl-step', selectedTask.statusCd === 'REQ' || selectedTask.statusCd === 'IN_PROG' || selectedTask.statusCd === 'DONE' ? 'tl-active' : '']">{{ tt('staff.timeline.received') }}</div>
 					<div class="tl-line"></div>
-					<div :class="['tl-step', selectedTask.statusCd === 'IN_PROG' || selectedTask.statusCd === 'DONE' ? 'tl-active' : '']">진행중</div>
+					<div :class="['tl-step', selectedTask.statusCd === 'IN_PROG' || selectedTask.statusCd === 'DONE' ? 'tl-active' : '']">{{ tt('staff.timeline.inProg') }}</div>
 					<div class="tl-line"></div>
-					<div :class="['tl-step', selectedTask.statusCd === 'DONE' ? 'tl-done' : selectedTask.statusCd === 'CANCELED' ? 'tl-canceled' : '']">{{ selectedTask.statusCd === 'CANCELED' ? '취소됨' : '완료' }}</div>
+					<div :class="['tl-step', selectedTask.statusCd === 'DONE' ? 'tl-done' : selectedTask.statusCd === 'CANCELED' ? 'tl-canceled' : '']">{{ selectedTask.statusCd === 'CANCELED' ? tt('staff.timeline.canceled') : tt('staff.timeline.complete') }}</div>
 				</div>
 				<div class="modal-actions">
-					<button v-if="!isAdminViewer && selectedTask.statusCd === 'REQ'" class="primary" :disabled="busyId === selectedTask.taskId" @click="take(selectedTask); selectedTask = null;">내가 받기</button>
-					<button v-if="!isAdminViewer && selectedTask.statusCd === 'ASSIGNED'" class="primary" :disabled="busyId === selectedTask.taskId" @click="changeStatus(selectedTask, 'IN_PROG'); selectedTask = null;">▶ 시작</button>
-					<button v-if="!isAdminViewer && selectedTask.statusCd === 'IN_PROG'" class="primary" :disabled="busyId === selectedTask.taskId" @click="changeStatus(selectedTask, 'DONE'); selectedTask = null;">✅ 완료</button>
-					<button v-if="['REQ','ASSIGNED','IN_PROG'].includes(selectedTask.statusCd)" class="ghost" :disabled="busyId === selectedTask.taskId" @click="changeStatus(selectedTask, 'CANCELED'); selectedTask = null;">취소</button>
-					<button class="ghost" @click="selectedTask = null">닫기</button>
+					<button v-if="!isAdminViewer && selectedTask.statusCd === 'REQ'" class="primary" :disabled="busyId === selectedTask.taskId" @click="take(selectedTask); selectedTask = null;">{{ tt('staff.action.assign') }}</button>
+					<button v-if="!isAdminViewer && selectedTask.statusCd === 'ASSIGNED'" class="primary" :disabled="busyId === selectedTask.taskId" @click="changeStatus(selectedTask, 'IN_PROG'); selectedTask = null;">{{ tt('staff.action.start') }}</button>
+					<button v-if="!isAdminViewer && selectedTask.statusCd === 'IN_PROG'" class="primary" :disabled="busyId === selectedTask.taskId" @click="changeStatus(selectedTask, 'DONE'); selectedTask = null;">{{ tt('staff.action.complete') }}</button>
+					<button v-if="['REQ','ASSIGNED','IN_PROG'].includes(selectedTask.statusCd)" class="ghost" :disabled="busyId === selectedTask.taskId" @click="changeStatus(selectedTask, 'CANCELED'); selectedTask = null;">{{ tt('staff.action.cancel') }}</button>
+					<button class="ghost" @click="selectedTask = null">{{ tt('staff.action.close') }}</button>
 				</div>
 			</div>
 		</div>
@@ -159,15 +159,16 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchCcsTasks, assignCcsTask, transitionCcsTask } from '../../api/client.js';
 import { connectStomp, disconnectStomp } from '../../api/websocket.js';
+import { t as tt } from '../../i18n/ui.js';
 import StatsWidget from './StatsWidget.vue';
 import DeptLoadPanel from './DeptLoadPanel.vue';
 import StaffRequestModal from './StaffRequestModal.vue';
 
 const TABS = [
-	{ key: 'mine',  label: '내 작업', statuses: ['ASSIGNED','IN_PROG'], mine: true },
-	{ key: 'wait',  label: '대기',    statuses: ['REQ'] },
-	{ key: 'prog',  label: '진행중',  statuses: ['IN_PROG'] },
-	{ key: 'done',  label: '완료',    statuses: ['DONE'] }
+	{ key: 'mine',  labelKey: 'staff.tab.mine',  statuses: ['ASSIGNED','IN_PROG'], mine: true },
+	{ key: 'wait',  labelKey: 'staff.tab.wait',  statuses: ['REQ'] },
+	{ key: 'prog',  labelKey: 'staff.tab.prog',  statuses: ['IN_PROG'] },
+	{ key: 'done',  labelKey: 'staff.tab.done',  statuses: ['DONE'] }
 ];
 
 const router = useRouter();
@@ -261,28 +262,31 @@ function sourceClass(s) {
 
 function sourceLabel(s) {
 	if (!s) return '';
-	if (s === 'AMENITY') return '어메니티';
-	if (s === 'LATE_CO') return '레이트체크아웃';
-	if (s === 'PARKING') return '주차';
-	if (s === 'CHAT') return '챗';
-	if (s === 'STAFF_REQ') return '내부요청';
-	if (s === 'GUEST_REQ') return '게스트요청';
+	if (s === 'AMENITY') return tt('staff.source.amenity');
+	if (s === 'LATE_CO') return tt('staff.source.lateCheckout');
+	if (s === 'PARKING') return tt('staff.source.parking');
+	if (s === 'CHAT') return tt('staff.source.chat');
+	if (s === 'STAFF_REQ') return tt('staff.source.staffReq');
+	if (s === 'LOSTFOUND') return tt('staff.source.lostfound');
+	if (s === 'VOC') return tt('staff.source.voc');
+	if (s === 'RENTAL') return tt('staff.source.rental');
+	if (s === 'GUEST_REQ') return tt('staff.source.staffReq');
 	if (s.startsWith('HK_')) {
 		const sub = s.substring(3);
-		if (sub === 'MU') return '객실정비요청';
-		if (sub === 'DND') return '방해금지';
-		if (sub === 'CLR') return '해제';
-		return '하우스키핑';
+		if (sub === 'MU') return tt('staff.source.hkMu');
+		if (sub === 'DND') return tt('staff.source.hkDnd');
+		if (sub === 'CLR') return tt('staff.source.hkClr');
+		return tt('hk.title');
 	}
 	return s;
 }
 
 function statusLabel(s) {
-	if (s === 'REQ') return '대기';
-	if (s === 'ASSIGNED') return '배정됨';
-	if (s === 'IN_PROG') return '진행중';
-	if (s === 'DONE') return '완료';
-	if (s === 'CANCELED') return '취소됨';
+	if (s === 'REQ') return tt('staff.status.req');
+	if (s === 'ASSIGNED') return tt('staff.status.assigned');
+	if (s === 'IN_PROG') return tt('staff.status.inProg');
+	if (s === 'DONE') return tt('staff.status.done');
+	if (s === 'CANCELED') return tt('staff.status.canceled');
 	return s || '';
 }
 
@@ -310,33 +314,33 @@ async function load() {
 		tasks.value = res?.map?.list || res?.list || [];
 	} catch (e) {
 		if (e?.status === -30) { gotoLogin(); return; }
-		err.value = `조회 실패: ${e?.message || '서버 오류'}`;
+		err.value = e?.message || tt('error.server');
 	} finally {
 		busy.value = false;
 	}
 }
 
-async function take(t) {
+async function take(tk) {
 	const me = staff.value.staffId;
-	if (!me) { err.value = '스태프 정보 없음 — 재로그인 필요'; return; }
-	busyId.value = t.taskId;
+	if (!me) { err.value = tt('auth.expired'); return; }
+	busyId.value = tk.taskId;
 	try {
-		await assignCcsTask(t.taskId, me);
+		await assignCcsTask(tk.taskId, me);
 		await load();
 	} catch (e) {
-		err.value = `작업 배정 실패: ${e?.message || '서버 오류'}`;
+		err.value = e?.message || tt('error.server');
 	} finally {
 		busyId.value = '';
 	}
 }
 
-async function changeStatus(t, statusCd) {
-	busyId.value = t.taskId;
+async function changeStatus(tk, statusCd) {
+	busyId.value = tk.taskId;
 	try {
-		await transitionCcsTask(t.taskId, statusCd);
+		await transitionCcsTask(tk.taskId, statusCd);
 		await load();
 	} catch (e) {
-		err.value = `상태 변경 실패: ${e?.message || '서버 오류'}`;
+		err.value = e?.message || tt('error.server');
 	} finally {
 		busyId.value = '';
 	}

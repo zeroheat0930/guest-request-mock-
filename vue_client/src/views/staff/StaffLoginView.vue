@@ -9,18 +9,18 @@
 
 			<form @submit.prevent="submit" novalidate>
 				<label>
-					<span class="lb">아이디</span>
+					<span class="lb">{{ t('staff.login.id') }}</span>
 					<input
 						ref="idInput"
 						type="text"
 						v-model="loginId"
 						autocomplete="username"
 						:disabled="busy"
-						placeholder="아이디 입력"
+						:placeholder="t('staff.login.id')"
 					/>
 				</label>
 				<label>
-					<span class="lb">비밀번호</span>
+					<span class="lb">{{ t('staff.login.password') }}</span>
 					<div class="pw-wrap">
 						<input
 							:type="showPw ? 'text' : 'password'"
@@ -42,7 +42,7 @@
 				</label>
 				<button class="primary" type="submit" :disabled="busy || !loginId || !password">
 					<span v-if="busy" class="spinner" />
-					{{ busy ? '확인 중' : '로그인' }}
+					{{ busy ? t('auth.loading') : t('staff.login.submit') }}
 				</button>
 				<div v-if="err" class="err">{{ err }}</div>
 			</form>
@@ -55,6 +55,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { postCcsLogin } from '../../api/client.js';
+import { t } from '../../i18n/ui.js';
 
 const PROP_CD = '0000000010';
 const CMPX_CD = '00001';
@@ -86,16 +87,16 @@ async function submit() {
 		// status: 0=성공, 404=계정없음, -20=비번오류, -30=비활성, 401=입력누락
 		const code = res?.status;
 		if (code !== 0 && code !== undefined) {
-			if (code === 404) err.value = '계정이 없습니다';
-			else if (code === -20) err.value = '비밀번호가 일치하지 않습니다';
-			else if (code === -30 || code === 401) err.value = '로그인 실패';
-			else err.value = `서버 오류 (${code})`;
+			if (code === 404) err.value = t('staff.login.fail');
+			else if (code === -20) err.value = t('staff.login.fail');
+			else if (code === -30 || code === 401) err.value = t('staff.login.fail');
+			else err.value = t('error.server');
 			password.value = '';
 			return;
 		}
 		const map = res?.map || {};
 		if (!map.token) {
-			err.value = '서버 오류: 토큰 없음';
+			err.value = t('error.server');
 			return;
 		}
 		sessionStorage.setItem('ccs.token', map.token);
@@ -103,11 +104,7 @@ async function submit() {
 		router.replace('/staff');
 	} catch (e) {
 		// 네트워크 실패 / HTTP 5xx 등 throw 되는 경우
-		const code = e?.status;
-		if (code === 404) err.value = '계정이 없습니다';
-		else if (code === -20) err.value = '비밀번호가 일치하지 않습니다';
-		else if (code === -30 || code === 401) err.value = '로그인 실패';
-		else err.value = `서버 오류${code ? ` (${code})` : ''}`;
+		err.value = t('staff.login.fail');
 		password.value = '';
 	} finally {
 		busy.value = false;

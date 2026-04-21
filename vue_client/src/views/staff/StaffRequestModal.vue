@@ -2,51 +2,46 @@
   <teleport to="body">
     <div v-if="open" class="srm-backdrop" @click.self="onClose">
       <div class="srm-card" role="dialog" aria-modal="true" aria-labelledby="srm-title">
-        <h2 id="srm-title" class="srm-title">새 요청 만들기</h2>
+        <h2 id="srm-title" class="srm-title">{{ t('srm.title') }}</h2>
 
         <form @submit.prevent="submit" class="srm-form">
-          <!-- 대상 부서 (필수) -->
           <label class="srm-label">
-            대상 부서 <span class="srm-required">*</span>
+            {{ t('srm.dept') }} <span class="srm-required">*</span>
             <select v-model="form.toDeptCd" class="srm-input" required>
-              <option value="" disabled>부서 선택</option>
-              <option value="HK">HK — 하우스키핑</option>
-              <option value="FR">FR — 프론트</option>
-              <option value="ENG">ENG — 엔지니어링</option>
+              <option value="" disabled>{{ t('srm.dept.select') }}</option>
+              <option value="HK">HK — {{ t('srm.dept.hk') }}</option>
+              <option value="FR">FR — {{ t('srm.dept.fr') }}</option>
+              <option value="ENG">ENG — {{ t('srm.dept.eng') }}</option>
               <option value="FB">FB — F&amp;B</option>
             </select>
           </label>
 
-          <!-- 특정 직원 (선택) -->
           <label class="srm-label">
-            특정 직원 staffId <span class="srm-hint">(선택)</span>
-            <input v-model="form.toAssigneeId" class="srm-input" type="text" placeholder="예: S001" />
+            {{ t('srm.assignee') }} <span class="srm-hint">({{ t('srm.optional') }})</span>
+            <input v-model="form.toAssigneeId" class="srm-input" type="text" placeholder="S001" />
           </label>
 
-          <!-- 제목 (필수) -->
           <label class="srm-label">
-            제목 <span class="srm-required">*</span>
-            <input v-model="form.title" class="srm-input" type="text" placeholder="요청 제목" required />
+            {{ t('srm.ttl') }} <span class="srm-required">*</span>
+            <input v-model="form.title" class="srm-input" type="text" :placeholder="t('srm.ttl.placeholder')" required />
           </label>
 
-          <!-- 메모 (선택) -->
           <label class="srm-label">
-            메모 <span class="srm-hint">(선택)</span>
-            <textarea v-model="form.memo" class="srm-input srm-textarea" rows="3" placeholder="상세 내용"></textarea>
+            {{ t('srm.memo') }} <span class="srm-hint">({{ t('srm.optional') }})</span>
+            <textarea v-model="form.memo" class="srm-input srm-textarea" rows="3" :placeholder="t('srm.memo.placeholder')"></textarea>
           </label>
 
-          <!-- 객실 번호 (선택) -->
           <label class="srm-label">
-            객실 번호 <span class="srm-hint">(선택)</span>
-            <input v-model="form.roomNo" class="srm-input" type="text" placeholder="예: 1205" />
+            {{ t('srm.room') }} <span class="srm-hint">({{ t('srm.optional') }})</span>
+            <input v-model="form.roomNo" class="srm-input" type="text" placeholder="1205" />
           </label>
 
           <p v-if="errorMsg" class="srm-error">{{ errorMsg }}</p>
 
           <div class="srm-actions">
-            <button type="button" class="srm-btn srm-btn-cancel" @click="onClose" :disabled="loading">취소</button>
+            <button type="button" class="srm-btn srm-btn-cancel" @click="onClose" :disabled="loading">{{ t('staff.action.cancel') }}</button>
             <button type="submit" class="srm-btn srm-btn-submit" :disabled="loading">
-              {{ loading ? '전송 중…' : '요청 전송' }}
+              {{ loading ? t('srm.sending') : t('srm.submit') }}
             </button>
           </div>
         </form>
@@ -58,6 +53,7 @@
 <script setup>
 import { ref, reactive } from 'vue';
 import { createCcsTask } from '../../api/client.js';
+import { t } from '../../i18n/ui.js';
 
 const props = defineProps({
   open:      { type: Boolean, required: true },
@@ -80,7 +76,7 @@ async function submit() {
   errorMsg.value = '';
 
   if (!form.toDeptCd || !form.title.trim()) {
-    errorMsg.value = '대상 부서와 제목은 필수입니다.';
+    errorMsg.value = t('srm.err.required');
     return;
   }
 
@@ -97,7 +93,7 @@ async function submit() {
     props.onClose();
     Object.assign(form, { toDeptCd: '', toAssigneeId: '', title: '', memo: '', roomNo: '' });
   } catch (err) {
-    errorMsg.value = err?.message || '요청 전송에 실패했습니다.';
+    errorMsg.value = err?.message || t('srm.err.send');
   } finally {
     loading.value = false;
   }

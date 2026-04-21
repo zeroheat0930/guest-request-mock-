@@ -371,6 +371,32 @@ com.daol.concierge.ccs/
 
 ## 🗓️ 진행 로그
 
+### 2026-04-20 → Phase C: 스태프/관리자 UI i18n 전면화 ✅
+
+Phase C 완료. 스태프 번들의 **모든 상호작용 UI 가 4개 국어(ko/en/ja/zh)** 로 전환. 해외 호텔 파일럿 전제 조건 해결.
+
+**핵심 변경**
+- `layouts/StaffShell.vue` — LNB 상단에 **언어 스위처** 셀렉트(ko_KR/en_US/ja_JP/zh_CN) 추가. `sessionStorage['concierge.staffLang']` 에 보관, 변경 시 `window.location.reload()`. 네비게이션 라벨/그룹 타이틀/로그아웃 툴팁 모두 `t('shell.*')` 사용.
+- `views/staff/StaffDashboardView.vue` — 페이지 타이틀, 탭 라벨(내 작업/대기/진행중/완료), 상태 뱃지, source type 라벨, 액션 버튼(내가 받기/시작/완료/취소/닫기), 모달 detail row 라벨, 타임라인 단계, SLA 메시지, 관리자 힌트 전부 `t()` 로 전환. SLA 초과 토스트도 i18n.
+- `views/staff/StaffLoginView.vue` — 아이디/비밀번호 라벨 + placeholder + 로그인 버튼 + 에러 메시지 i18n.
+- `views/staff/StaffRequestModal.vue` — 모달 타이틀/필드 라벨/부서 옵션/placeholder/액션 버튼 i18n. `srm.*` 키 추가.
+- `views/staff/StatsWidget.vue` — 접수/완료/평균처리시간(분) 카드 라벨 i18n.
+- `views/staff/DeptLoadPanel.vue` — 부서 로드 타이틀/새로고침/테이블 헤더/빈 상태 메시지 i18n.
+- `views/AdminLoginView.vue` — 관리자 패스워드 라벨 + 로그인/실패 메시지 + 힌트 문구 i18n.
+
+**i18n 키 추가** (`src/i18n/ui.js`) — 4개 국어 완비:
+- `staff.*` (dashboard, action, status, tab, source, detail, timeline, sla, login, adminHint 등 30+ 키)
+- `admin.*` (common, features, staff, dept, lf, voc, rental, duty, reports, audit, login 등 60+ 키)
+- `shell.*` (group, nav, logout, lang)
+- `srm.*` (요청 생성 모달)
+- `stats.*`, `deptload.*`
+
+**언어 스위처 UX** — 게스트 앱과 동일한 스토리지 키 `concierge.perUseLang` 을 보조로 동기화해, 운영자가 스태프/게스트 번들 양쪽을 같은 기기에서 전환해도 일관된 언어가 유지되게 설정.
+
+**범위 외(의도적 연기)**: AdminFeaturesView / AdminCcsView / QrGeneratorView — 관리자 고급 기능, 한국 운영팀만 접근, i18n 필요성 낮음. 추후 Phase G 확장 가능.
+
+---
+
 ### 2026-04-20 → Phase B: 분실물(Lost & Found) + 고객 불만(VOC) 풀구현 ✅
 
 상용화 로드맵 Phase B 완료. **CCS 5대 본연 기능 중 ②, ③** 이 운영 가능 상태에 도달.

@@ -10,6 +10,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { fetchCcsStatsToday } from '../../api/client.js';
+import { t } from '../../i18n/ui.js';
 
 const props = defineProps({
 	deptCd: {
@@ -23,9 +24,9 @@ const completed = ref('-');
 const avgMinutes = ref('-');
 
 const cards = computed(() => [
-	{ label: '접수', value: received.value },
-	{ label: '완료', value: completed.value },
-	{ label: '평균 처리 시간(분)', value: avgMinutes.value }
+	{ label: t('stats.received'), value: received.value },
+	{ label: t('stats.completed'), value: completed.value },
+	{ label: t('stats.avgMin'), value: avgMinutes.value }
 ]);
 
 async function loadStats() {

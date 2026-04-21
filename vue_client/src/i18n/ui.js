@@ -226,6 +226,39 @@ const messages = {
   'staff.deptLoad':         { ko: '부서원 로드 현황', en: 'Team Workload',  ja: '部員の負荷状況',      zh: '团队工作负载' },
   'staff.adminHint':        { ko: '담당자 미배정',  en: 'Unassigned',       ja: '担当者未定',          zh: '未指派' },
 
+  // Stats widget (Phase C)
+  'stats.received':  { ko: '접수',               en: 'Received',         ja: '受付',                zh: '接收' },
+  'stats.completed': { ko: '완료',               en: 'Completed',        ja: '完了',                zh: '已完成' },
+  'stats.avgMin':    { ko: '평균 처리 시간(분)',  en: 'Avg Time (min)',   ja: '平均処理時間（分）',  zh: '平均处理时间（分钟）' },
+
+  // Dept load (Phase C)
+  'deptload.title':    { ko: '부서 로드',    en: 'Team Workload',   ja: '部署負荷',        zh: '部门负载' },
+  'deptload.refresh':  { ko: '새로고침',     en: 'Refresh',         ja: '更新',            zh: '刷新' },
+  'deptload.name':     { ko: '직원명',       en: 'Staff Name',      ja: '担当者名',        zh: '员工姓名' },
+  'deptload.assigned': { ko: '대기 (배정됨)', en: 'Assigned',       ja: '割当済',          zh: '已指派' },
+  'deptload.inprog':   { ko: '진행중',       en: 'In Progress',     ja: '進行中',          zh: '处理中' },
+  'deptload.total':    { ko: '합계',         en: 'Total',           ja: '合計',            zh: '合计' },
+  'deptload.empty':    { ko: '부서 멤버가 없습니다', en: 'No team members', ja: '部員がいません', zh: '无部门成员' },
+
+  // Staff Request Modal (Phase C)
+  'srm.title':          { ko: '새 요청 만들기',   en: 'Create New Request', ja: '新規リクエスト作成', zh: '创建新请求' },
+  'srm.dept':           { ko: '대상 부서',       en: 'Target Dept',      ja: '対象部署',            zh: '目标部门' },
+  'srm.dept.select':    { ko: '부서 선택',       en: 'Select Dept',       ja: '部署選択',            zh: '选择部门' },
+  'srm.dept.hk':        { ko: '하우스키핑',      en: 'Housekeeping',      ja: 'ハウスキーピング',    zh: '客房部' },
+  'srm.dept.fr':        { ko: '프론트',          en: 'Front Desk',        ja: 'フロント',            zh: '前台' },
+  'srm.dept.eng':       { ko: '엔지니어링',      en: 'Engineering',       ja: 'エンジニアリング',    zh: '工程部' },
+  'srm.assignee':       { ko: '특정 직원',       en: 'Assignee',          ja: '特定担当者',          zh: '指定员工' },
+  'srm.optional':       { ko: '선택',            en: 'optional',          ja: '任意',                zh: '选填' },
+  'srm.ttl':            { ko: '제목',            en: 'Title',             ja: 'タイトル',            zh: '标题' },
+  'srm.ttl.placeholder':{ ko: '요청 제목',       en: 'Request title',     ja: 'リクエストタイトル',  zh: '请求标题' },
+  'srm.memo':           { ko: '메모',            en: 'Memo',              ja: 'メモ',                zh: '备注' },
+  'srm.memo.placeholder': { ko: '상세 내용',     en: 'Details',           ja: '詳細内容',            zh: '详细内容' },
+  'srm.room':           { ko: '객실 번호',       en: 'Room Number',       ja: '客室番号',            zh: '房间号' },
+  'srm.submit':         { ko: '요청 전송',       en: 'Send Request',      ja: 'リクエスト送信',      zh: '发送请求' },
+  'srm.sending':        { ko: '전송 중...',       en: 'Sending...',        ja: '送信中...',           zh: '发送中...' },
+  'srm.err.required':   { ko: '대상 부서와 제목은 필수입니다.', en: 'Target dept and title are required', ja: '対象部署とタイトルは必須です', zh: '目标部门和标题为必填项' },
+  'srm.err.send':       { ko: '요청 전송에 실패했습니다.', en: 'Failed to send request', ja: 'リクエスト送信に失敗しました', zh: '请求发送失败' },
+
   // Staff login (Phase C)
   'staff.login.title':      { ko: '스태프 로그인', en: 'Staff Login',      ja: 'スタッフログイン',    zh: '员工登录' },
   'staff.login.id':         { ko: '로그인 ID',     en: 'Login ID',         ja: 'ログインID',          zh: '登录账号' },
@@ -248,6 +281,13 @@ const messages = {
   'shell.nav.audit':        { ko: '감사 로그',     en: 'Audit Log',        ja: '監査ログ',            zh: '审计日志' },
   'shell.logout':           { ko: '로그아웃',      en: 'Logout',           ja: 'ログアウト',          zh: '退出' },
   'shell.lang':             { ko: '언어',          en: 'Language',         ja: '言語',                zh: '语言' },
+
+  // Admin login (Phase C)
+  'admin.login.password':       { ko: '관리자 패스워드', en: 'Admin Password',   ja: '管理者パスワード',  zh: '管理员密码' },
+  'admin.login.submit':         { ko: '로그인',          en: 'Login',            ja: 'ログイン',          zh: '登录' },
+  'admin.login.fail':           { ko: '인증 실패',       en: 'Authentication failed', ja: '認証失敗',      zh: '认证失败' },
+  'admin.login.notConfigured':  { ko: '관리자 인증이 설정되지 않았습니다', en: 'Admin auth not configured', ja: '管理者認証未設定', zh: '管理员认证未设置' },
+  'admin.login.hint':           { ko: '환경변수가 서버에 설정돼야 접속 가능합니다.', en: 'env var must be set on the server', ja: '環境変数がサーバーに設定されている必要があります', zh: '需在服务器端设置该环境变量' },
 
   // Admin generic (Phase C / E)
   'admin.common.back':      { ko: '← 뒤로',        en: '← Back',           ja: '← 戻る',              zh: '← 返回' },
