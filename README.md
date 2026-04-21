@@ -371,6 +371,37 @@ com.daol.concierge.ccs/
 
 ## 🗓️ 진행 로그
 
+### 2026-04-20 → Phase E: 관리자 리포트 + Swagger + 감사 로그 ✅
+
+운영 가시성과 API 문서화 완성. SaaS 납품 전제 조건 해결.
+
+**DB** — `db/migrations/phase_e_audit_reports.sql`:
+- `INV.CCS_AUDIT_LOG` — AUDIT_ID + ACTOR + ACTION(CREATE/UPDATE/DELETE/STATUS_CHANGE/LOGIN/LOGOUT) + DOMAIN + BEFORE_JSON/AFTER_JSON + 인덱스 (domain/createdAt, actor/createdAt).
+- `INV.CCS_REPORT_DAILY` — 일일 롤업 materialized 테이블 (batch 잡 대상, 현재는 ad-hoc GROUP BY 로 대체).
+
+**백엔드 신설**
+- `ccs/audit/AuditLogService.java` — `log(actor, type, action, domain, entityId, prop/cmpx, before, after)` inline 호출 방식. 실패해도 비즈니스 트랜잭션 막지 않음(try/catch).
+- `ccs/audit/CcsAuditController.java` — `GET /api/ccs/audit` 도메인/액션/작업자/날짜 필터, 최대 500건.
+- `ccs/report/CcsReportService.java` — daily / sla / heatmap. SLA 기준(`CcsSlaRules`)과 실제 평균 처리시간 비교로 `slaCompliance` / `slaMet` / `completionRate` 계산.
+- `ccs/report/CcsReportController.java` — `GET /api/ccs/reports/daily` / `/sla` / `/heatmap`, from/to 날짜 파라미터.
+- 서비스 감사 hook 인라인: `CcsLostFoundService.createReport` / `updateStatus`, `CcsVocService.createReport` / `resolve` 에 `auditLogService.log(...)` 추가. 실패 시 경고 로그만.
+
+**Swagger / OpenAPI**
+- 기존 `core/config/OpenApiConfig.java` 활용 (제목: "다올 컨시어지 API", 버전 1.0.0, Bearer JWT 설정).
+- `@Tag` + `@Operation` 어노테이션 전 CCS 컨트롤러 적용: Task / LostFound / VOC / Rental / Duty / Audit / Reports / Guest Request.
+- `application.yml` 기존 설정: `/swagger-ui.html` + `/v3/api-docs` 접근 가능.
+- `pom.xml` 에 `springdoc-openapi-starter-webmvc-ui` 2.5.0 이미 포함.
+
+**프론트 관리자**
+- `views/AdminReportsView.vue` — 날짜 범위 필터 + 3 탭(일일 통계 / SLA 준수율 / 히트맵). SLA: 부서 × 소스타입별 completionRate 를 그라데이션 바로 시각화. 히트맵: 요일 × 시간 (DOW 1~7, Hour 0~23) 어두운 블루 농도로 요청 볼륨 표시. CSV 내보내기 버튼.
+- `views/AdminAuditView.vue` — 도메인/액션/작업자 필터 + 감사 로그 리스트. 각 행 확장 시 before/after JSON diff 표시 (JSON.parse 후 pretty print).
+- staffRouter 에 이미 등록됨 (Phase B 커밋에서).
+- StaffShell 네비게이션에 "리포트", "감사 로그" 이미 추가됨.
+
+**차트 구현** — 외부 차트 라이브러리 미도입. 순수 CSS 바(그라데이션 fill) + HTML 테이블 셀 배경 그라데이션으로 구현 → 번들 사이즈 최소화.
+
+---
+
 ### 2026-04-20 → Phase D: 대여(Rental) + 당직 로그(Duty) 풀구현 ✅
 
 CCS 5대 본연 기능 중 **④ 대여 품목 / ⑤ 당직 관리자 로그** 완성.

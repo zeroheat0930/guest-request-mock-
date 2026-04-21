@@ -8,6 +8,8 @@ import com.daol.concierge.core.api.Responses;
 import com.daol.concierge.core.controller.BaseController;
 import com.daol.concierge.core.parameter.RequestParams;
 import com.daol.concierge.gr.service.GrService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -21,6 +23,7 @@ import java.util.Map;
 /**
  * 투숙객 요청(Guest Request) 컨트롤러
  */
+@Tag(name = "Guest Request", description = "투숙객 앱 API (어메니티/하우스키핑/레이트체크아웃/주차/분실물/VOC/대여)")
 @Controller
 @RequestMapping(value = "/api/gr")
 public class GrController extends BaseController {

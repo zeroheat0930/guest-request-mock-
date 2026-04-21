@@ -1,5 +1,6 @@
 package com.daol.concierge.ccs.service;
 
+import com.daol.concierge.ccs.audit.AuditLogService;
 import com.daol.concierge.ccs.routing.CcsSlaRules;
 import com.daol.concierge.ccs.sync.PmsSyncAdapter;
 import com.daol.concierge.core.api.ApiException;
@@ -24,6 +25,7 @@ public class CcsVocService {
 	@Autowired private InvMapper invMapper;
 	@Autowired private PmsSyncAdapter pmsSyncAdapter;
 	@Autowired(required = false) SimpMessagingTemplate messagingTemplate;
+	@Autowired(required = false) AuditLogService auditLogService;
 
 	public Map<String, Object> createReport(Map<String, Object> body) {
 		String vocId = "VOC" + UUID.randomUUID().toString().replace("-", "").substring(0, 20).toUpperCase();
@@ -35,6 +37,8 @@ public class CcsVocService {
 		invMapper.insertVoc(p);
 		Map<String, Object> saved = invMapper.selectVoc(vocId);
 		try { pmsSyncAdapter.syncVoc(saved); } catch (Exception ignore) {}
+		if (auditLogService != null) auditLogService.log(str(p.get("rsvNo")), "GUEST", "CREATE", "VOC", vocId,
+				str(p.get("propCd")), str(p.get("cmpxCd")), null, saved);
 		publish(saved);
 		return saved;
 	}
@@ -62,6 +66,7 @@ public class CcsVocService {
 	}
 
 	public Map<String, Object> resolve(String vocId, String resolution, String handlerId) {
+		Map<String, Object> before = invMapper.selectVoc(vocId);
 		Map<String, Object> p = new HashMap<>();
 		p.put("vocId", vocId);
 		p.put("resolution", resolution);
@@ -69,6 +74,8 @@ public class CcsVocService {
 		invMapper.updateVocResolution(p);
 		Map<String, Object> saved = invMapper.selectVoc(vocId);
 		try { pmsSyncAdapter.syncVoc(saved); } catch (Exception ignore) {}
+		if (auditLogService != null) auditLogService.log(handlerId, "STAFF", "UPDATE", "VOC", vocId,
+				str(saved != null ? saved.get("propCd") : null), str(saved != null ? saved.get("cmpxCd") : null), before, saved);
 		publish(saved);
 		return saved;
 	}

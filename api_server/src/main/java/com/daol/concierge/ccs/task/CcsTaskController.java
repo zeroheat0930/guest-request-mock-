@@ -10,6 +10,8 @@ import com.daol.concierge.core.api.Responses;
 import com.daol.concierge.core.controller.BaseController;
 import com.daol.concierge.core.parameter.RequestParams;
 import com.daol.concierge.inv.mapper.InvMapper;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+@Tag(name = "CCS Task", description = "스태프 작업 관리 (조회/배정/상태 전환)")
 @Controller
 @RequestMapping("/api/ccs/tasks")
 public class CcsTaskController extends BaseController {
@@ -40,6 +43,7 @@ public class CcsTaskController extends BaseController {
 		}
 	}
 
+	@Operation(summary = "작업 목록 조회", description = "로그인 스태프의 부서 태스크 (관리자는 전체)")
 	@ResponseBody
 	@RequestMapping(method = RequestMethod.GET, produces = APPLICATION_JSON)
 	public ApiResponse list(RequestParams requestParams) {
@@ -49,6 +53,7 @@ public class CcsTaskController extends BaseController {
 		return Responses.MapResponse.of(Map.of("list", tasks));
 	}
 
+	@Operation(summary = "작업 배정", description = "assigneeId 를 태스크에 연결, 상태 IN_PROG")
 	@ResponseBody
 	@RequestMapping(value = "/{taskId}/assign", method = RequestMethod.PUT, produces = APPLICATION_JSON)
 	public ApiResponse assign(@PathVariable String taskId, RequestParams requestParams) {
@@ -60,6 +65,7 @@ public class CcsTaskController extends BaseController {
 		return Responses.MapResponse.of(Map.of("task", t));
 	}
 
+	@Operation(summary = "상태 전환", description = "REQ → IN_PROG → DONE / CANCELED")
 	@ResponseBody
 	@RequestMapping(value = "/{taskId}/status", method = RequestMethod.PUT, produces = APPLICATION_JSON)
 	public ApiResponse status(@PathVariable String taskId, RequestParams requestParams) {

@@ -1,5 +1,6 @@
 package com.daol.concierge.ccs.service;
 
+import com.daol.concierge.ccs.audit.AuditLogService;
 import com.daol.concierge.ccs.sync.PmsSyncAdapter;
 import com.daol.concierge.core.api.ApiException;
 import com.daol.concierge.core.api.ApiStatus;
@@ -25,6 +26,7 @@ public class CcsLostFoundService {
 	@Autowired private InvMapper invMapper;
 	@Autowired private PmsSyncAdapter pmsSyncAdapter;
 	@Autowired(required = false) SimpMessagingTemplate messagingTemplate;
+	@Autowired(required = false) AuditLogService auditLogService;
 
 	public Map<String, Object> createReport(Map<String, Object> body) {
 		String lfId = "LF" + UUID.randomUUID().toString().replace("-", "").substring(0, 20).toUpperCase();
@@ -36,6 +38,9 @@ public class CcsLostFoundService {
 		invMapper.insertLostFound(p);
 		Map<String, Object> saved = invMapper.selectLostFound(lfId);
 		try { pmsSyncAdapter.syncLostFound(saved); } catch (Exception ignore) {}
+		if (auditLogService != null) auditLogService.log(str(p.get("reporterRef")),
+				str(p.get("reporterType")), "CREATE", "LOSTFOUND", lfId,
+				str(p.get("propCd")), str(p.get("cmpxCd")), null, saved);
 		publish(saved);
 		return saved;
 	}
@@ -51,6 +56,7 @@ public class CcsLostFoundService {
 	}
 
 	public Map<String, Object> updateStatus(String lfId, String statusCd, String handlerId, String note) {
+		Map<String, Object> before = invMapper.selectLostFound(lfId);
 		Map<String, Object> p = new HashMap<>();
 		p.put("lfId", lfId);
 		p.put("statusCd", statusCd);
@@ -59,6 +65,8 @@ public class CcsLostFoundService {
 		invMapper.updateLostFoundStatus(p);
 		Map<String, Object> saved = invMapper.selectLostFound(lfId);
 		try { pmsSyncAdapter.syncLostFound(saved); } catch (Exception ignore) {}
+		if (auditLogService != null) auditLogService.log(handlerId, "STAFF", "STATUS_CHANGE", "LOSTFOUND", lfId,
+				str(saved != null ? saved.get("propCd") : null), str(saved != null ? saved.get("cmpxCd") : null), before, saved);
 		publish(saved);
 		return saved;
 	}
