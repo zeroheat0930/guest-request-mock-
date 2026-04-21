@@ -11,6 +11,15 @@ const messages = {
   // {0} = 방번호. 각 뷰 상단 게스트 정보 바
   'guest.room.label': { ko: '{0}호 고객님', en: 'Room {0} · Guest', ja: '{0}号室 お客様', zh: '{0}号房 贵宾' },
 
+  // Home (메인보드)
+  'home.tagline': {
+    ko: '원하시는 서비스를 선택해 주세요',
+    en: 'Select a service to get started',
+    ja: 'ご利用になりたいサービスをお選びください',
+    zh: '请选择您需要的服务'
+  },
+  'home.label':   { ko: '홈', en: 'Home', ja: 'ホーム', zh: '主页' },
+
   // Amenity
   'amenity.title':   { ko: '어메니티 요청',    en: 'Amenity Request',      ja: 'アメニティリクエスト', zh: '客房用品' },
   'amenity.sub':     { ko: '필요한 품목을 선택하세요', en: 'Select items you need', ja: '必要なアイテムを選択', zh: '请选择所需物品' },

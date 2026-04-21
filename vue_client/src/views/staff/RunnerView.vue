@@ -5,13 +5,23 @@
 				<span class="staff-nm">{{ staff.staffNm || '—' }}</span>
 				<span class="dept-badge">{{ staff.deptCd || '-' }}</span>
 			</div>
-			<button class="logout-btn" @click="logout" title="로그아웃">
-				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-					<polyline points="16 17 21 12 16 7"/>
-					<line x1="21" y1="12" x2="9" y2="12"/>
-				</svg>
-			</button>
+			<div class="top-actions">
+				<router-link to="/staff" class="top-link" title="대시보드로">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<rect x="3" y="3" width="7" height="7"/>
+						<rect x="14" y="3" width="7" height="7"/>
+						<rect x="14" y="14" width="7" height="7"/>
+						<rect x="3" y="14" width="7" height="7"/>
+					</svg>
+				</router-link>
+				<button class="logout-btn" @click="logout" title="로그아웃">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+						<polyline points="16 17 21 12 16 7"/>
+						<line x1="21" y1="12" x2="9" y2="12"/>
+					</svg>
+				</button>
+			</div>
 		</header>
 
 		<main class="body">
@@ -206,7 +216,13 @@ onUnmounted(() => {
 	font-weight: 600;
 }
 
-.logout-btn {
+.top-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.top-link, .logout-btn {
 	background: transparent;
 	border: none;
 	color: #90cdf4;
@@ -215,8 +231,9 @@ onUnmounted(() => {
 	align-items: center;
 	padding: 6px;
 	border-radius: 6px;
+	text-decoration: none;
 }
-.logout-btn:hover { background: #1a3a6e; }
+.top-link:hover, .logout-btn:hover { background: #1a3a6e; }
 
 /* ── 본문 ── */
 .body {

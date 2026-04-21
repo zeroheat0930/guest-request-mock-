@@ -649,4 +649,49 @@ onUnmounted(() => {
 }
 .modal-actions button.primary:hover { background: #152e58; }
 .modal-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ═══ Mobile (< 720px) ═══ */
+@media (max-width: 720px) {
+	.staff { max-width: 100%; }
+	.page-head h2 { font-size: 18px; }
+	.page-head-row {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
+	}
+	.btn-new-request {
+		width: 100%;
+		padding: 10px 12px;
+		font-size: 13px;
+	}
+	.tabs {
+		overflow-x: auto;
+		flex-wrap: nowrap;
+	}
+	.tab {
+		padding: 10px 12px;
+		font-size: 13px;
+		white-space: nowrap;
+	}
+	.task-card { padding: 12px 14px; }
+	.row-top { flex-wrap: wrap; }
+	.row-meta { gap: 8px; font-size: 11px; }
+	.row-meta .st { margin-left: 0; }
+
+	.modal-overlay { padding: 10px; }
+	.modal-card { border-radius: 12px; }
+	.modal-head { padding: 14px 16px 12px; }
+	.modal-head h3 { font-size: 14px; }
+	.modal-body { padding: 12px 16px; }
+	.detail-row { font-size: 13px; }
+	.detail-label { min-width: 48px; font-size: 10px; }
+	.modal-timeline { padding: 10px 16px; }
+	.tl-step { padding: 3px 8px; font-size: 10px; }
+	.modal-actions { padding: 12px 16px; }
+	.modal-actions button {
+		padding: 10px 12px;
+		font-size: 13px;
+		flex: 1 1 calc(50% - 4px);
+	}
+}
 </style>

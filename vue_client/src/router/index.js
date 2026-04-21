@@ -4,6 +4,7 @@
  * 게스트 번들에 스태프/관리자 소스가 포함되지 않음(Vite 트리쉐이킹 + 멀티 엔트리).
  */
 import { createRouter, createWebHashHistory } from 'vue-router';
+import HomeView from '../views/HomeView.vue';
 import AmenityView from '../views/AmenityView.vue';
 import HousekeepingView from '../views/HousekeepingView.vue';
 import LateCheckoutView from '../views/LateCheckoutView.vue';
@@ -13,7 +14,8 @@ import ParkingView from '../views/ParkingView.vue';
 import { featuresLoaded, isFeatureEnabled, firstEnabledPath } from '../features/featureStore.js';
 
 const routes = [
-	{ path: '/',              redirect: '/amenity' },
+	{ path: '/',              redirect: '/home' },
+	{ path: '/home',          component: HomeView,         meta: { home: true } },
 	{ path: '/amenity',       component: AmenityView,      meta: { featureCd: 'AMENITY' } },
 	{ path: '/housekeeping',  component: HousekeepingView, meta: { featureCd: 'HK' } },
 	{ path: '/late-checkout', component: LateCheckoutView, meta: { featureCd: 'LATE_CO' } },
@@ -22,7 +24,7 @@ const routes = [
 	{ path: '/parking',       component: ParkingView,      meta: { featureCd: 'PARKING' } },
 	{ path: '/history',       component: () => import('../views/HistoryView.vue'), meta: { featureCd: 'HISTORY' } },
 	// 게스트 번들로 잘못 들어온 스태프/관리자 URL 은 홈으로 돌려보냄
-	{ path: '/:pathMatch(.*)*', redirect: '/' }
+	{ path: '/:pathMatch(.*)*', redirect: '/home' }
 ];
 
 const router = createRouter({

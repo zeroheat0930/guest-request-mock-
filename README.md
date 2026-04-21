@@ -282,6 +282,27 @@ Base: `http://localhost:8080/api`
 
 ## 🗓️ 진행 로그
 
+### 2026-04-21 저녁 — 메인보드 UX + 모바일 반응형 + 랜딩 호스트 설정
+
+**9) 게스트 앱 홈(메인보드) 도입** — 기존엔 `/` 가 곧바로 `/amenity` 로 리다이렉트돼 투숙객이 "무엇이 있는지" 한눈에 못 보던 UX. 호텔 컨시어지 철학에 맞게 **럭셔리 메인보드** 신설.
+
+- `HomeView.vue` 신규 — 세리프 Hero(환영 + 룸 배지 + 골드 디바이더) + 기능 타일 그리드(기능별 그라디언트 + 호버 애니메이션 + 화살표 이동)
+- 라우트 `/` → `/home` 기본 착지. `/home` 는 `meta.home=true` (featureCd 검사 우회)
+- `App.vue` LNB: 최상단에 🏠 홈 탭 + 브랜드 블록 전체를 홈 링크로 전환 — 클릭 하면 메인보드 복귀
+- `i18n/ui.js`: `home.tagline` / `home.label` 추가 (ko/en/ja/zh)
+- 모바일(< 720px): 기존 LNB 가로 스크롤 바 유지. 메인보드 2열 그리드 자동 반영
+
+**10) 스태프 대시보드 모바일 반응형 + 러너 네비게이션**
+
+- `StaffDashboardView`: `@media (max-width: 720px)` breakpoint 추가. 헤더 세로쌓기, 탭 가로 스크롤, 태스크 카드 패딩 축소, 모달 축소/재구성. iPhone 14 Plus (430px) 짤림 해소
+- `RunnerView` top-bar 에 **그리드 아이콘 = 대시보드 이동** 버튼 추가 (로그아웃 옆). 러너 진입 후 대시보드로 복귀 불가하던 이슈 해소
+
+**11) 랜딩 페이지 APP_HOST 동적 설정** — github.io 공개 호스팅 랜딩 페이지의 QR/링크가 `location.hostname + :5173` 으로 생성돼 `zeroheat0930.github.io:5173` 처럼 잘못된 URL 이 박히던 이슈.
+
+- `landing/index.html` 스크립트 전면 재작성 — 우선순위: `?host=...` URL 쿼리 > `localStorage.concierge.host` > `localhost` 셀프 호스팅 > `DEFAULT_HOST` (기본값 `192.168.0.51:5173`, 심사 당일 PC LAN IP 로 업데이트)
+- 모든 버튼 href + QR 데이터를 동일 APP_HOST 기준 동적 생성
+- 하단에 "Demo target: {host}" hint 자동 표시 — 심사 전 육안 검증용
+
 ### 2026-04-21 오후 — systemic 에러 핸들링 + 상태 머신 보강
 
 **7) 클라이언트 `unwrapOk` systemic fix** — 기존엔 `BaseController` 가 ApiException 도 HTTP 200 + body `{status:음수, message, error}` 로 내리는데 axios interceptor `unwrapOk` 가 status 필드를 보지 않고 data 를 통째로 리턴해서 호출자 catch 블록이 절대 안 타는 systemic 이슈였음. 로그인 버그(`상태=-20` 을 "서버 오류" 로 표시), 러너 "시작" 무반응 전부 같은 원인.

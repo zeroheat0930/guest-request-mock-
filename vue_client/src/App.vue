@@ -29,7 +29,7 @@
 	<div v-else class="app-shell" :class="{ 'no-lnb': !showLnb }">
 		<!-- LNB (좌측 사이드) — 게스트 화면에서만 -->
 		<aside v-if="showLnb" class="lnb">
-			<div class="brand">
+			<router-link to="/home" class="brand brand-link" title="홈">
 				<div class="brand-logomark">
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
 						<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -40,9 +40,13 @@
 					<div class="brand-name">{{ t('brand.name') }}</div>
 					<div class="brand-sub">{{ t('brand.sub') }}</div>
 				</div>
-			</div>
+			</router-link>
 
 			<nav class="lnb-nav">
+				<router-link to="/home" class="tab home-tab">
+					<span class="ic">🏠</span>
+					<span class="label">{{ t('home.label') }}</span>
+				</router-link>
 				<router-link
 					v-for="tab in tabs"
 					:key="tab.featureCd"
@@ -272,6 +276,14 @@ onUnmounted(() => {
 	padding: var(--sp-6) var(--sp-6);
 	border-bottom: 1px solid rgba(201, 169, 110, 0.1);
 }
+.brand-link {
+	text-decoration: none;
+	color: inherit;
+	transition: background var(--t-fast) var(--ease-out);
+	cursor: pointer;
+}
+.brand-link:hover { background: rgba(201, 169, 110, 0.04); }
+.brand-link:hover .brand-logomark { border-color: rgba(201, 169, 110, 0.6); }
 .brand-logomark {
 	width: 34px;
 	height: 34px;
@@ -368,6 +380,18 @@ onUnmounted(() => {
 	padding-top: var(--sp-5);
 }
 
+.tab.home-tab {
+	margin-bottom: var(--sp-2);
+	padding-bottom: var(--sp-4);
+	border-bottom: 1px solid rgba(201, 169, 110, 0.08);
+	color: rgba(232, 224, 212, 0.75);
+}
+.tab.home-tab .ic { font-size: 18px; }
+.tab.home-tab.router-link-active {
+	background: rgba(201, 169, 110, 0.12);
+	color: var(--c-gold-light);
+}
+
 /* ── Footer guest card ── */
 .lnb-foot {
 	padding: var(--sp-4) var(--sp-3);
@@ -457,6 +481,7 @@ onUnmounted(() => {
 	.tab .label { font-size: 12px; }
 	.tab .label small { display: none; }
 	.tab.chat-tab { margin-top: 0; border-top: none; padding-top: var(--sp-2); }
+	.tab.home-tab { margin-bottom: 0; border-bottom: none; padding-bottom: var(--sp-2); }
 	.lnb-foot { display: none; }
 	.app-body { padding: var(--sp-5) var(--sp-4); }
 }

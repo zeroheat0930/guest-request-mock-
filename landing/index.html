@@ -559,7 +559,7 @@ html, body {
             <span class="demo-guest-name">다올킴</span>
             <span class="demo-guest-room">ROOM 03010</span>
           </div>
-          <a class="btn-primary btn-sm" href="http://localhost:5173/?room=03010" target="_blank" rel="noopener">
+          <a class="btn-primary btn-sm link-guest" data-room="03010" target="_blank" rel="noopener">
             <span>한국어 체험</span><span class="btn-arrow">→</span>
           </a>
         </div>
@@ -572,7 +572,7 @@ html, body {
             <span class="demo-guest-name">macdonaldo</span>
             <span class="demo-guest-room">ROOM 00595</span>
           </div>
-          <a class="btn-primary btn-sm" href="http://localhost:5173/?room=00595" target="_blank" rel="noopener">
+          <a class="btn-primary btn-sm link-guest" data-room="00595" target="_blank" rel="noopener">
             <span>English Demo</span><span class="btn-arrow">→</span>
           </a>
         </div>
@@ -596,7 +596,7 @@ html, body {
             <span class="demo-guest-room">COMMUNICATION CENTER SYSTEM</span>
           </div>
           <p class="ccs-hint">PMS 계정(ID/PW)으로 로그인</p>
-          <a class="btn-primary btn-sm" href="http://localhost:5173/staff.html" target="_blank" rel="noopener">
+          <a class="btn-primary btn-sm link-staff" target="_blank" rel="noopener">
             <span>스태프 로그인</span><span class="btn-arrow">→</span>
           </a>
         </div>
@@ -829,23 +829,52 @@ html, body {
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script>
 (function() {
-  // file:// 에서 열면 localhost, http 에서 열면 현재 호스트 사용
-  var host = (location.protocol === 'file:') ? 'localhost' : location.hostname;
-  var baseUrl = 'http://' + host + ':5173/?room=';
+  // 데모 대상 컨시어지 앱 호스트 결정 규칙 (우선순위):
+  //   1) URL 쿼리 ?host=<ip:port>       예: ?host=192.168.0.42:5173
+  //   2) localStorage 'concierge.host'  (심사 당일 콘솔에서 고정)
+  //   3) 페이지가 http(s):// 로 localhost/127.0.0.1 에서 열렸으면 현재 호스트
+  //   4) DEFAULT_HOST (사내 WiFi 심사 기본값 — 심사 당일 PC LAN IP 로 업데이트)
+  var DEFAULT_HOST = '192.168.0.51:5173';
+
+  var params = new URLSearchParams(location.search);
+  var override = params.get('host');
+  var saved = null;
+  try { saved = localStorage.getItem('concierge.host'); } catch (e) {}
+
+  var isLocalHost = (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+  var APP_HOST = override
+    || saved
+    || (isLocalHost && location.protocol !== 'file:' ? location.hostname + ':5173' : null)
+    || DEFAULT_HOST;
+
+  var baseUrl = 'http://' + APP_HOST;
+
+  // QR 생성
   var rooms = [
     { id: 'qr-03010', room: '03010' },
     { id: 'qr-00595', room: '00595' }
   ];
   rooms.forEach(function(r) {
     var qr = qrcode(0, 'M');
-    qr.addData(baseUrl + r.room);
+    qr.addData(baseUrl + '/?room=' + r.room);
     qr.make();
     var el = document.getElementById(r.id);
-    if (el) {
-      var img = qr.createDataURL(4, 8);
-      el.src = img;
-    }
+    if (el) el.src = qr.createDataURL(4, 8);
   });
+
+  // 버튼 href 세팅
+  document.querySelectorAll('.link-guest').forEach(function(a) {
+    a.href = baseUrl + '/?room=' + a.dataset.room;
+  });
+  document.querySelectorAll('.link-staff').forEach(function(a) {
+    a.href = baseUrl + '/staff.html';
+  });
+
+  // 디버그 힌트 — footer 밑에 현재 대상 호스트 출력 (심사 전 확인용)
+  var hint = document.createElement('div');
+  hint.style.cssText = 'text-align:center;font-size:11px;color:rgba(232,224,212,0.3);margin:8px 0 24px;letter-spacing:0.5px;';
+  hint.textContent = 'Demo target: ' + APP_HOST + (override ? ' (?host override)' : saved ? ' (saved)' : '');
+  document.body.appendChild(hint);
 })();
 </script>
 </body>
