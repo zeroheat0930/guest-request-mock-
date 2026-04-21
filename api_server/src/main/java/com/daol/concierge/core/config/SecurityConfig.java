@@ -75,6 +75,8 @@ public class SecurityConfig {
 							.requestMatchers("/api/concierge/admin/**").permitAll()
 							.requestMatchers("/actuator/health").permitAll()
 							.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+							// WebSocket STOMP 업그레이드 — CONNECT 시 JWT 는 CcsStompAuthInterceptor 에서 검증
+							.requestMatchers("/ws-ccs/**").permitAll()
 							.requestMatchers("/", "/error").permitAll();
 					// H2 console 은 dev 프로파일에서만 공개 — prod 엔 절대 노출 금지
 					if (devLike) {

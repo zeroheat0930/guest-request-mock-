@@ -282,17 +282,24 @@ Base: `http://localhost:8080/api`
 
 ## 🗓️ 진행 로그
 
-### 2026-04-21 (윈도우 세션 — MyBatis SQL 별칭 제거)
+### 2026-04-21 (윈도우 세션 — MyBatis SQL 별칭 제거 + WebSocket STOMP 연결 복구)
 
-**목표**: PMS 소스 스타일 정렬. `map-underscore-to-camel-case: true` 활용해 매퍼 XML의 중복 `AS camelCase` 별칭 일괄 제거.
+**1) MyBatis SQL 별칭 제거** — PMS 소스 스타일 정렬. `map-underscore-to-camel-case: true` 활용해 매퍼 XML의 중복 `AS camelCase` 별칭 일괄 제거.
 
-**완료**:
 - `INV_SQL.xml` — 7개 테이블 관련 15개 select 의 `AS camelCase` 별칭 제거. 스칼라 집계(`COUNT`/`SUM`/`AVG`)는 컬럼 이름이 없어 `AS CNT`/`TOTAL_CNT`/`DONE_CNT`/`AVG_MINUTES` 유지 — 언더스코어 자동 변환으로 `cnt`/`totalCnt`/`doneCnt`/`avgMinutes` 되어 소비자(`CcsStatsController`) 키 일치
 - `PMS_SQL.xml` — 8개 select 의 `AS camelCase` 별칭 전부 제거
+- 회귀 확인: `@Transactional` grep 결과 0건(이전 완료), `GrService.insertAmenityReq` 이미 품목당 1행 INSERT 구조(이전 완료)
+
+**2) WebSocket STOMP 연결 복구** — 커밋 `360e45c` 에서 "WebSocket 미연결" 이라 5초 폴링 fallback 쓰던 상태. 원인 진단 + 수정.
+
+- **원인**: `SecurityConfig.java` 의 `.anyRequest().denyAll()` 이 `/ws-ccs` HTTP 업그레이드 요청을 차단. `/ws-ccs` 는 `/api/**` 하위도 아니고 어떤 `permitAll` 규칙에도 매칭 안 돼 fallback 차단에 걸림. stompjs 클라이언트 코드 자체는 정상이었음.
+- **수정**: `SecurityConfig` 에 `requestMatchers("/ws-ccs/**").permitAll()` 추가. STOMP CONNECT-time JWT 검증은 `CcsStompAuthInterceptor` 에서 별도 처리하므로 HTTP 레이어는 열어도 안전.
+- **폴링 간격 복원**: `StaffDashboardView.vue` / `RunnerView.vue` 의 `setInterval(load, 5000)` → `30000`. WebSocket 이 주 경로, 폴링은 연결 실패 시 백업.
 
 **검증**:
-- 지난 세션 TODO 회귀 확인: `@Transactional` grep 결과 0건(이전 완료), `GrService.insertAmenityReq` 이미 품목당 1행 INSERT 구조(이전 완료)
 - `mvn compile -o` BUILD SUCCESS (1.8s)
+- `npm run build` — 211 modules, 0 errors
+- 런타임 검증 남음: 사내망에서 앱 부팅 후 브라우저 DevTools Network → WS 탭 에서 `/ws-ccs` `101 Switching Protocols` + STOMP CONNECTED 프레임 확인. 게스트 앱에서 요청 1건 → 스태프 대시보드 30s 안에 즉시 업데이트되면 WS 작동.
 
 **주의**: 컴파일만으론 MyBatis 매퍼 파싱은 검증 불가. 런타임 부팅은 사내망 DB 접속 시 자동 검증됨.
 
@@ -395,7 +402,7 @@ Base: `http://localhost:8080/api`
 - 부팅 + 실제 쿼리 동작 검증 (사내망 필요)
 - 스태프 비밀번호 해싱 (PMS 평문 → 독립 인증 테이블 검토)
 - AdminCcsView 부서 CRUD 백엔드 엔드포인트 추가 (POST/PUT/DELETE)
-- WebSocket 실시간 연결 (현재 폴링 → STOMP 클라이언트)
+- ~~WebSocket 실시간 연결 (현재 폴링 → STOMP 클라이언트)~~ ✅ (2026-04-21, SecurityConfig 원인 수정)
 - Health Check 엔드포인트 (Spring Actuator)
 - API 문서 (Swagger/OpenAPI)
 

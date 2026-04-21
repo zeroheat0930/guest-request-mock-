@@ -241,7 +241,8 @@ onMounted(() => {
 			});
 		}
 	});
-	pollTimer = setInterval(load, 5000);
+	// WebSocket 주 경로 — 폴링은 연결 실패 시 백업 (30s 간격)
+	pollTimer = setInterval(load, 30000);
 });
 
 onUnmounted(() => {
