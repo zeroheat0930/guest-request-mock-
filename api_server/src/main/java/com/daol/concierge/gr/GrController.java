@@ -1,6 +1,7 @@
 package com.daol.concierge.gr;
 
 import com.daol.concierge.ccs.service.CcsLostFoundService;
+import com.daol.concierge.ccs.service.CcsRentalService;
 import com.daol.concierge.ccs.service.CcsVocService;
 import com.daol.concierge.core.api.ApiResponse;
 import com.daol.concierge.core.api.Responses;
@@ -29,6 +30,7 @@ public class GrController extends BaseController {
 
 	@Autowired(required = false) private CcsLostFoundService lostFoundService;
 	@Autowired(required = false) private CcsVocService vocService;
+	@Autowired(required = false) private CcsRentalService rentalService;
 
 	@Value("${concierge.tenant.prop-cd:0000000001}") private String propCd;
 	@Value("${concierge.tenant.cmpx-cd:00001}") private String cmpxCd;
@@ -163,6 +165,28 @@ public class GrController extends BaseController {
 		body.putIfAbsent("propCd", propCd);
 		body.putIfAbsent("cmpxCd", cmpxCd);
 		Map<String, Object> saved = vocService.createReport(body);
+		return Responses.MapResponse.of(saved);
+	}
+
+	/**
+	 * 대여 카탈로그 (게스트) — Phase D.
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/rental/items", method = RequestMethod.GET, produces = APPLICATION_JSON)
+	public Responses.ListResponse listRentalItems() {
+		return Responses.ListResponse.of(rentalService.listItems(propCd, cmpxCd));
+	}
+
+	/**
+	 * 대여 주문 (게스트) — Phase D.
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/rental", method = RequestMethod.POST, produces = APPLICATION_JSON)
+	public ApiResponse insertRental(RequestParams requestParams) {
+		Map<String, Object> body = new HashMap<>(requestParams.getParams());
+		body.putIfAbsent("propCd", propCd);
+		body.putIfAbsent("cmpxCd", cmpxCd);
+		Map<String, Object> saved = rentalService.createOrder(body);
 		return Responses.MapResponse.of(saved);
 	}
 }

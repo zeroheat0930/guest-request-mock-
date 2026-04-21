@@ -371,6 +371,45 @@ com.daol.concierge.ccs/
 
 ## 🗓️ 진행 로그
 
+### 2026-04-20 → Phase D: 대여(Rental) + 당직 로그(Duty) 풀구현 ✅
+
+CCS 5대 본연 기능 중 **④ 대여 품목 / ⑤ 당직 관리자 로그** 완성.
+
+**DB** — `db/migrations/phase_d_rental_duty.sql`:
+- `INV.CCS_RENTAL_ITEM` — 카탈로그 (UMBRELLA/CHARGER/ADAPTER/IRON/ETC, STOCK_TOTAL/AVAILABLE)
+- `INV.CCS_RENTAL_ORDER` — 주문/반납 이력 (REQUESTED/LOANED/RETURNED/LOST)
+- `INV.CCS_DUTY_LOG` — 교대 기록 + 인수인계 + 사건 타임라인 + PMS_AUDIT_DONE_YN
+
+**백엔드**
+- `ccs/service/CcsRentalService.java` — createOrder 시 `STOCK_AVAILABLE -= qty`, 반납 시 `+= qty` (원자적 update). 재고 부족 시 SYSTEM_ERROR.
+- `ccs/service/CcsDutyService.java` — startShift/handover/close + `today()` 는 PMS 야간감사 placeholder status 함께 리턴.
+- `ccs/rental/CcsRentalController.java` — `/api/ccs/rental/items` (GET/POST/PUT) + `/orders` (GET/POST) + `/orders/{id}/loan` + `/orders/{id}/return`. Swagger 문서화.
+- `ccs/duty/CcsDutyController.java` — `/api/ccs/duty` (POST start, GET list) + `/today` + `/{logId}/handover` + `/{logId}/close`.
+- `gr/GrController.java` — 게스트 엔드포인트 `GET /api/gr/rental/items` / `POST /api/gr/rental` 추가.
+- InvMapper / INV_SQL.xml — Phase B 커밋에서 미리 추가된 쿼리 활용 (재사용).
+
+**PMS 연동**
+- `DaolPmsSyncAdapter.syncRental` + `syncDuty` 로그만 남김 (TODO: VPN 접속 시 `/api/ht/hk/loanAndRecoveryMgmt` 호출).
+- `selectPmsNightAuditStatus` 는 지금 `SELECT 'N' AS auditDoneYn` placeholder — 실제 PMS 스키마 파악 후 교체.
+
+**프론트 게스트**
+- `views/RentalView.vue` — 카탈로그 그리드 + 아이콘별 카테고리 + 재고 뱃지 + quantity selector + 주문 버튼. 주문 성공 시 카탈로그 재조회 (실시간 재고 반영).
+- API 헬퍼 `submitRental / fetchRentalItems` (guest client).
+
+**프론트 스태프 (관리자)**
+- `views/AdminRentalView.vue` — 2 탭(주문/카탈로그). 주문: 상태 필터 + loan/return 액션. 카탈로그: 추가/수정 모달.
+- `views/AdminDutyView.vue` — Today 카드(현재 교대 상세) + PMS 야간감사 뱃지 + 이력 테이블.
+- `views/staff/DutyLogView.vue` — 스태프 근무 화면, DAY/NIGHT 교대 시작 + summary/incidents/handoverTo 입력 + 핸드오버/종료 버튼.
+- staffRouter 에 `/staff/duty`, `/admin/rental`, `/admin/duty` 이미 등록됨 (Phase B 커밋에서).
+- StaffShell 네비게이션에 "대여 관리", "당직 로그" 메뉴 추가 (Phase B 커밋).
+
+**테스트**
+- `CcsRentalServiceTest` — `createOrder_decrementsStock` (qty=2 → -2), `returnItem_restoresStock` (qty=3 → +3).
+
+**재고 일관성** — 동시성은 MyBatis `UPDATE SET STOCK_AVAILABLE = STOCK_AVAILABLE + #{delta}` 의 DB 원자적 증감에 의존 (race 방지). 낙관적 잠금은 Phase G 에 위임.
+
+---
+
 ### 2026-04-20 → Phase C: 스태프/관리자 UI i18n 전면화 ✅
 
 Phase C 완료. 스태프 번들의 **모든 상호작용 UI 가 4개 국어(ko/en/ja/zh)** 로 전환. 해외 호텔 파일럿 전제 조건 해결.
