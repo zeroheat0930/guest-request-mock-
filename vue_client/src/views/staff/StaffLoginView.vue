@@ -82,21 +82,32 @@ async function submit() {
 			propCd: PROP_CD,
 			cmpxCd: CMPX_CD
 		});
+		// BaseController 는 ApiException 도 HTTP 200 + body{status:음수} 로 내림.
+		// status: 0=성공, 404=계정없음, -20=비번오류, -30=비활성, 401=입력누락
+		const code = res?.status;
+		if (code !== 0 && code !== undefined) {
+			if (code === 404) err.value = '계정이 없습니다';
+			else if (code === -20) err.value = '비밀번호가 일치하지 않습니다';
+			else if (code === -30 || code === 401) err.value = '로그인 실패';
+			else err.value = `서버 오류 (${code})`;
+			password.value = '';
+			return;
+		}
 		const map = res?.map || {};
 		if (!map.token) {
-			err.value = '서버 오류';
+			err.value = '서버 오류: 토큰 없음';
 			return;
 		}
 		sessionStorage.setItem('ccs.token', map.token);
 		sessionStorage.setItem('ccs.staff', JSON.stringify(map));
 		router.replace('/staff');
 	} catch (e) {
-		// unwrapErr 는 {status, message, map} 을 던짐.
-		// status 로 구분 (CcsAuthController: 404=계정없음, -30=비번/비활성, 401=BAD_REQUEST)
+		// 네트워크 실패 / HTTP 5xx 등 throw 되는 경우
 		const code = e?.status;
 		if (code === 404) err.value = '계정이 없습니다';
+		else if (code === -20) err.value = '비밀번호가 일치하지 않습니다';
 		else if (code === -30 || code === 401) err.value = '로그인 실패';
-		else err.value = '서버 오류';
+		else err.value = `서버 오류${code ? ` (${code})` : ''}`;
 		password.value = '';
 	} finally {
 		busy.value = false;

@@ -282,26 +282,31 @@ Base: `http://localhost:8080/api`
 
 ## 🗓️ 진행 로그
 
-### 2026-04-21 (윈도우 세션 — MyBatis SQL 별칭 제거 + WebSocket STOMP 연결 복구)
+### 2026-04-21 (윈도우 세션 — WebSocket STOMP 연결 복구 + CCS 로그인 회귀 수정)
 
-**1) MyBatis SQL 별칭 제거** — PMS 소스 스타일 정렬. `map-underscore-to-camel-case: true` 활용해 매퍼 XML의 중복 `AS camelCase` 별칭 일괄 제거.
-
-- `INV_SQL.xml` — 7개 테이블 관련 15개 select 의 `AS camelCase` 별칭 제거. 스칼라 집계(`COUNT`/`SUM`/`AVG`)는 컬럼 이름이 없어 `AS CNT`/`TOTAL_CNT`/`DONE_CNT`/`AVG_MINUTES` 유지 — 언더스코어 자동 변환으로 `cnt`/`totalCnt`/`doneCnt`/`avgMinutes` 되어 소비자(`CcsStatsController`) 키 일치
-- `PMS_SQL.xml` — 8개 select 의 `AS camelCase` 별칭 전부 제거
-- 회귀 확인: `@Transactional` grep 결과 0건(이전 완료), `GrService.insertAmenityReq` 이미 품목당 1행 INSERT 구조(이전 완료)
-
-**2) WebSocket STOMP 연결 복구** — 커밋 `360e45c` 에서 "WebSocket 미연결" 이라 5초 폴링 fallback 쓰던 상태. 원인 진단 + 수정.
+**1) WebSocket STOMP 연결 복구** — 커밋 `360e45c` 에서 "WebSocket 미연결" 이라 5초 폴링 fallback 쓰던 상태. 원인 진단 + 수정.
 
 - **원인**: `SecurityConfig.java` 의 `.anyRequest().denyAll()` 이 `/ws-ccs` HTTP 업그레이드 요청을 차단. `/ws-ccs` 는 `/api/**` 하위도 아니고 어떤 `permitAll` 규칙에도 매칭 안 돼 fallback 차단에 걸림. stompjs 클라이언트 코드 자체는 정상이었음.
 - **수정**: `SecurityConfig` 에 `requestMatchers("/ws-ccs/**").permitAll()` 추가. STOMP CONNECT-time JWT 검증은 `CcsStompAuthInterceptor` 에서 별도 처리하므로 HTTP 레이어는 열어도 안전.
 - **폴링 간격 복원**: `StaffDashboardView.vue` / `RunnerView.vue` 의 `setInterval(load, 5000)` → `30000`. WebSocket 이 주 경로, 폴링은 연결 실패 시 백업.
 
-**검증**:
-- `mvn compile -o` BUILD SUCCESS (1.8s)
-- `npm run build` — 211 modules, 0 errors
-- 런타임 검증 남음: 사내망에서 앱 부팅 후 브라우저 DevTools Network → WS 탭 에서 `/ws-ccs` `101 Switching Protocols` + STOMP CONNECTED 프레임 확인. 게스트 앱에서 요청 1건 → 스태프 대시보드 30s 안에 즉시 업데이트되면 WS 작동.
+**2) MyBatis SQL 별칭 제거 시도 → 원복** (`17b0e24` 커밋의 내용 자체를 되돌림)
 
-**주의**: 컴파일만으론 MyBatis 매퍼 파싱은 검증 불가. 런타임 부팅은 사내망 DB 접속 시 자동 검증됨.
+- 시도: `map-underscore-to-camel-case: true` 활용해 `AS camelCase` 별칭을 일괄 제거하려 했음
+- **원복 이유**: `resultType="map"` 환경에서 Map 키의 camelCase 변환이 불안정. 사내 DB 실행 시 `user.get("userPw")` 가 null 반환하며 로그인 회귀 발생. PMS 원본이 모든 컬럼에 AS 별칭을 박아둔 게 바로 이 때문이었음
+- 결과: INV_SQL.xml / PMS_SQL.xml 을 17b0e24 이전 상태로 복원 (AS camelCase 별칭 유지)
+
+**3) CCS 로그인 회귀 수정** (BCrypt 평문 분기 + 프론트 status 핸들링)
+
+- **백엔드 (`CcsAuthController`)**: 기존 `BCryptPasswordEncoder.matches()` 가 평문 저장된 `PMS_USER_MTR.USER_PW` 만나면 `IllegalArgumentException` → HTTP 500. BCrypt 포맷(`$2a`/`$2b`/`$2y`) 감지 시 BCrypt, 아니면 평문 동등 비교로 분기. PMS 기존 계정과 호환 유지, 미래 자체 CONCIERGE_STAFF 테이블 + BCrypt 전환 시에도 깨지지 않음
+- **프론트 (`StaffLoginView.vue`)**: `BaseController.handleApiException` 이 ApiException 도 HTTP 200 + `{status:음수, ...}` 로 내려주는데, 기존 `submit()` 이 try 블록에서 `res.status` 검사 없이 `!map.token` 만 보고 전부 "서버 오류" 로 처리. `res.status !== 0` 분기 추가하여 `-20 (INVALID_PASSWORD) → "비밀번호가 일치하지 않습니다"` 등 정확한 메시지 노출. 미지의 코드는 `서버 오류 (코드번호)` 로 디버깅 용이하게
+- **검증**: 사내 MariaDB (`211.34.228.191:3336`) 로 실제 `dongjunkorea` 계정 로그인 성공 → `/staff` 진입 → `selectTasksByDept` 30건 조회 확인
+
+**빌드**: `mvn compile -o` BUILD SUCCESS / `npm run build` 211 modules 0 errors
+
+**남은 런타임 검증**: 브라우저 DevTools Network → WS 탭 에서 `/ws-ccs` `101 Switching Protocols` + STOMP CONNECTED 확인. 게스트 요청 1건 → 스태프 대시보드 30s 내 즉시 업데이트되면 WS 작동.
+
+**주의**: 프론트 `StaffLoginView.vue` 의 `PROP_CD = '0000000010'` 하드코딩은 데드코드 — 백엔드(`CcsAuthController`) 가 request param 을 무시하고 `PMS_USER_MTR` 로우에서 propCd/cmpxCd 를 직접 읽음. 추후 청소 예정.
 
 ### 2026-04-16 (맥북 야간 세션 2 — 상용화 보안 수정 + 테스트 + UI 완성)
 
@@ -396,7 +401,7 @@ Base: `http://localhost:8080/api`
 - ~~AdminCcsView CRUD 완성~~ ✅
 - ~~게스트 UI 폴리싱 (로딩/모바일/토스트/터치)~~ ✅
 - ~~스태프 대시보드 컴포넌트 렌더 (Stats/DeptLoad/RequestModal)~~ ✅
-- ~~SQL 별칭(AS camelCase) 제거~~ ✅ (2026-04-21, `map-underscore-to-camel-case: true` 활용)
+- ~~SQL 별칭(AS camelCase) 제거~~ — 2026-04-21 시도했으나 `resultType="map"` 환경에서 Map 키 casing 회귀로 원복. AS 별칭 유지가 맞음 (PMS 스타일과도 일치)
 - ~~@Transactional 제거 → TxAdviceConfig AOP 로 대체~~ ✅ (이전 세션 완료 확인)
 - ~~AmenityRequest 다건 요청 구조 변경 확인 (1 item per row)~~ ✅ (이미 품목당 1행 INSERT)
 - 부팅 + 실제 쿼리 동작 검증 (사내망 필요)

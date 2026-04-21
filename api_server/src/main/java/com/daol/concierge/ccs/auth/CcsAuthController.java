@@ -42,8 +42,13 @@ public class CcsAuthController extends BaseController {
 		if (!"Y".equals(str(user.get("useYn")))) throw new ApiException(ApiStatus.ACCESS_DENIED, "비활성 계정");
 
 		String storedPw = str(user.get("userPw"));
-		if (storedPw == null || !passwordEncoder.matches(password, storedPw))
-			throw new ApiException(ApiStatus.INVALID_PASSWORD, "비밀번호 오류");
+		if (storedPw == null) throw new ApiException(ApiStatus.INVALID_PASSWORD, "비밀번호 오류");
+		// PMS_USER_MTR 은 평문 저장. BCrypt 해시($2a/$2b/$2y) 감지되면 그 경로로, 아니면 평문 비교.
+		// (상용화 전 자체 CONCIERGE_STAFF 테이블 + BCrypt 전환 예정)
+		boolean match = (storedPw.startsWith("$2a$") || storedPw.startsWith("$2b$") || storedPw.startsWith("$2y$"))
+				? passwordEncoder.matches(password, storedPw)
+				: password.equals(storedPw);
+		if (!match) throw new ApiException(ApiStatus.INVALID_PASSWORD, "비밀번호 오류");
 
 		String propCd = str(user.get("propCd"));
 		String cmpxCd = str(user.get("cmpxCd"));
