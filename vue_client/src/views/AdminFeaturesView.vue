@@ -1,13 +1,13 @@
 <template>
 	<div class="admin">
 		<div class="head">
-			<h2>⚙️ 컨시어지 기능 관리</h2>
+			<h2>⚙️ {{ t('admin.features.manage.title') }}</h2>
 			<div class="bar">
 				<label>propCd
 					<input v-model="propCd" @change="load" />
 				</label>
-				<button @click="load" :disabled="busy">새로고침</button>
-				<button class="primary" @click="save" :disabled="busy || hasJsonErrors">저장</button>
+				<button @click="load" :disabled="busy">{{ t('admin.features.refresh') }}</button>
+				<button class="primary" @click="save" :disabled="busy || hasJsonErrors">{{ t('admin.features.save') }}</button>
 			</div>
 		</div>
 
@@ -28,7 +28,7 @@
 						</div>
 					</div>
 					<div class="ctrls">
-						<label class="switch" :title="r.useYn === 'Y' ? '사용' : '미사용'">
+						<label class="switch" :title="r.useYn === 'Y' ? t('admin.features.on') : t('admin.features.off')">
 							<input
 								type="checkbox"
 								:checked="r.useYn === 'Y'"
@@ -43,7 +43,7 @@
 							title="sortOrd"
 						/>
 						<button class="adv" type="button" @click="toggleAdv(r.featureCd)">
-							{{ expanded[r.featureCd] ? '▲ 고급 설정' : '▼ 고급 설정' }}
+							{{ expanded[r.featureCd] ? '▲ ' + t('admin.features.adv') : '▼ ' + t('admin.features.adv') }}
 						</button>
 					</div>
 				</div>
@@ -56,11 +56,11 @@
 							placeholder='{ "key": "value" }'
 						/>
 					</label>
-					<div v-if="cfgErr[r.featureCd]" class="json-err">JSON 형식 오류</div>
+					<div v-if="cfgErr[r.featureCd]" class="json-err">{{ t('admin.features.jsonErr') }}</div>
 				</div>
 			</div>
 		</div>
-		<div v-else class="dim">데이터 없음</div>
+		<div v-else class="dim">{{ t('admin.features.empty') }}</div>
 
 		<transition name="fade">
 			<div v-if="toast" class="toast">{{ toast }}</div>
@@ -74,6 +74,7 @@ import axios from 'axios';
 import { useRouter } from 'vue-router';
 import { API_BASE } from '../api/client.js';
 import { FEATURE_META } from '../features/featureStore.js';
+import { t } from '../i18n/ui.js';
 
 const META = FEATURE_META;
 const TOKEN_KEY = 'concierge.adminToken';
@@ -143,32 +144,32 @@ function hydrateRows(list) {
 }
 
 async function load() {
-	const t = getToken();
-	if (!t) { gotoLogin(); return; }
+	const tok = getToken();
+	if (!tok) { gotoLogin(); return; }
 	err.value = '';
 	busy.value = true;
 	try {
 		const res = await axios.get(`${API_BASE}/concierge/admin/features`, {
 			params: { propCd: propCd.value },
-			headers: { 'X-Admin-Token': t },
+			headers: { 'X-Admin-Token': tok },
 			timeout: 8000
 		});
 		hydrateRows(res.data?.list || []);
 	} catch (e) {
 		if (e.response?.status === 401) { gotoLogin(); return; }
-		err.value = `조회 실패: ${e.response?.data?.message || e.message}`;
+		err.value = `${t('admin.features.loadFail')}: ${e.response?.data?.message || e.message}`;
 	} finally {
 		busy.value = false;
 	}
 }
 
 async function save() {
-	const t = getToken();
-	if (!t) { gotoLogin(); return; }
+	const tok = getToken();
+	if (!tok) { gotoLogin(); return; }
 	// 저장 전 모든 고급 설정 JSON 재검증 (blur 없이 저장 눌렀을 때 대비)
 	for (const r of rows.value) validateJson(r.featureCd);
 	if (hasJsonErrors.value) {
-		err.value = '고급 설정 JSON 형식 오류를 수정해주세요';
+		err.value = t('admin.features.jsonFixErr');
 		return;
 	}
 	err.value = '';
@@ -189,14 +190,14 @@ async function save() {
 		});
 		const res = await axios.put(`${API_BASE}/concierge/admin/features`, payload, {
 			params: { propCd: propCd.value },
-			headers: { 'X-Admin-Token': t, 'Content-Type': 'application/json' },
+			headers: { 'X-Admin-Token': tok, 'Content-Type': 'application/json' },
 			timeout: 8000
 		});
 		hydrateRows(res.data?.list || payload);
-		showToast('저장 완료');
+		showToast(t('admin.features.saveOk'));
 	} catch (e) {
 		if (e.response?.status === 401) { gotoLogin(); return; }
-		err.value = `저장 실패: ${e.response?.data?.message || e.message}`;
+		err.value = `${t('admin.features.saveFail')}: ${e.response?.data?.message || e.message}`;
 	} finally {
 		busy.value = false;
 	}

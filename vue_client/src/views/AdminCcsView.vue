@@ -1,7 +1,7 @@
 <template>
 	<div class="admin">
 		<div class="head">
-			<h2>🧑‍🍳 CCS 스태프 관리</h2>
+			<h2>🧑‍🍳 {{ t('admin.ccs.title') }}</h2>
 			<div class="bar">
 				<label>propCd
 					<input v-model="propCd" @change="load" />
@@ -9,8 +9,8 @@
 				<label>cmpxCd
 					<input v-model="cmpxCd" @change="load" />
 				</label>
-				<button @click="load" :disabled="busy">새로고침</button>
-				<button class="ghost" @click="goBack">뒤로</button>
+				<button @click="load" :disabled="busy">{{ t('admin.ccs.refresh') }}</button>
+				<button class="ghost" @click="goBack">{{ t('admin.ccs.back') }}</button>
 			</div>
 		</div>
 
@@ -20,25 +20,25 @@
 		<!-- 부서 목록 -->
 		<section class="section">
 			<div class="section-head">
-				<h3>부서 목록</h3>
-				<button class="btn-add" @click="openAddForm" :disabled="busy">+ 부서 추가</button>
+				<h3>{{ t('admin.ccs.dept.list') }}</h3>
+				<button class="btn-add" @click="openAddForm" :disabled="busy">+ {{ t('admin.ccs.dept.add') }}</button>
 			</div>
 
 			<!-- 추가 폼 -->
 			<div v-if="addFormOpen" class="inline-form">
 				<div class="form-row">
-					<label>부서 코드
-						<input v-model="addForm.deptCd" placeholder="예) FOOD" />
+					<label>{{ t('admin.ccs.dept.code') }}
+						<input v-model="addForm.deptCd" :placeholder="t('admin.ccs.dept.code.placeholder')" />
 					</label>
-					<label>부서명
-						<input v-model="addForm.deptNm" placeholder="예) 식음료" />
+					<label>{{ t('admin.ccs.dept.name') }}
+						<input v-model="addForm.deptNm" :placeholder="t('admin.ccs.dept.name.placeholder')" />
 					</label>
-					<label>정렬순서
+					<label>{{ t('admin.ccs.dept.sort') }}
 						<input v-model.number="addForm.sortOrd" type="number" placeholder="0" style="width:80px" />
 					</label>
 					<div class="form-actions">
-						<button class="btn-save" @click="createDept" :disabled="busy || !addForm.deptCd">저장</button>
-						<button class="btn-cancel" @click="closeAddForm">취소</button>
+						<button class="btn-save" @click="createDept" :disabled="busy || !addForm.deptCd">{{ t('admin.ccs.save') }}</button>
+						<button class="btn-cancel" @click="closeAddForm">{{ t('admin.ccs.cancel') }}</button>
 					</div>
 				</div>
 			</div>
@@ -51,7 +51,7 @@
 							<th>deptNm</th>
 							<th>sortOrd</th>
 							<th>useYn</th>
-							<th>작업</th>
+							<th>{{ t('admin.ccs.col.action') }}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -63,12 +63,12 @@
 								<td>{{ d.sortOrd ?? '-' }}</td>
 								<td>
 									<span :class="['badge', d.useYn === 'Y' ? 'badge-on' : 'badge-off']">
-										{{ d.useYn === 'Y' ? '사용' : '미사용' }}
+										{{ d.useYn === 'Y' ? t('admin.ccs.on') : t('admin.ccs.off') }}
 									</span>
 								</td>
 								<td class="actions">
-									<button class="btn-sm btn-edit" @click="startEdit(d)">수정</button>
-									<button class="btn-sm btn-delete" @click="deleteDept(d.deptCd)">삭제</button>
+									<button class="btn-sm btn-edit" @click="startEdit(d)">{{ t('admin.ccs.edit') }}</button>
+									<button class="btn-sm btn-delete" @click="deleteDept(d.deptCd)">{{ t('admin.ccs.delete') }}</button>
 								</td>
 							</tr>
 							<!-- 인라인 편집 행 -->
@@ -77,7 +77,7 @@
 								<td><input class="cell-input" v-model="editForm.deptNm" /></td>
 								<td><input class="cell-input cell-input-sm" v-model.number="editForm.sortOrd" type="number" /></td>
 								<td>
-									<label class="switch" :title="editForm.useYn === 'Y' ? '사용' : '미사용'">
+									<label class="switch" :title="editForm.useYn === 'Y' ? t('admin.ccs.on') : t('admin.ccs.off')">
 										<input
 											type="checkbox"
 											:checked="editForm.useYn === 'Y'"
@@ -87,13 +87,13 @@
 									</label>
 								</td>
 								<td class="actions">
-									<button class="btn-sm btn-save" @click="saveEdit(d.deptCd)" :disabled="busy">저장</button>
-									<button class="btn-sm btn-cancel" @click="cancelEdit">취소</button>
+									<button class="btn-sm btn-save" @click="saveEdit(d.deptCd)" :disabled="busy">{{ t('admin.ccs.save') }}</button>
+									<button class="btn-sm btn-cancel" @click="cancelEdit">{{ t('admin.ccs.cancel') }}</button>
 								</td>
 							</tr>
 						</template>
 						<tr v-if="!depts.length">
-							<td colspan="5" class="dim">데이터 없음</td>
+							<td colspan="5" class="dim">{{ t('admin.ccs.empty') }}</td>
 						</tr>
 					</tbody>
 				</table>
@@ -102,7 +102,7 @@
 
 		<!-- 직원 목록 -->
 		<section class="section">
-			<h3>직원 목록</h3>
+			<h3>{{ t('admin.ccs.staff.list') }}</h3>
 			<div class="table-wrap">
 				<table>
 					<thead>
@@ -122,12 +122,12 @@
 							<td>{{ s.positionCd ?? '-' }}</td>
 							<td>
 								<span :class="['badge', s.useYn === 'Y' ? 'badge-on' : 'badge-off']">
-									{{ s.useYn === 'Y' ? '재직' : '미사용' }}
+									{{ s.useYn === 'Y' ? t('admin.ccs.staff.active') : t('admin.ccs.staff.inactive') }}
 								</span>
 							</td>
 						</tr>
 						<tr v-if="!staffList.length">
-							<td colspan="5" class="dim">데이터 없음</td>
+							<td colspan="5" class="dim">{{ t('admin.ccs.empty') }}</td>
 						</tr>
 					</tbody>
 				</table>
@@ -146,6 +146,7 @@ import {
 	updateAdminDept,
 	deleteAdminDept,
 } from '../api/client.js';
+import { t } from '../i18n/ui.js';
 
 const TOKEN_KEY = 'concierge.adminToken';
 
@@ -185,12 +186,12 @@ function showSuccess(msg) {
 }
 
 async function load() {
-	const t = getToken();
-	if (!t) { gotoLogin(); return; }
+	const tok = getToken();
+	if (!tok) { gotoLogin(); return; }
 	err.value = '';
 	busy.value = true;
 	try {
-		const headers = { 'X-Admin-Token': t };
+		const headers = { 'X-Admin-Token': tok };
 		const params = { propCd: propCd.value, cmpxCd: cmpxCd.value };
 
 		const [deptRes, staffRes] = await Promise.all([
@@ -202,7 +203,7 @@ async function load() {
 		staffList.value = staffRes.data?.map?.list || staffRes.data?.list || [];
 	} catch (e) {
 		if (e.response?.status === 401) { gotoLogin(); return; }
-		err.value = `조회 실패: ${e.response?.data?.message || e.message}`;
+		err.value = `${t('admin.ccs.loadFail')}: ${e.response?.data?.message || e.message}`;
 	} finally {
 		busy.value = false;
 	}
@@ -230,10 +231,10 @@ async function createDept() {
 			cmpxCd: cmpxCd.value,
 		});
 		closeAddForm();
-		showSuccess('부서가 추가되었습니다.');
+		showSuccess(t('admin.ccs.dept.addOk'));
 		await load();
 	} catch (e) {
-		err.value = `추가 실패: ${e.response?.data?.message || e.message || '알 수 없는 오류'}`;
+		err.value = `${t('admin.ccs.addFail')}: ${e.response?.data?.message || e.message || t('admin.ccs.unknownErr')}`;
 		busy.value = false;
 	}
 }
@@ -259,24 +260,24 @@ async function saveEdit(deptCd) {
 			cmpxCd: cmpxCd.value,
 		});
 		cancelEdit();
-		showSuccess('부서 정보가 수정되었습니다.');
+		showSuccess(t('admin.ccs.dept.editOk'));
 		await load();
 	} catch (e) {
-		err.value = `수정 실패: ${e.response?.data?.message || e.message || '알 수 없는 오류'}`;
+		err.value = `${t('admin.ccs.editFail')}: ${e.response?.data?.message || e.message || t('admin.ccs.unknownErr')}`;
 		busy.value = false;
 	}
 }
 
 async function deleteDept(deptCd) {
-	if (!confirm(`'${deptCd}' 부서를 정말 삭제하시겠습니까?`)) return;
+	if (!confirm(t('admin.ccs.dept.deleteConfirm').replace('{0}', deptCd))) return;
 	err.value = '';
 	busy.value = true;
 	try {
 		await deleteAdminDept(deptCd);
-		showSuccess('부서가 삭제되었습니다.');
+		showSuccess(t('admin.ccs.dept.deleteOk'));
 		await load();
 	} catch (e) {
-		err.value = `삭제 실패: ${e.response?.data?.message || e.message || '알 수 없는 오류'}`;
+		err.value = `${t('admin.ccs.deleteFail')}: ${e.response?.data?.message || e.message || t('admin.ccs.unknownErr')}`;
 		busy.value = false;
 	}
 }

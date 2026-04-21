@@ -1,24 +1,24 @@
 <template>
 	<div class="qr-page">
-		<h2 class="page-title">객실 QR 코드 생성</h2>
+		<h2 class="page-title">{{ t('staff.qr.title') }}</h2>
 
 		<div class="qr-form form-card">
 			<div class="form-group">
-				<label class="field-label">객실 번호</label>
+				<label class="field-label">{{ t('staff.qr.roomNo') }}</label>
 				<input
 					v-model="roomNo"
 					class="field-input"
-					placeholder="예: 03010"
+					:placeholder="t('staff.qr.roomNo.placeholder')"
 					@keydown.enter="generate"
 				/>
 			</div>
-			<button class="submit-btn" :disabled="!roomNo.trim()" @click="generate">생성</button>
+			<button class="submit-btn" :disabled="!roomNo.trim()" @click="generate">{{ t('staff.qr.generate') }}</button>
 		</div>
 
 		<div v-if="generated" class="qr-result form-card">
 			<canvas ref="qrCanvas" class="qr-canvas"></canvas>
 			<p class="qr-url">{{ qrUrl }}</p>
-			<button class="print-btn" @click="printQr">인쇄</button>
+			<button class="print-btn" @click="printQr">{{ t('staff.qr.print') }}</button>
 		</div>
 	</div>
 </template>
@@ -26,6 +26,7 @@
 <script setup>
 import { ref, nextTick } from 'vue';
 import QRCode from 'qrcode';
+import { t } from '../../i18n/ui.js';
 
 const roomNo = ref('');
 const generated = ref(false);
