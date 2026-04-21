@@ -265,29 +265,37 @@ function logout() {
 
 /* ═══ Mobile (< 720px) — LNB 을 상단 가로 바로 변환 ═══ */
 @media (max-width: 720px) {
-	.ccs-shell { flex-direction: column; }
+	.ccs-shell { flex-direction: column; width: 100%; max-width: 100vw; overflow-x: hidden; }
 	.ccs-lnb {
 		width: 100%;
+		max-width: 100%;
 		flex-direction: row;
 		flex-wrap: wrap;
 		box-shadow: 0 4px 12px rgba(11, 31, 59, 0.18);
 	}
-	.brand { flex: 0 0 100%; padding: var(--sp-4) var(--sp-5); }
+	.brand { flex: 0 0 100%; padding: var(--sp-4) var(--sp-5); min-width: 0; }
 	.nav {
 		flex: 1 1 100%;
 		flex-direction: row;
 		overflow-x: auto;
 		padding: var(--sp-3);
 		gap: var(--sp-2);
+		max-width: 100%;
 	}
 	.group { flex-direction: row; gap: var(--sp-1); }
 	.group-label { display: none; }
 	.item { padding: 10px 14px; white-space: nowrap; }
 	.foot {
 		flex: 0 0 100%;
+		padding: var(--sp-3) var(--sp-4);
+		gap: var(--sp-2);
 		justify-content: space-between;
 		border-top: 1px solid rgba(255, 255, 255, 0.08);
+		min-width: 0;
 	}
-	.ccs-main { padding: var(--sp-4); }
+	.user { min-width: 0; overflow: hidden; }
+	.avatar { width: 32px; height: 32px; font-size: var(--fs-sm); }
+	.logout { flex-shrink: 0; width: 36px; height: 36px; }
+	.ccs-main { padding: var(--sp-4); width: 100%; max-width: 100%; overflow-x: hidden; }
 }
 </style>

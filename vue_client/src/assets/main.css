@@ -2,6 +2,8 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #app { height: 100%; }
+/* 모바일에서 예상치 못한 가로 스크롤 방지 — 특정 요소가 100vw 넘을 때 빈 흰 공간 나타나는 걸 막음 */
+html, body { overflow-x: hidden; max-width: 100%; }
 body {
 	font-family: -apple-system, "SF Pro Display", "Segoe UI", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
 	background: var(--c-bg);
