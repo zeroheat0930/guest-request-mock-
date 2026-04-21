@@ -5,6 +5,68 @@
 
 ---
 
+## 🎯 회사 출근 후 다음 작업 (2026-04-22 시점 — 심사 2026-05-20)
+
+**상용화 1.0 Phase A~F 전부 코드 완료.** 로컬에서 Maven compile + Vue build 통과 확인.
+회사 VPN 없이는 못 했던 것 + 실제 QA 만 남음. 순서대로:
+
+### 1) 브랜치 pull
+```bash
+git fetch origin
+git checkout feat/phases-b-f       # 또는 pull 받은 main
+git pull
+```
+
+### 2) DB 마이그레이션 실행 (VPN + INV 스키마 DBA 권한 필요, 순서 엄수)
+```bash
+mysql -u <DBA> -p INV < db/migrations/phase_b_lostfound_voc.sql   # CCS_LOSTFOUND, CCS_VOC
+mysql -u <DBA> -p INV < db/migrations/phase_d_rental_duty.sql     # CCS_RENTAL_ITEM/ORDER, CCS_DUTY_LOG
+mysql -u <DBA> -p INV < db/migrations/phase_e_audit_reports.sql   # CCS_AUDIT_LOG, CCS_REPORT_DAILY
+```
+> 모두 `CREATE TABLE IF NOT EXISTS`. 재실행 안전. INV 스키마 주인 계정으로 실행.
+
+### 3) api_server 재기동
+```bash
+cd api_server && mvn spring-boot:run
+# 또는 IDE 에서 restart
+```
+**smoke test**:
+- `GET http://localhost:8080/swagger-ui.html` — 새 컨트롤러 (lostfound / voc / rental / duty / audit / report) 노출 확인
+- `GET /api/ccs/reports/daily?from=2026-04-01&to=2026-04-22` — 빈 결과 OK (아직 데이터 없음)
+- `POST /api/gr/lostfound` (게스트 신고) — 샘플 바디로 201 + WS 푸시 확인
+
+### 4) vue_client 재기동
+```bash
+cd vue_client && npm run dev
+```
+- 게스트 앱: `/lostfound`, `/voc`, `/rental` 3개 새 페이지 렌더링
+- 스태프 앱: `/admin/lostfound`, `/admin/voc`, `/admin/rental`, `/admin/duty`, `/admin/reports`, `/admin/audit` 6개 새 페이지
+- 언어 스위처 (ko/en/ja/zh) 스태프 상단에 표시되는지
+
+### 5) 기능 플래그 ON (AdminFeaturesView 에서)
+신규 feature code 3개를 DB `INV.FEATURE_MGT` 에 INSERT 필요 (AdminFeaturesView 로 추가 가능):
+- `LOSTFOUND` (sortOrd 70)
+- `VOC` (sortOrd 80)
+- `RENTAL` (sortOrd 90)
+
+useYn='Y' 로 설정해야 게스트 앱 LNB 에 노출됨.
+
+### 6) main 머지
+PR 생성: https://github.com/zeroheat0930/guest-request-mock-/pull/new/feat/phases-b-f
+셀프 리뷰 후 머지 (관리 게시 트랙에 바로 영향 없음 — 이 레포는 데모용).
+
+### 7) 심사 리허설 (5/20 전 최소 1회)
+- `docs/DEMO_SCRIPT.md` 7단계 90초 시나리오
+- 랜딩 페이지 `?host=<PC LAN IP>:5173` 쿼리로 데모 타겟 변경 후 QR 재생성
+- 기기: QR 태블릿 (게스트) + 노트북 (스태프 대시보드) + 휴대폰 (관리자 리포트)
+
+### 🚧 알려진 미완 (추후 이슈로)
+- `DaolPmsSyncAdapter.syncLostFound/syncVoc/syncRental/syncDuty` — 로그만 남김, 실제 PMS 테이블 INSERT 는 stub. 상용 배포 전 작성 필요.
+- `CCS_REPORT_DAILY` 롤업 스케줄러 미구현 — 현재 쿼리는 실시간 GROUP BY. 트래픽 증가 시 배치 추가.
+- AuditLogService inline 훅은 LostFound/VOC 만 적용. Rental/Duty 는 Phase E 에서 AOP 로 전환 예정.
+
+---
+
 ## 📦 구성
 
 ```
