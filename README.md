@@ -282,6 +282,15 @@ Base: `http://localhost:8080/api`
 
 ## 🗓️ 진행 로그
 
+### 2026-04-21 오후 — systemic 에러 핸들링 + 상태 머신 보강
+
+**7) 클라이언트 `unwrapOk` systemic fix** — 기존엔 `BaseController` 가 ApiException 도 HTTP 200 + body `{status:음수, message, error}` 로 내리는데 axios interceptor `unwrapOk` 가 status 필드를 보지 않고 data 를 통째로 리턴해서 호출자 catch 블록이 절대 안 타는 systemic 이슈였음. 로그인 버그(`상태=-20` 을 "서버 오류" 로 표시), 러너 "시작" 무반응 전부 같은 원인.
+
+- `client.js:unwrapOk` 가 `status !== 0` 이면 `{status, message, map}` 으로 reject. 모든 CCS/gr/ai/admin 호출이 catch 블록으로 정상 에러 surface.
+- 결과: 러너 "시작" 실패 시 "상태 변경 실패: ..." 메시지가 뜸, 로그인 틀린 비번 시 "비밀번호가 일치하지 않습니다" 정상 표시 (프론트 기존 status 체크 가지친 코드도 일관된 catch 블록으로 수렴).
+
+**8) CcsTaskService 상태 머신 보강** — 러너 태스크가 `ASSIGNED` 상태로 배정돼있으면 "시작" 버튼이 `IN_PROG` 전이 시도했으나 기존 규칙은 `REQ → IN_PROG` 만 허용해 백엔드가 거부하던 이슈. `ASSIGNED → IN_PROG`, `ASSIGNED → CANCELED` 두 경로 허용. 러너 시작/완료 플로우 정상 동작 확인.
+
 ### 2026-04-21 오후 (윈도우 세션 — 역할 기반 WebSocket 토픽 + CCS UI 라벨)
 
 **4) 역할 기반 WebSocket 토픽 아키텍처** — 관리자(dongjunkorea, dept=00000) 가 부서별 토픽(`/topic/ccs/dept/HK` 등) 만 publish 되는 기존 구조에선 실시간 푸시 못 받던 문제. PMS `USER_TP` 체계(00001 시스템 / 00002 프로퍼티 / 00003 컴플렉스 / 00004 일반 / 00007~00008 객실정비) 로 스코프 분기.

@@ -49,7 +49,17 @@ function attachAuthHeader(config) {
 }
 
 function unwrapOk(r) {
-	return r.data;
+	// BaseController 는 ApiException 도 HTTP 200 + body{status:음수, message, error} 로 내림.
+	// status === 0 (SUCCESS) 이 아니면 ApiException 응답으로 간주해 reject — 호출자 catch 에서 처리.
+	const d = r.data;
+	if (d && typeof d === 'object' && 'status' in d && d.status !== 0) {
+		return Promise.reject({
+			status: d.status,
+			message: d.message || (d.error && d.error.message) || '',
+			map: d.map || {}
+		});
+	}
+	return d;
 }
 
 function unwrapErr(e) {

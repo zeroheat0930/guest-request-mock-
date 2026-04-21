@@ -65,9 +65,10 @@ public class CcsTaskService {
 
 		boolean legal = false;
 		if ("CANCELED".equals(newStatusCd)) {
-			legal = "REQ".equals(cur) || "IN_PROG".equals(cur);
+			legal = "REQ".equals(cur) || "ASSIGNED".equals(cur) || "IN_PROG".equals(cur);
 		} else if ("IN_PROG".equals(newStatusCd)) {
-			legal = "REQ".equals(cur);
+			// REQ 에서 바로 시작(대시보드 내가 받기 경로) + ASSIGNED 에서 시작(러너 시작 버튼) 양쪽 허용
+			legal = "REQ".equals(cur) || "ASSIGNED".equals(cur);
 		} else if ("DONE".equals(newStatusCd)) {
 			legal = "IN_PROG".equals(cur);
 		}
