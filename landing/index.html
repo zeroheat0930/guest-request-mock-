@@ -357,6 +357,112 @@ html, body {
   box-shadow: var(--shadow-card);
 }
 
+/* ── PILLAR GRID (Phase F) ── */
+.pillar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-top: 28px;
+}
+.pillar-card {
+  padding: 22px 22px 18px;
+  background: rgba(15, 23, 42, 0.6);
+  border: var(--border-gold);
+  border-radius: var(--radius-card);
+  text-align: center;
+  transition: border-color 0.3s, transform 0.3s;
+}
+.pillar-card:hover {
+  border-color: rgba(201, 169, 110, 0.4);
+  transform: translateY(-2px);
+}
+.pillar-ic {
+  font-size: 36px;
+  margin-bottom: 12px;
+}
+.pillar-card h3 {
+  font-family: var(--serif);
+  font-size: 17px;
+  color: var(--gold-light);
+  margin-bottom: 8px;
+  font-weight: 400;
+}
+.pillar-card p {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin-bottom: 12px;
+  min-height: 40px;
+}
+.pillar-chk {
+  display: inline-block;
+  padding: 3px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #a6ddb8;
+  background: rgba(39, 103, 73, 0.25);
+  border: 1px solid rgba(166, 221, 184, 0.3);
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.8px;
+}
+
+/* ── TECH GRID (Phase F) ── */
+.tech-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 26px;
+}
+.tech-chip {
+  padding: 8px 18px;
+  background: var(--gold-dim);
+  border: 1px solid rgba(201, 169, 110, 0.3);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  color: var(--gold-light);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* ── DIFFERENTIATORS (Phase F) ── */
+.diff-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 26px;
+}
+.diff-row {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 16px 18px;
+  background: rgba(15, 23, 42, 0.4);
+  border-left: 2px solid var(--gold);
+  border-radius: 2px;
+}
+.diff-num {
+  font-family: var(--serif);
+  font-size: 28px;
+  color: var(--gold);
+  line-height: 1;
+  min-width: 48px;
+  opacity: 0.72;
+}
+.diff-body h4 {
+  font-size: 14px;
+  color: var(--gold-light);
+  font-weight: 700;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+}
+.diff-body p {
+  font-size: 12.5px;
+  color: var(--text-cream);
+  line-height: 1.65;
+  opacity: 0.78;
+}
+
 /* ── META TABLE ── */
 .meta-section { padding: 56px 0 0; }
 .meta dl {
@@ -602,6 +708,109 @@ html, body {
           <a class="btn-primary btn-sm link-staff" target="_blank" rel="noopener">
             <span>스태프 로그인</span><span class="btn-arrow">→</span>
           </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ━━━━ 5대 본연 기능 ━━━━ -->
+  <section class="meta-section">
+    <div class="section-header">
+      <span class="section-label">Core Pillars</span>
+      <h2 class="section-title">CCS 5대 본연 기능</h2>
+    </div>
+    <div class="pillar-grid">
+      <div class="pillar-card">
+        <div class="pillar-ic">🚨</div>
+        <h3>SLA 에스컬레이션</h3>
+        <p>태스크별 자동 SLA 카운트 · 초과 시 관리자 실시간 푸시</p>
+        <span class="pillar-chk">✓ 구현 완료</span>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-ic">🔍</div>
+        <h3>분실물 센터</h3>
+        <p>게스트 신고 → 스태프 습득 → 매칭 → 회수 · 4단계 워크플로우</p>
+        <span class="pillar-chk">✓ 구현 완료</span>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-ic">💬</div>
+        <h3>VOC 관리</h3>
+        <p>고객 불만 심각도 분류 · URGENT 즉시 관리자 토스트 · 만족도 평가</p>
+        <span class="pillar-chk">✓ 구현 완료</span>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-ic">🏷️</div>
+        <h3>물품 대여</h3>
+        <p>카탈로그 + 재고 카운터 · 주문/반납 원자적 업데이트</p>
+        <span class="pillar-chk">✓ 구현 완료</span>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-ic">🗓️</div>
+        <h3>당직 관리자 로그</h3>
+        <p>교대 시작 · 인수인계 · 사건 타임라인 · PMS 야간감사 상태</p>
+        <span class="pillar-chk">✓ 구현 완료</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ━━━━ 기술 스택 ━━━━ -->
+  <section class="meta-section">
+    <div class="section-header">
+      <span class="section-label">Tech Stack</span>
+      <h2 class="section-title">기술 스택</h2>
+    </div>
+    <div class="tech-grid">
+      <div class="tech-chip">Vue 3</div>
+      <div class="tech-chip">Vite · PWA</div>
+      <div class="tech-chip">Spring Boot 3.2</div>
+      <div class="tech-chip">Java 17</div>
+      <div class="tech-chip">MyBatis · MariaDB</div>
+      <div class="tech-chip">WebSocket (STOMP)</div>
+      <div class="tech-chip">Claude API</div>
+      <div class="tech-chip">Swagger · OpenAPI 3</div>
+    </div>
+  </section>
+
+  <!-- ━━━━ 차별화 포인트 ━━━━ -->
+  <section class="meta-section">
+    <div class="section-header">
+      <span class="section-label">Why DAOL Concierge</span>
+      <h2 class="section-title">차별화 포인트</h2>
+    </div>
+    <div class="diff-list">
+      <div class="diff-row">
+        <div class="diff-num">01</div>
+        <div class="diff-body">
+          <h4>AI 자연어 라우팅</h4>
+          <p>"베개 하나 더 주세요" → 자동으로 어메니티 요청 · 하우스키핑 부서 전달. 한/영/일/중 4개 국어 지원.</p>
+        </div>
+      </div>
+      <div class="diff-row">
+        <div class="diff-num">02</div>
+        <div class="diff-body">
+          <h4>멀티 테넌시 내장</h4>
+          <p>프로퍼티(PROP_CD) + 부속건물(CMPX_CD) 스코프로 단일 배포 · 여러 호텔 동시 운영.</p>
+        </div>
+      </div>
+      <div class="diff-row">
+        <div class="diff-num">03</div>
+        <div class="diff-body">
+          <h4>기능 플래그</h4>
+          <p>프로퍼티별 on/off 토글. 특정 호텔만 분실물/VOC 베타 오픈 등 세밀한 운영.</p>
+        </div>
+      </div>
+      <div class="diff-row">
+        <div class="diff-num">04</div>
+        <div class="diff-body">
+          <h4>PMS 어댑터 패턴</h4>
+          <p>PMS-first 가 아닌 CCS-first. PmsSyncAdapter 로 DAOL/다른 PMS/PMS 없음 3가지 시나리오 모두 지원.</p>
+        </div>
+      </div>
+      <div class="diff-row">
+        <div class="diff-num">05</div>
+        <div class="diff-body">
+          <h4>실시간 SLA + 감사 로그</h4>
+          <p>초과 시 WebSocket 에스컬레이션 푸시 · 모든 도메인 변경을 before/after JSON 으로 감사 기록.</p>
         </div>
       </div>
     </div>
