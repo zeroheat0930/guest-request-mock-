@@ -14,10 +14,17 @@ const routes = [
 	{ path: '/',               redirect: '/staff' },
 	{ path: '/staff/login',    component: StaffLoginView,     meta: { staff: true, public: true } },
 	{ path: '/staff',          component: StaffDashboardView, meta: { staff: true } },
+	{ path: '/staff/duty',     component: () => import('../views/staff/DutyLogView.vue'), meta: { staff: true } },
 	{ path: '/admin/login',    component: AdminLoginView,     meta: { admin: true, public: true } },
 	{ path: '/admin/features', component: AdminFeaturesView,  meta: { admin: true } },
 	{ path: '/admin/ccs',      component: AdminCcsView,       meta: { admin: true } },
 	{ path: '/admin/qr',       component: () => import('../views/staff/QrGeneratorView.vue'), meta: { admin: true } },
+	{ path: '/admin/lostfound',component: () => import('../views/AdminLostFoundView.vue'), meta: { admin: true } },
+	{ path: '/admin/voc',      component: () => import('../views/AdminVocView.vue'),        meta: { admin: true } },
+	{ path: '/admin/rental',   component: () => import('../views/AdminRentalView.vue'),     meta: { admin: true } },
+	{ path: '/admin/duty',     component: () => import('../views/AdminDutyView.vue'),       meta: { admin: true } },
+	{ path: '/admin/reports',  component: () => import('../views/AdminReportsView.vue'),    meta: { admin: true } },
+	{ path: '/admin/audit',    component: () => import('../views/AdminAuditView.vue'),      meta: { admin: true } },
 	// 스태프 번들로 잘못 들어온 미지 경로는 스태프 로그인으로
 	{ path: '/:pathMatch(.*)*', redirect: '/staff/login' }
 ];

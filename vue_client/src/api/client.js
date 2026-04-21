@@ -121,6 +121,12 @@ export const requestLateCheckout = (body)            => client.post('/late-check
 export const fetchParkingList = (rsvNo) => client.get('/parking/list', { params: { rsvNo } });
 export const requestParking   = (body)  => client.post('/parking', body);
 
+// 분실물 / VOC / 대여 — 게스트 신고 (Phase B/D)
+export const submitLostFound  = (body)  => client.post('/lostfound', body);
+export const submitVoc        = (body)  => client.post('/voc', body);
+export const submitRental     = (body)  => client.post('/rental', body);
+export const fetchRentalItems = ()      => client.get('/rental/items');
+
 // AI (LLM 프록시 — Spring Boot가 Anthropic 키를 보관/호출)
 export const postAiChat  = (body) => aiClient.post('/chat', body);
 export const getAiStatus = ()     => aiClient.get('/status');
@@ -167,6 +173,40 @@ export const createCcsTask = (body) => ccsClient.post('/tasks', body);
 export const fetchCcsDeptLoad = (deptCd) => ccsClient.get(`/dept/${encodeURIComponent(deptCd)}/load`);
 
 export const fetchCcsStatsToday = (deptCd) => ccsClient.get('/stats/today', { params: { deptCd } });
+
+// ─────────────────────────────────────────────
+// CCS 관리자용 — 분실물 / VOC / 대여 / 당직 / 리포트 / 감사 (Phase B/D/E)
+// ─────────────────────────────────────────────
+export const fetchLostFoundList    = (params)         => ccsClient.get('/lostfound', { params });
+export const createLostFound       = (body)           => ccsClient.post('/lostfound', body);
+export const updateLostFoundStatus = (lfId, body)     => ccsClient.put(`/lostfound/${encodeURIComponent(lfId)}/status`, body);
+export const matchLostFound        = (lfId, body)     => ccsClient.put(`/lostfound/${encodeURIComponent(lfId)}/match`, body);
+
+export const fetchVocList         = (params)          => ccsClient.get('/voc', { params });
+export const createVoc            = (body)            => ccsClient.post('/voc', body);
+export const updateVocStatus      = (vocId, body)     => ccsClient.put(`/voc/${encodeURIComponent(vocId)}/status`, body);
+export const resolveVoc           = (vocId, body)     => ccsClient.put(`/voc/${encodeURIComponent(vocId)}/resolve`, body);
+export const rateVoc              = (vocId, body)     => ccsClient.post(`/voc/${encodeURIComponent(vocId)}/satisfaction`, body);
+
+export const fetchRentalCatalog   = ()                => ccsClient.get('/rental/items');
+export const upsertRentalItem     = (body)            => ccsClient.post('/rental/items', body);
+export const updateRentalItem     = (itemId, body)    => ccsClient.put(`/rental/items/${encodeURIComponent(itemId)}`, body);
+export const fetchRentalOrders    = (params)          => ccsClient.get('/rental/orders', { params });
+export const createRentalOrder    = (body)            => ccsClient.post('/rental/orders', body);
+export const loanRentalOrder      = (orderId)         => ccsClient.put(`/rental/orders/${encodeURIComponent(orderId)}/loan`, {});
+export const returnRentalOrder    = (orderId)         => ccsClient.put(`/rental/orders/${encodeURIComponent(orderId)}/return`, {});
+
+export const fetchDutyLogToday    = (params)          => ccsClient.get('/duty/today', { params });
+export const fetchDutyLogList     = (params)          => ccsClient.get('/duty', { params });
+export const startDutyShift       = (body)            => ccsClient.post('/duty', body);
+export const handoverDutyShift    = (logId, body)     => ccsClient.put(`/duty/${encodeURIComponent(logId)}/handover`, body);
+export const closeDutyShift       = (logId, body)     => ccsClient.put(`/duty/${encodeURIComponent(logId)}/close`, body);
+
+export const fetchReportDaily     = (params)          => ccsClient.get('/reports/daily', { params });
+export const fetchReportSla       = (params)          => ccsClient.get('/reports/sla', { params });
+export const fetchReportHeatmap   = (params)          => ccsClient.get('/reports/heatmap', { params });
+
+export const fetchAuditLog        = (params)          => ccsClient.get('/audit', { params });
 
 // ─────────────────────────────────────────────
 // Admin — /api/concierge/admin/**

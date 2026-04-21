@@ -47,4 +47,9 @@ public class DaolPmsSyncAdapter implements PmsSyncAdapter {
 	public void syncRental(Map<String, Object> payload) {
 		log.info("[pms-sync] syncRental (stub) — TODO Phase D: PMS_LOAN INSERT 또는 /api/ht/hk/loanAndRecoveryMgmt 호출");
 	}
+
+	@Override
+	public void syncDuty(Map<String, Object> payload) {
+		log.info("[pms-sync] syncDuty (stub) — TODO Phase D: PMS_DUTY_LOG INSERT 또는 야간감사 API 연동");
+	}
 }

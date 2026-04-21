@@ -236,4 +236,352 @@
 		   AND DATE(CREATED_AT) = CURDATE()
 	</select>
 
+	<!-- ═══════════ CCS_LOSTFOUND (Phase B) ═══════════ -->
+
+	<insert id="insertLostFound" parameterType="map">
+		INSERT INTO INV.CCS_LOSTFOUND (LF_ID, PROP_CD, CMPX_CD, REPORTER_TYPE, REPORTER_REF, RM_NO,
+		                                CATEGORY, ITEM_NAME, DESCRIPTION, LOCATION_HINT,
+		                                FOUND_AT, STATUS_CD, HANDLER_ID, NOTE, CREATED_AT, UPDATED_AT)
+		VALUES (#{lfId}, #{propCd}, #{cmpxCd}, #{reporterType}, #{reporterRef}, #{rmNo},
+		        #{category}, #{itemName}, #{description}, #{locationHint},
+		        #{foundAt}, #{statusCd}, #{handlerId}, #{note}, NOW(), NOW())
+	</insert>
+
+	<select id="selectLostFoundList" parameterType="map" resultType="map">
+		SELECT LF_ID AS lfId, PROP_CD AS propCd, CMPX_CD AS cmpxCd,
+		       REPORTER_TYPE AS reporterType, REPORTER_REF AS reporterRef,
+		       RM_NO AS rmNo, CATEGORY AS category, ITEM_NAME AS itemName,
+		       DESCRIPTION AS description, LOCATION_HINT AS locationHint,
+		       FOUND_AT AS foundAt, MATCHED_LF_ID AS matchedLfId,
+		       STATUS_CD AS statusCd, HANDLER_ID AS handlerId, NOTE AS note,
+		       CREATED_AT AS createdAt, UPDATED_AT AS updatedAt
+		  FROM INV.CCS_LOSTFOUND
+		 WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd}
+		<if test="statusCd != null and statusCd != ''">AND STATUS_CD = #{statusCd}</if>
+		<if test="category != null and category != ''">AND CATEGORY = #{category}</if>
+		<if test="reporterType != null and reporterType != ''">AND REPORTER_TYPE = #{reporterType}</if>
+		 ORDER BY CREATED_AT DESC
+	</select>
+
+	<select id="selectLostFound" resultType="map">
+		SELECT LF_ID AS lfId, PROP_CD AS propCd, CMPX_CD AS cmpxCd,
+		       REPORTER_TYPE AS reporterType, REPORTER_REF AS reporterRef,
+		       RM_NO AS rmNo, CATEGORY AS category, ITEM_NAME AS itemName,
+		       DESCRIPTION AS description, LOCATION_HINT AS locationHint,
+		       FOUND_AT AS foundAt, MATCHED_LF_ID AS matchedLfId,
+		       STATUS_CD AS statusCd, HANDLER_ID AS handlerId, NOTE AS note,
+		       CREATED_AT AS createdAt, UPDATED_AT AS updatedAt
+		  FROM INV.CCS_LOSTFOUND
+		 WHERE LF_ID = #{lfId}
+	</select>
+
+	<update id="updateLostFoundStatus" parameterType="map">
+		UPDATE INV.CCS_LOSTFOUND
+		   SET STATUS_CD = #{statusCd},
+		       HANDLER_ID = COALESCE(#{handlerId}, HANDLER_ID),
+		       NOTE = COALESCE(#{note}, NOTE),
+		       UPDATED_AT = NOW()
+		 WHERE LF_ID = #{lfId}
+	</update>
+
+	<update id="updateLostFoundMatch" parameterType="map">
+		UPDATE INV.CCS_LOSTFOUND
+		   SET MATCHED_LF_ID = #{matchedLfId},
+		       STATUS_CD = 'MATCHED',
+		       HANDLER_ID = COALESCE(#{handlerId}, HANDLER_ID),
+		       UPDATED_AT = NOW()
+		 WHERE LF_ID = #{lfId}
+	</update>
+
+	<!-- ═══════════ CCS_VOC (Phase B) ═══════════ -->
+
+	<insert id="insertVoc" parameterType="map">
+		INSERT INTO INV.CCS_VOC (VOC_ID, PROP_CD, CMPX_CD, RSV_NO, RM_NO,
+		                          CATEGORY, SEVERITY, TITLE, CONTENT,
+		                          STATUS_CD, HANDLER_ID, CREATED_AT, UPDATED_AT)
+		VALUES (#{vocId}, #{propCd}, #{cmpxCd}, #{rsvNo}, #{rmNo},
+		        #{category}, #{severity}, #{title}, #{content},
+		        #{statusCd}, #{handlerId}, NOW(), NOW())
+	</insert>
+
+	<select id="selectVocList" parameterType="map" resultType="map">
+		SELECT VOC_ID AS vocId, PROP_CD AS propCd, CMPX_CD AS cmpxCd,
+		       RSV_NO AS rsvNo, RM_NO AS rmNo,
+		       CATEGORY AS category, SEVERITY AS severity,
+		       TITLE AS title, CONTENT AS content,
+		       STATUS_CD AS statusCd, HANDLER_ID AS handlerId,
+		       RESOLUTION AS resolution, SATISFACTION AS satisfaction,
+		       CREATED_AT AS createdAt, UPDATED_AT AS updatedAt, RESOLVED_AT AS resolvedAt
+		  FROM INV.CCS_VOC
+		 WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd}
+		<if test="statusCd != null and statusCd != ''">AND STATUS_CD = #{statusCd}</if>
+		<if test="category != null and category != ''">AND CATEGORY = #{category}</if>
+		<if test="severity != null and severity != ''">AND SEVERITY = #{severity}</if>
+		 ORDER BY CREATED_AT DESC
+	</select>
+
+	<select id="selectVoc" resultType="map">
+		SELECT VOC_ID AS vocId, PROP_CD AS propCd, CMPX_CD AS cmpxCd,
+		       RSV_NO AS rsvNo, RM_NO AS rmNo,
+		       CATEGORY AS category, SEVERITY AS severity,
+		       TITLE AS title, CONTENT AS content,
+		       STATUS_CD AS statusCd, HANDLER_ID AS handlerId,
+		       RESOLUTION AS resolution, SATISFACTION AS satisfaction,
+		       CREATED_AT AS createdAt, UPDATED_AT AS updatedAt, RESOLVED_AT AS resolvedAt
+		  FROM INV.CCS_VOC
+		 WHERE VOC_ID = #{vocId}
+	</select>
+
+	<update id="updateVocStatus" parameterType="map">
+		UPDATE INV.CCS_VOC
+		   SET STATUS_CD = #{statusCd},
+		       HANDLER_ID = COALESCE(#{handlerId}, HANDLER_ID),
+		       UPDATED_AT = NOW()
+		 WHERE VOC_ID = #{vocId}
+	</update>
+
+	<update id="updateVocResolution" parameterType="map">
+		UPDATE INV.CCS_VOC
+		   SET STATUS_CD = 'RESOLVED',
+		       RESOLUTION = #{resolution},
+		       HANDLER_ID = COALESCE(#{handlerId}, HANDLER_ID),
+		       RESOLVED_AT = NOW(),
+		       UPDATED_AT = NOW()
+		 WHERE VOC_ID = #{vocId}
+	</update>
+
+	<update id="updateVocSatisfaction" parameterType="map">
+		UPDATE INV.CCS_VOC
+		   SET SATISFACTION = #{satisfaction},
+		       UPDATED_AT = NOW()
+		 WHERE VOC_ID = #{vocId}
+	</update>
+
+	<!-- ═══════════ CCS_RENTAL_ITEM (Phase D) ═══════════ -->
+
+	<select id="selectRentalItems" resultType="map">
+		SELECT ITEM_ID AS itemId, PROP_CD AS propCd, CMPX_CD AS cmpxCd,
+		       NAME AS name, DESCRIPTION AS description, CATEGORY AS category,
+		       STOCK_TOTAL AS stockTotal, STOCK_AVAILABLE AS stockAvailable,
+		       USE_YN AS useYn, CREATED_AT AS createdAt
+		  FROM INV.CCS_RENTAL_ITEM
+		 WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd}
+		 ORDER BY CATEGORY, NAME
+	</select>
+
+	<select id="selectRentalItem" resultType="map">
+		SELECT ITEM_ID AS itemId, PROP_CD AS propCd, CMPX_CD AS cmpxCd,
+		       NAME AS name, DESCRIPTION AS description, CATEGORY AS category,
+		       STOCK_TOTAL AS stockTotal, STOCK_AVAILABLE AS stockAvailable,
+		       USE_YN AS useYn, CREATED_AT AS createdAt
+		  FROM INV.CCS_RENTAL_ITEM
+		 WHERE ITEM_ID = #{itemId}
+	</select>
+
+	<insert id="insertRentalItem" parameterType="map">
+		INSERT INTO INV.CCS_RENTAL_ITEM (ITEM_ID, PROP_CD, CMPX_CD, NAME, DESCRIPTION,
+		                                  CATEGORY, STOCK_TOTAL, STOCK_AVAILABLE, USE_YN, CREATED_AT)
+		VALUES (#{itemId}, #{propCd}, #{cmpxCd}, #{name}, #{description},
+		        #{category}, #{stockTotal}, #{stockAvailable}, #{useYn}, NOW())
+	</insert>
+
+	<update id="updateRentalItem" parameterType="map">
+		UPDATE INV.CCS_RENTAL_ITEM
+		   SET NAME = #{name}, DESCRIPTION = #{description}, CATEGORY = #{category},
+		       STOCK_TOTAL = #{stockTotal}, USE_YN = #{useYn}
+		 WHERE ITEM_ID = #{itemId}
+	</update>
+
+	<update id="updateRentalItemStock" parameterType="map">
+		UPDATE INV.CCS_RENTAL_ITEM
+		   SET STOCK_AVAILABLE = STOCK_AVAILABLE + #{delta}
+		 WHERE ITEM_ID = #{itemId}
+	</update>
+
+	<!-- ═══════════ CCS_RENTAL_ORDER (Phase D) ═══════════ -->
+
+	<insert id="insertRentalOrder" parameterType="map">
+		INSERT INTO INV.CCS_RENTAL_ORDER (ORDER_ID, PROP_CD, CMPX_CD, RSV_NO, ITEM_ID,
+		                                   QTY, STATUS_CD, REQUESTED_AT, DUE_AT,
+		                                   HANDLER_ID, NOTE)
+		VALUES (#{orderId}, #{propCd}, #{cmpxCd}, #{rsvNo}, #{itemId},
+		        #{qty}, #{statusCd}, NOW(), #{dueAt},
+		        #{handlerId}, #{note})
+	</insert>
+
+	<select id="selectRentalOrderList" parameterType="map" resultType="map">
+		SELECT ORDER_ID AS orderId, PROP_CD AS propCd, CMPX_CD AS cmpxCd,
+		       RSV_NO AS rsvNo, ITEM_ID AS itemId, QTY AS qty,
+		       STATUS_CD AS statusCd, REQUESTED_AT AS requestedAt,
+		       LOANED_AT AS loanedAt, DUE_AT AS dueAt, RETURNED_AT AS returnedAt,
+		       HANDLER_ID AS handlerId, NOTE AS note
+		  FROM INV.CCS_RENTAL_ORDER
+		 WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd}
+		<if test="statusCd != null and statusCd != ''">AND STATUS_CD = #{statusCd}</if>
+		<if test="rsvNo != null and rsvNo != ''">AND RSV_NO = #{rsvNo}</if>
+		 ORDER BY REQUESTED_AT DESC
+	</select>
+
+	<select id="selectRentalOrder" resultType="map">
+		SELECT ORDER_ID AS orderId, PROP_CD AS propCd, CMPX_CD AS cmpxCd,
+		       RSV_NO AS rsvNo, ITEM_ID AS itemId, QTY AS qty,
+		       STATUS_CD AS statusCd, REQUESTED_AT AS requestedAt,
+		       LOANED_AT AS loanedAt, DUE_AT AS dueAt, RETURNED_AT AS returnedAt,
+		       HANDLER_ID AS handlerId, NOTE AS note
+		  FROM INV.CCS_RENTAL_ORDER
+		 WHERE ORDER_ID = #{orderId}
+	</select>
+
+	<update id="updateRentalOrderStatus" parameterType="map">
+		UPDATE INV.CCS_RENTAL_ORDER
+		   SET STATUS_CD = #{statusCd},
+		       HANDLER_ID = COALESCE(#{handlerId}, HANDLER_ID),
+		       LOANED_AT = CASE WHEN #{statusCd} = 'LOANED' THEN NOW() ELSE LOANED_AT END,
+		       RETURNED_AT = CASE WHEN #{statusCd} = 'RETURNED' THEN NOW() ELSE RETURNED_AT END
+		 WHERE ORDER_ID = #{orderId}
+	</update>
+
+	<!-- ═══════════ CCS_DUTY_LOG (Phase D) ═══════════ -->
+
+	<insert id="insertDutyLog" parameterType="map">
+		INSERT INTO INV.CCS_DUTY_LOG (LOG_ID, PROP_CD, CMPX_CD, DUTY_DATE, SHIFT_CD,
+		                               MANAGER_ID, HANDOVER_FROM, SUMMARY, INCIDENTS,
+		                               PMS_AUDIT_DONE_YN, CREATED_AT, UPDATED_AT)
+		VALUES (#{logId}, #{propCd}, #{cmpxCd}, #{dutyDate}, #{shiftCd},
+		        #{managerId}, #{handoverFrom}, #{summary}, #{incidents},
+		        #{pmsAuditDoneYn}, NOW(), NOW())
+	</insert>
+
+	<select id="selectDutyLogList" parameterType="map" resultType="map">
+		SELECT LOG_ID AS logId, PROP_CD AS propCd, CMPX_CD AS cmpxCd,
+		       DUTY_DATE AS dutyDate, SHIFT_CD AS shiftCd,
+		       MANAGER_ID AS managerId, HANDOVER_FROM AS handoverFrom, HANDOVER_TO AS handoverTo,
+		       SUMMARY AS summary, INCIDENTS AS incidents,
+		       PMS_AUDIT_DONE_YN AS pmsAuditDoneYn,
+		       CREATED_AT AS createdAt, UPDATED_AT AS updatedAt
+		  FROM INV.CCS_DUTY_LOG
+		 WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd}
+		<if test="dutyDateFrom != null and dutyDateFrom != ''">AND DUTY_DATE &gt;= #{dutyDateFrom}</if>
+		<if test="dutyDateTo != null and dutyDateTo != ''">AND DUTY_DATE &lt;= #{dutyDateTo}</if>
+		 ORDER BY DUTY_DATE DESC, SHIFT_CD ASC
+	</select>
+
+	<select id="selectDutyLog" resultType="map">
+		SELECT LOG_ID AS logId, PROP_CD AS propCd, CMPX_CD AS cmpxCd,
+		       DUTY_DATE AS dutyDate, SHIFT_CD AS shiftCd,
+		       MANAGER_ID AS managerId, HANDOVER_FROM AS handoverFrom, HANDOVER_TO AS handoverTo,
+		       SUMMARY AS summary, INCIDENTS AS incidents,
+		       PMS_AUDIT_DONE_YN AS pmsAuditDoneYn,
+		       CREATED_AT AS createdAt, UPDATED_AT AS updatedAt
+		  FROM INV.CCS_DUTY_LOG
+		 WHERE LOG_ID = #{logId}
+	</select>
+
+	<select id="selectDutyLogToday" resultType="map">
+		SELECT LOG_ID AS logId, PROP_CD AS propCd, CMPX_CD AS cmpxCd,
+		       DUTY_DATE AS dutyDate, SHIFT_CD AS shiftCd,
+		       MANAGER_ID AS managerId, HANDOVER_FROM AS handoverFrom, HANDOVER_TO AS handoverTo,
+		       SUMMARY AS summary, INCIDENTS AS incidents,
+		       PMS_AUDIT_DONE_YN AS pmsAuditDoneYn,
+		       CREATED_AT AS createdAt, UPDATED_AT AS updatedAt
+		  FROM INV.CCS_DUTY_LOG
+		 WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd}
+		   AND DUTY_DATE = CURDATE()
+		<if test="shift != null and shift != ''">AND SHIFT_CD = #{shift}</if>
+		 ORDER BY CREATED_AT DESC LIMIT 1
+	</select>
+
+	<update id="updateDutyLogHandover" parameterType="map">
+		UPDATE INV.CCS_DUTY_LOG
+		   SET HANDOVER_TO = #{handoverTo},
+		       SUMMARY = COALESCE(#{summary}, SUMMARY),
+		       INCIDENTS = COALESCE(#{incidents}, INCIDENTS),
+		       UPDATED_AT = NOW()
+		 WHERE LOG_ID = #{logId}
+	</update>
+
+	<update id="updateDutyLogClose" parameterType="map">
+		UPDATE INV.CCS_DUTY_LOG
+		   SET SUMMARY = COALESCE(#{summary}, SUMMARY),
+		       INCIDENTS = COALESCE(#{incidents}, INCIDENTS),
+		       PMS_AUDIT_DONE_YN = COALESCE(#{pmsAuditDoneYn}, PMS_AUDIT_DONE_YN),
+		       UPDATED_AT = NOW()
+		 WHERE LOG_ID = #{logId}
+	</update>
+
+	<!-- PMS 야간감사 상태 placeholder — 실제 PMS 테이블(NIGHT_AUDIT 등) 미접근, 고정 'N' 리턴.
+	     VPN 접속 후 PMS.HT_ROOM_PRICE / PMS.NIGHT_AUDIT_STATUS 등으로 교체 예정 -->
+	<select id="selectPmsNightAuditStatus" resultType="map">
+		SELECT #{propCd} AS propCd, #{dateYmd} AS dateYmd, 'N' AS auditDoneYn, NULL AS auditAt
+	</select>
+
+	<!-- ═══════════ CCS_AUDIT_LOG (Phase E) ═══════════ -->
+
+	<insert id="insertAuditLog" parameterType="map">
+		INSERT INTO INV.CCS_AUDIT_LOG (AUDIT_ID, PROP_CD, CMPX_CD, ACTOR_ID, ACTOR_TYPE,
+		                                ACTION, DOMAIN, ENTITY_ID,
+		                                BEFORE_JSON, AFTER_JSON, CREATED_AT)
+		VALUES (#{auditId}, #{propCd}, #{cmpxCd}, #{actorId}, #{actorType},
+		        #{action}, #{domain}, #{entityId},
+		        #{beforeJson}, #{afterJson}, NOW())
+	</insert>
+
+	<select id="selectAuditLogList" parameterType="map" resultType="map">
+		SELECT AUDIT_ID AS auditId, PROP_CD AS propCd, CMPX_CD AS cmpxCd,
+		       ACTOR_ID AS actorId, ACTOR_TYPE AS actorType,
+		       ACTION AS action, DOMAIN AS domain, ENTITY_ID AS entityId,
+		       BEFORE_JSON AS beforeJson, AFTER_JSON AS afterJson,
+		       CREATED_AT AS createdAt
+		  FROM INV.CCS_AUDIT_LOG
+		 WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd}
+		<if test="domain != null and domain != ''">AND DOMAIN = #{domain}</if>
+		<if test="action != null and action != ''">AND ACTION = #{action}</if>
+		<if test="actorId != null and actorId != ''">AND ACTOR_ID = #{actorId}</if>
+		<if test="fromDt != null and fromDt != ''">AND CREATED_AT &gt;= #{fromDt}</if>
+		<if test="toDt != null and toDt != ''">AND CREATED_AT &lt;= #{toDt}</if>
+		 ORDER BY CREATED_AT DESC
+		 LIMIT 500
+	</select>
+
+	<!-- ═══════════ Reports (Phase E) ═══════════ -->
+
+	<select id="selectDailyReport" parameterType="map" resultType="map">
+		SELECT DATE(CREATED_AT) AS dateYmd,
+		       DEPT_CD AS deptCd, SOURCE_TYPE AS sourceType,
+		       COUNT(*) AS requestCount,
+		       SUM(CASE WHEN STATUS_CD = 'DONE' THEN 1 ELSE 0 END) AS doneCount,
+		       AVG(CASE WHEN STATUS_CD = 'DONE' THEN TIMESTAMPDIFF(MINUTE, CREATED_AT, UPDATED_AT) END) AS avgElapsedMin
+		  FROM INV.CCS_TASK
+		 WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd}
+		<if test="fromDt != null and fromDt != ''">AND CREATED_AT &gt;= #{fromDt}</if>
+		<if test="toDt != null and toDt != ''">AND CREATED_AT &lt;= #{toDt}</if>
+		 GROUP BY DATE(CREATED_AT), DEPT_CD, SOURCE_TYPE
+		 ORDER BY dateYmd DESC, deptCd, sourceType
+	</select>
+
+	<select id="selectSlaReport" parameterType="map" resultType="map">
+		SELECT DEPT_CD AS deptCd, SOURCE_TYPE AS sourceType,
+		       COUNT(*) AS totalCount,
+		       SUM(CASE WHEN STATUS_CD = 'DONE' THEN 1 ELSE 0 END) AS doneCount,
+		       AVG(CASE WHEN STATUS_CD = 'DONE' THEN TIMESTAMPDIFF(MINUTE, CREATED_AT, UPDATED_AT) END) AS avgElapsedMin,
+		       MAX(CASE WHEN STATUS_CD = 'DONE' THEN TIMESTAMPDIFF(MINUTE, CREATED_AT, UPDATED_AT) END) AS maxElapsedMin
+		  FROM INV.CCS_TASK
+		 WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd}
+		<if test="fromDt != null and fromDt != ''">AND CREATED_AT &gt;= #{fromDt}</if>
+		<if test="toDt != null and toDt != ''">AND CREATED_AT &lt;= #{toDt}</if>
+		 GROUP BY DEPT_CD, SOURCE_TYPE
+	</select>
+
+	<select id="selectHeatmapReport" parameterType="map" resultType="map">
+		SELECT DAYOFWEEK(CREATED_AT) AS dow,
+		       HOUR(CREATED_AT) AS hour,
+		       COUNT(*) AS cnt
+		  FROM INV.CCS_TASK
+		 WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd}
+		<if test="fromDt != null and fromDt != ''">AND CREATED_AT &gt;= #{fromDt}</if>
+		<if test="toDt != null and toDt != ''">AND CREATED_AT &lt;= #{toDt}</if>
+		 GROUP BY DAYOFWEEK(CREATED_AT), HOUR(CREATED_AT)
+		 ORDER BY dow, hour
+	</select>
+
 </mapper>

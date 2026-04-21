@@ -37,6 +37,7 @@ public interface PmsSyncAdapter {
 	default void syncRental(Map<String, Object> payload) {}
 
 	/**
-	 * 당직 로그는 PMS 미보유 도메인이라 기본 구현 자체 없음 (future reserved).
+	 * 당직 로그는 PMS 미보유 도메인이지만 야간감사 연동 가능 (future reserved).
 	 */
+	default void syncDuty(Map<String, Object> payload) {}
 }

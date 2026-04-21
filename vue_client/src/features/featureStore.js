@@ -19,8 +19,11 @@ export const FEATURE_META = {
 	LATE_CO: { to: '/late-checkout', icon: '⏰', labels: { ko: '레이트 체크아웃', en: 'Late Checkout', ja: 'レイトチェックアウト', zh: '延迟退房' } },
 	CHAT:    { to: '/chat',          icon: '🤖', labels: { ko: 'AI 컨시어지',    en: 'AI Concierge',  ja: 'AIコンシェルジュ',     zh: 'AI礼宾' } },
 	NEARBY:  { to: '/nearby',        icon: '📍', labels: { ko: '주변 안내',      en: 'Nearby',        ja: '周辺案内',             zh: '周边信息' } },
-	PARKING: { to: '/parking',       icon: '🚗', labels: { ko: '주차',           en: 'Parking',       ja: '駐車',                 zh: '停车' } },
-	HISTORY: { to: '/history',       icon: '📋', labels: { ko: '요청 내역',      en: 'My Requests',   ja: 'リクエスト履歴',       zh: '请求记录' } }
+	PARKING:   { to: '/parking',       icon: '🚗', labels: { ko: '주차',           en: 'Parking',       ja: '駐車',                 zh: '停车' } },
+	LOSTFOUND: { to: '/lostfound',     icon: '🔍', labels: { ko: '분실물',         en: 'Lost & Found',  ja: '忘れ物',               zh: '失物招领' } },
+	VOC:       { to: '/voc',           icon: '💬', labels: { ko: '불편/의견',      en: 'Feedback',      ja: 'ご意見',               zh: '意见反馈' } },
+	RENTAL:    { to: '/rental',        icon: '🏷️', labels: { ko: '대여',           en: 'Rental',        ja: 'レンタル',             zh: '租借' } },
+	HISTORY:   { to: '/history',       icon: '📋', labels: { ko: '요청 내역',      en: 'My Requests',   ja: 'リクエスト履歴',       zh: '请求记录' } }
 };
 
 function authHeader() {

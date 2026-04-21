@@ -22,6 +22,9 @@ const routes = [
 	{ path: '/chat',          component: ChatView,         meta: { featureCd: 'CHAT' } },
 	{ path: '/nearby',        component: NearbyView,       meta: { featureCd: 'NEARBY' } },
 	{ path: '/parking',       component: ParkingView,      meta: { featureCd: 'PARKING' } },
+	{ path: '/lostfound',     component: () => import('../views/LostFoundView.vue'), meta: { featureCd: 'LOSTFOUND' } },
+	{ path: '/voc',           component: () => import('../views/VocView.vue'),        meta: { featureCd: 'VOC' } },
+	{ path: '/rental',        component: () => import('../views/RentalView.vue'),     meta: { featureCd: 'RENTAL' } },
 	{ path: '/history',       component: () => import('../views/HistoryView.vue') },
 	// 게스트 번들로 잘못 들어온 스태프/관리자 URL 은 홈으로 돌려보냄
 	{ path: '/:pathMatch(.*)*', redirect: '/home' }

@@ -371,6 +371,51 @@ com.daol.concierge.ccs/
 
 ## 🗓️ 진행 로그
 
+### 2026-04-20 → Phase B: 분실물(Lost & Found) + 고객 불만(VOC) 풀구현 ✅
+
+상용화 로드맵 Phase B 완료. **CCS 5대 본연 기능 중 ②, ③** 이 운영 가능 상태에 도달.
+
+**DB 마이그레이션** — `db/migrations/phase_b_lostfound_voc.sql` (DB 관리자가 수동 실행)
+- `INV.CCS_LOSTFOUND` — 분실물/습득물 통합 테이블, `REPORTER_TYPE=GUEST|STAFF` 로 분리, `MATCHED_LF_ID` 로 매칭 연결.
+- `INV.CCS_VOC` — 고객 불만, `SEVERITY` (LOW/NORMAL/HIGH/URGENT) + `SATISFACTION` (1~5).
+
+**백엔드 신설**
+- `ccs/lostfound/CcsLostFoundController.java` — `POST /api/ccs/lostfound` / `GET` 목록 / `PUT /{lfId}/status` / `PUT /{lfId}/match`.
+- `ccs/voc/CcsVocController.java` — `POST /api/ccs/voc` / `GET` / `PUT /{vocId}/status` / `PUT /{vocId}/resolve` / `POST /{vocId}/satisfaction`.
+- `ccs/service/CcsLostFoundService.java`, `ccs/service/CcsVocService.java` — INV 저장 → `PmsSyncAdapter` 전파(옵션) → WebSocket 5토픽 푸시.
+- `gr/GrController.java` — 게스트 신고 엔드포인트 `POST /api/gr/lostfound` / `POST /api/gr/voc` 추가 (게스트 토큰 인증).
+- `CcsSlaRules` — `LOSTFOUND:30 / VOC:30 / RENTAL:30 / DUTY:60` SLA 기본값 추가.
+- `CcsRoutingRuleDefault` — `LOSTFOUND / VOC / RENTAL → FR` 라우팅 추가.
+- `PmsSyncAdapter` + `DaolPmsSyncAdapter` — `syncDuty()` 메서드 추가, `syncVoc/syncLostFound` stub 호출 후 log.
+
+**WebSocket 토픽** — 기존 CCS 5토픽 계층 그대로: `/topic/ccs/dept/FR`, `/topic/ccs/cmpx/{propCd}/{cmpxCd}`, `/topic/ccs/prop/{propCd}`, `/topic/ccs/staff/{handlerId}`, 추가로 **URGENT VOC** 은 `/topic/ccs/esc/{propCd}` 로 관리자 토스트 즉시 푸시.
+
+**프론트 게스트**
+- `views/LostFoundView.vue` — 6 카테고리 chip(WALLET/PHONE/CLOTHING/ACCESSORY/DOCUMENT/ETC) + 물품명 + 위치 hint + 설명. Luxury gold/cream 스타일.
+- `views/VocView.vue` — 6 카테고리(FACILITY/CLEAN/SERVICE/NOISE/BILLING/ETC) + 심각도 radio(색상 코드) + 제목 + 본문.
+- `router/index.js` — `/lostfound`, `/voc`, `/rental` 라우트 등록 with `meta.featureCd`.
+- `features/featureStore.js` — `LOSTFOUND 🔍 / VOC 💬 / RENTAL 🏷️` FEATURE_META 4개 국어 라벨.
+- `chat/intent.js` — 4개 국어 regex 키워드 추가: 분실/lost/紛失/丢失 → `intent: 'lostfound'`; 불만/complaint/クレーム/投诉 → `intent: 'voc'`; 대여/rental/レンタル/租借 → `intent: 'rental'`.
+- `api/client.js` — `submitLostFound / submitVoc / submitRental` (guest client) + `fetchLostFoundList / createLostFound / updateLostFoundStatus / matchLostFound / fetchVocList / resolveVoc / rateVoc` (ccs client).
+- `i18n/ui.js` — `lostfound.*`, `voc.*`, `rental.*` + Phase C에 쓰일 `staff.*` / `admin.*` 키를 ko/en/ja/zh 4개 국어로 대량 등록.
+
+**프론트 스태프(관리자)**
+- `views/AdminLostFoundView.vue` — 상태/카테고리 필터 + 테이블 뷰(신고일시/카테고리/물품/위치/신고자/상태/액션) + 상세 모달. 액션 버튼 `FOUND / RETURNED / DISPOSED`.
+- `views/AdminVocView.vue` — 상태/심각도/카테고리 필터 + URGENT 빨강 / HIGH 주황 / NORMAL 기본 / LOW 회색 좌측 테두리 색상 코딩 + 해결 처리 모달(resolution 텍스트입력).
+- `router/staffRouter.js` — `/admin/lostfound`, `/admin/voc`, `/admin/rental`, `/admin/duty`, `/admin/reports`, `/admin/audit`, `/staff/duty` 라우트 등록.
+- `layouts/StaffShell.vue` — 관리자 그룹 네비게이션에 6개 메뉴 항목 추가 + **언어 스위처 셀렉트** (ko_KR/en_US/ja_JP/zh_CN, `sessionStorage['concierge.staffLang']` 보관, 선택 시 reload). i18n `shell.nav.*` 키 사용.
+
+**테스트**
+- `CcsLostFoundServiceTest` — 신규: `createReport_persistsAndPublishes`, `createReport_failsWithoutRequired` (InvMapperStub 로 DB 없이 동작 검증).
+- `CcsVocServiceTest` — 신규: `createReport_normal_noEscalation`, `createReport_urgent_triggersEscalation` (URGENT → `/topic/ccs/esc/` 푸시 검증).
+- `CcsRoutingRuleDefaultTest` — `LOSTFOUND/VOC/RENTAL → FR`, `DUTY → null` 케이스 추가.
+
+**Feature flag** — 현재는 별도 flag 없이 즉시 활성(CCS 본연 기능). 프로퍼티별 노출 제어는 `INV.CONCIERGE_FEATURE` 에 `LOSTFOUND/VOC/RENTAL` 행 추가로 가능.
+
+**파일 요약**: 백엔드 Java 4 신규 + 7 수정, SQL 1 신규, 프론트 Vue 4 신규 + 7 수정, 테스트 2 신규 + 1 수정. DB DDL 은 파일만 커밋, 실행은 VPN 접속 후 수동.
+
+---
+
 ### 2026-04-21 심야 2 — Phase A: PmsSyncAdapter 골격
 
 상용화 1.0 로드맵 Phase A 착수. 새 도메인(분실물/VOC/대여) 이 공통으로 쓸

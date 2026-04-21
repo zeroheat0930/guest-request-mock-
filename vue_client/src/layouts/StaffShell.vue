@@ -9,24 +9,56 @@
 				</div>
 			</div>
 
+			<!-- Lang switcher -->
+			<div class="lang-switch">
+				<label class="lang-label">{{ t('shell.lang') }}</label>
+				<select class="lang-select" :value="currentLang" @change="setLang($event.target.value)">
+					<option value="ko_KR">한국어</option>
+					<option value="en_US">English</option>
+					<option value="ja_JP">日本語</option>
+					<option value="zh_CN">中文</option>
+				</select>
+			</div>
+
 			<nav class="nav">
 				<div class="group" v-if="hasStaff">
-					<div class="group-label">스태프</div>
+					<div class="group-label">{{ t('shell.group.staff') }}</div>
 					<router-link to="/staff" class="item">
-						<span class="ic">📋</span><span class="label">대시보드</span>
+						<span class="ic">📋</span><span class="label">{{ t('shell.nav.dashboard') }}</span>
+					</router-link>
+					<router-link to="/staff/duty" class="item" v-if="hasStaff">
+						<span class="ic">🗓️</span><span class="label">{{ t('shell.nav.duty') }}</span>
 					</router-link>
 				</div>
 
 				<div class="group" v-if="hasAdmin">
-					<div class="group-label">관리자</div>
+					<div class="group-label">{{ t('shell.group.admin') }}</div>
 					<router-link to="/admin/features" class="item">
-						<span class="ic">⚙️</span><span class="label">기능 관리</span>
+						<span class="ic">⚙️</span><span class="label">{{ t('shell.nav.features') }}</span>
 					</router-link>
 					<router-link to="/admin/ccs" class="item">
-						<span class="ic">👥</span><span class="label">스태프 관리</span>
+						<span class="ic">👥</span><span class="label">{{ t('shell.nav.ccs') }}</span>
+					</router-link>
+					<router-link to="/admin/lostfound" class="item">
+						<span class="ic">🔍</span><span class="label">{{ t('shell.nav.lostfound') }}</span>
+					</router-link>
+					<router-link to="/admin/voc" class="item">
+						<span class="ic">💬</span><span class="label">{{ t('shell.nav.voc') }}</span>
+					</router-link>
+					<router-link to="/admin/rental" class="item">
+						<span class="ic">🏷️</span><span class="label">{{ t('shell.nav.rental') }}</span>
+					</router-link>
+					<router-link to="/admin/duty" class="item">
+						<span class="ic">🗓️</span><span class="label">{{ t('shell.nav.duty') }}</span>
+					</router-link>
+					<router-link to="/admin/reports" class="item">
+						<span class="ic">📊</span><span class="label">{{ t('shell.nav.reports') }}</span>
+					</router-link>
+					<router-link to="/admin/audit" class="item">
+						<span class="ic">📜</span><span class="label">{{ t('shell.nav.audit') }}</span>
 					</router-link>
 					<router-link to="/admin/qr" class="item">
-						<span class="ic">📷</span><span class="label">QR 생성</span>
+						<span class="ic">📷</span><span class="label">{{ t('shell.nav.qr') }}</span>
 					</router-link>
 				</div>
 			</nav>
@@ -39,7 +71,7 @@
 						<div class="role">{{ roleLabel }}</div>
 					</div>
 				</div>
-				<button class="logout" @click="logout" title="로그아웃">
+				<button class="logout" @click="logout" :title="t('shell.logout')">
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
 						stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 						<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -59,6 +91,7 @@
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { t } from '../i18n/ui.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -66,6 +99,27 @@ const router = useRouter();
 const staffToken = ref(null);
 const adminToken = ref(null);
 const staffInfo = ref({});
+const currentLang = ref('ko_KR');
+
+function readLang() {
+	try {
+		return sessionStorage.getItem('concierge.staffLang')
+			|| sessionStorage.getItem('concierge.perUseLang')
+			|| 'ko_KR';
+	} catch {
+		return 'ko_KR';
+	}
+}
+
+function setLang(value) {
+	try {
+		sessionStorage.setItem('concierge.staffLang', value);
+		sessionStorage.setItem('concierge.perUseLang', value);
+	} catch {}
+	currentLang.value = value;
+	// 간단한 전환: 페이지 새로고침 — reactive 전역 언어 스토어가 없으므로
+	window.location.reload();
+}
 
 function refreshAuth() {
 	try {
@@ -78,7 +132,10 @@ function refreshAuth() {
 	}
 }
 
-onMounted(refreshAuth);
+onMounted(() => {
+	refreshAuth();
+	currentLang.value = readLang();
+});
 watch(() => route.fullPath, refreshAuth);
 
 const hasStaff = computed(() => !!staffToken.value);
@@ -86,7 +143,7 @@ const hasAdmin = computed(() => !!adminToken.value);
 
 const displayName = computed(() => {
 	if (staffInfo.value?.staffNm) return staffInfo.value.staffNm;
-	if (hasAdmin.value) return '관리자';
+	if (hasAdmin.value) return t('shell.group.admin');
 	return '—';
 });
 
@@ -99,9 +156,9 @@ const roleLabel = computed(() => {
 	if (hasStaff.value && hasAdmin.value) return 'Staff · Admin';
 	if (hasStaff.value) {
 		const d = staffInfo.value?.deptCd;
-		return d ? `${d} Staff` : 'Staff';
+		return d ? `${d} · ${t('shell.group.staff')}` : t('shell.group.staff');
 	}
-	if (hasAdmin.value) return 'Admin';
+	if (hasAdmin.value) return t('shell.group.admin');
 	return '';
 });
 
@@ -111,7 +168,6 @@ function logout() {
 		sessionStorage.removeItem('ccs.staff');
 		sessionStorage.removeItem('concierge.adminToken');
 	} catch {}
-	// 스태프가 있으면 스태프 로그인으로, 아니면 어드민 로그인으로.
 	const target = hasStaff.value ? '/staff/login' : '/admin/login';
 	staffToken.value = null;
 	adminToken.value = null;
@@ -163,6 +219,32 @@ function logout() {
 	margin-top: 2px;
 }
 
+/* Language switcher */
+.lang-switch {
+	padding: 10px var(--sp-5);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.lang-label {
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 1.2px;
+	opacity: 0.5;
+	flex-shrink: 0;
+}
+.lang-select {
+	flex: 1;
+	padding: 6px 8px;
+	background: rgba(255,255,255,0.06);
+	color: #fff;
+	border: 1px solid rgba(255,255,255,0.1);
+	border-radius: 4px;
+	font-size: 12px;
+	cursor: pointer;
+}
+
 .nav {
 	flex: 1;
 	padding: var(--sp-4) var(--sp-3);
@@ -183,7 +265,7 @@ function logout() {
 	display: flex;
 	align-items: center;
 	gap: var(--sp-3);
-	padding: 12px 14px;
+	padding: 10px 14px;
 	border-radius: var(--r-md);
 	color: #cfd8dc;
 	text-decoration: none;
@@ -271,6 +353,7 @@ function logout() {
 		box-shadow: 0 4px 12px rgba(11, 31, 59, 0.18);
 	}
 	.brand { flex: 0 0 100%; padding: var(--sp-4) var(--sp-5); min-width: 0; }
+	.lang-switch { flex: 0 0 100%; padding: 6px var(--sp-5); }
 	.nav {
 		flex: 1 1 100%;
 		flex-direction: row;

@@ -72,4 +72,52 @@ public interface InvMapper {
 	Map<String, Object> selectTodayStats(@Param("propCd") String propCd,
 	                                      @Param("cmpxCd") String cmpxCd,
 	                                      @Param("deptCd") String deptCd);
+
+	// ── CCS_LOSTFOUND (Phase B) ──
+	int insertLostFound(Map<String, Object> param);
+	List<Map<String, Object>> selectLostFoundList(Map<String, Object> param);
+	Map<String, Object> selectLostFound(@Param("lfId") String lfId);
+	int updateLostFoundStatus(Map<String, Object> param);
+	int updateLostFoundMatch(Map<String, Object> param);
+
+	// ── CCS_VOC (Phase B) ──
+	int insertVoc(Map<String, Object> param);
+	List<Map<String, Object>> selectVocList(Map<String, Object> param);
+	Map<String, Object> selectVoc(@Param("vocId") String vocId);
+	int updateVocStatus(Map<String, Object> param);
+	int updateVocResolution(Map<String, Object> param);
+	int updateVocSatisfaction(Map<String, Object> param);
+
+	// ── CCS_RENTAL_ITEM (Phase D) ──
+	List<Map<String, Object>> selectRentalItems(@Param("propCd") String propCd, @Param("cmpxCd") String cmpxCd);
+	Map<String, Object> selectRentalItem(@Param("itemId") String itemId);
+	int insertRentalItem(Map<String, Object> param);
+	int updateRentalItem(Map<String, Object> param);
+	int updateRentalItemStock(Map<String, Object> param);
+
+	// ── CCS_RENTAL_ORDER (Phase D) ──
+	int insertRentalOrder(Map<String, Object> param);
+	List<Map<String, Object>> selectRentalOrderList(Map<String, Object> param);
+	Map<String, Object> selectRentalOrder(@Param("orderId") String orderId);
+	int updateRentalOrderStatus(Map<String, Object> param);
+
+	// ── CCS_DUTY_LOG (Phase D) ──
+	int insertDutyLog(Map<String, Object> param);
+	List<Map<String, Object>> selectDutyLogList(Map<String, Object> param);
+	Map<String, Object> selectDutyLog(@Param("logId") String logId);
+	Map<String, Object> selectDutyLogToday(@Param("propCd") String propCd,
+	                                        @Param("cmpxCd") String cmpxCd,
+	                                        @Param("shift") String shift);
+	int updateDutyLogHandover(Map<String, Object> param);
+	int updateDutyLogClose(Map<String, Object> param);
+	Map<String, Object> selectPmsNightAuditStatus(@Param("propCd") String propCd, @Param("dateYmd") String dateYmd);
+
+	// ── CCS_AUDIT_LOG (Phase E) ──
+	int insertAuditLog(Map<String, Object> param);
+	List<Map<String, Object>> selectAuditLogList(Map<String, Object> param);
+
+	// ── Reports (Phase E) ──
+	List<Map<String, Object>> selectDailyReport(Map<String, Object> param);
+	List<Map<String, Object>> selectSlaReport(Map<String, Object> param);
+	List<Map<String, Object>> selectHeatmapReport(Map<String, Object> param);
 }

@@ -21,6 +21,10 @@ public final class CcsSlaRules {
 			case "STAFF_REQ": return 60;  // 내부 요청
 			case "COMPLAINT": return 10;  // 불만 — 최우선
 			case "CHAT":      return 30;
+			case "LOSTFOUND": return 30;  // Phase B — 분실물 신고 응답
+			case "VOC":       return 30;  // Phase B — 고객 불만 응답
+			case "RENTAL":    return 30;  // Phase D — 대여 신청 처리
+			case "DUTY":      return 60;  // Phase D — 당직 로그
 			default:
 				if (sourceType.startsWith("HK_")) return 45;  // 하우스키핑 상태 변경
 				return 30;

@@ -25,7 +25,14 @@ const KW = {
 	hkDnd:     [/방해\s*금지|건드리지|들어오지/i, /do\s*not\s*disturb|dnd|don.?t\s*disturb/i, /(起こさないで|お休み|ドント\s*ディスターブ)/, /(请勿打扰|不要打扰)/],
 	hkClr:     [/해제|취소|풀어/i, /clear|cancel\s*dnd|remove/i, /(解除|キャンセル)/, /(取消|解除)/],
 
-	late:      [/(레이트|늦게|체크\s*아웃|연장|더\s*있)/i, /(late|extend|stay\s*longer|check\s*out)/i, /(レイト|延長|遅く|チェックアウト)/, /(延迟|延长|退房)/]
+	late:      [/(레이트|늦게|체크\s*아웃|연장|더\s*있)/i, /(late|extend|stay\s*longer|check\s*out)/i, /(レイト|延長|遅く|チェックアウト)/, /(延迟|延长|退房)/],
+
+	// Phase B — 분실물 / VOC
+	lostfound: [/(분실|잃어|잃어버|못\s*찾|놓고\s*왔)/i, /(lost|missing|find\s*my|can.?t\s*find)/i, /(紛失|忘れ|なくした|失くし)/, /(丢失|丢了|找不到|遗失)/],
+	voc:       [/(불만|불편|컴플|항의|피드백|문제\s*(가|있))/i, /(complaint|complain|issue|feedback|problem)/i, /(クレーム|苦情|不便|問題)/, /(投诉|不满|反馈|问题|意见)/],
+
+	// Phase D — 대여
+	rental:    [/(대여|빌려|빌리|렌탈)/i, /(rental|rent|borrow|loan)/i, /(レンタル|貸し|借り)/, /(租借|借用|借一)/]
 };
 
 const ITEM_MAP = {
@@ -140,7 +147,34 @@ export function parseIntentRule(text, ctx) {
 		};
 	}
 
-	// 4) 일반 채팅
+	// 4) 분실물 (Phase B)
+	if (matchAny(text, KW.lostfound)) {
+		return {
+			intent: 'lostfound',
+			reply: t(lang, 'thinking'),
+			payload: { description: text }
+		};
+	}
+
+	// 5) VOC / 불만 (Phase B)
+	if (matchAny(text, KW.voc)) {
+		return {
+			intent: 'voc',
+			reply: t(lang, 'thinking'),
+			payload: { content: text, severity: 'NORMAL' }
+		};
+	}
+
+	// 6) 대여 (Phase D)
+	if (matchAny(text, KW.rental)) {
+		return {
+			intent: 'rental',
+			reply: t(lang, 'thinking'),
+			payload: { note: text }
+		};
+	}
+
+	// 7) 일반 채팅
 	return {
 		intent: 'chat',
 		reply: t(lang, 'intentChat'),

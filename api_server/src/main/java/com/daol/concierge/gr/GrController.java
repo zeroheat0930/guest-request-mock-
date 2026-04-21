@@ -1,15 +1,21 @@
 package com.daol.concierge.gr;
 
+import com.daol.concierge.ccs.service.CcsLostFoundService;
+import com.daol.concierge.ccs.service.CcsVocService;
 import com.daol.concierge.core.api.ApiResponse;
 import com.daol.concierge.core.api.Responses;
 import com.daol.concierge.core.controller.BaseController;
 import com.daol.concierge.core.parameter.RequestParams;
 import com.daol.concierge.gr.service.GrService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 투숙객 요청(Guest Request) 컨트롤러
@@ -20,6 +26,12 @@ public class GrController extends BaseController {
 
 	@Autowired
 	private GrService grService;
+
+	@Autowired(required = false) private CcsLostFoundService lostFoundService;
+	@Autowired(required = false) private CcsVocService vocService;
+
+	@Value("${concierge.tenant.prop-cd:0000000001}") private String propCd;
+	@Value("${concierge.tenant.cmpx-cd:00001}") private String cmpxCd;
 
 	/**
 	 * 예약 단건 조회 (챗봇이 perUseLang/roomNo 가져가는 용도)
@@ -121,5 +133,36 @@ public class GrController extends BaseController {
 	@RequestMapping(value = "/parking", method = RequestMethod.POST, produces = APPLICATION_JSON)
 	public ApiResponse insertParkingReq(RequestParams requestParams) {
 		return Responses.MapResponse.of(grService.insertParkingReq(requestParams.getParams()));
+	}
+
+	/**
+	 * 분실물 신고 (게스트) — Phase B.
+	 * CCS_LOSTFOUND 에 REPORTER_TYPE='GUEST' 로 저장 후 FR 부서에 실시간 푸시.
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/lostfound", method = RequestMethod.POST, produces = APPLICATION_JSON)
+	public ApiResponse insertLostFound(RequestParams requestParams) {
+		Map<String, Object> body = new HashMap<>(requestParams.getParams());
+		body.putIfAbsent("propCd", propCd);
+		body.putIfAbsent("cmpxCd", cmpxCd);
+		body.put("reporterType", "GUEST");
+		// rsvNo 를 reporterRef 로 설정 (게스트 신원)
+		Object rsv = body.get("rsvNo");
+		if (rsv != null) body.put("reporterRef", String.valueOf(rsv));
+		Map<String, Object> saved = lostFoundService.createReport(body);
+		return Responses.MapResponse.of(saved);
+	}
+
+	/**
+	 * VOC(고객 불만) 접수 (게스트) — Phase B.
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/voc", method = RequestMethod.POST, produces = APPLICATION_JSON)
+	public ApiResponse insertVoc(RequestParams requestParams) {
+		Map<String, Object> body = new HashMap<>(requestParams.getParams());
+		body.putIfAbsent("propCd", propCd);
+		body.putIfAbsent("cmpxCd", cmpxCd);
+		Map<String, Object> saved = vocService.createReport(body);
+		return Responses.MapResponse.of(saved);
 	}
 }

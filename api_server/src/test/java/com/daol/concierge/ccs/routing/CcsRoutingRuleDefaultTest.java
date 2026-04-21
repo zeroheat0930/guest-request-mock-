@@ -48,4 +48,25 @@ class CcsRoutingRuleDefaultTest {
     void unknownTypeReturnsNull() {
         assertNull(rule.deptCdFor("UNKNOWN_TYPE"));
     }
+
+    @Test
+    void lostFoundRoutesToFr() {
+        assertEquals("FR", rule.deptCdFor("LOSTFOUND"));
+    }
+
+    @Test
+    void vocRoutesToFr() {
+        assertEquals("FR", rule.deptCdFor("VOC"));
+    }
+
+    @Test
+    void rentalRoutesToFr() {
+        assertEquals("FR", rule.deptCdFor("RENTAL"));
+    }
+
+    @Test
+    void dutyReturnsNull() {
+        // DUTY 는 부서 라우팅 없음 — 관리자 전용 도메인
+        assertNull(rule.deptCdFor("DUTY"));
+    }
 }

@@ -13,12 +13,17 @@ import java.util.Map;
 @Component
 public class CcsRoutingRuleDefault {
 
-	private static final Map<String, String> DEFAULTS = Map.of(
-		"AMENITY",	"HK",
-		"HK",		"HK",
-		"LATE_CO",	"FR",
-		"PARKING",	"ENG"
-		// CHAT, NEARBY → null (무시)
+	private static final Map<String, String> DEFAULTS = Map.ofEntries(
+		Map.entry("AMENITY",   "HK"),
+		Map.entry("HK",        "HK"),
+		Map.entry("LATE_CO",   "FR"),
+		Map.entry("PARKING",   "ENG"),
+		// Phase B — 분실물/VOC 는 FR(프론트데스크) 가 1차 접수
+		Map.entry("LOSTFOUND", "FR"),
+		Map.entry("VOC",       "FR"),
+		// Phase D — 대여는 FR 가 접수 (Staff 직접 관리)
+		Map.entry("RENTAL",    "FR")
+		// CHAT, NEARBY, DUTY → null (무시 — DUTY 는 관리자 전용)
 	);
 
 	/**
