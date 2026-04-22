@@ -174,6 +174,11 @@ export const fetchCcsDeptLoad = (deptCd) => ccsClient.get(`/dept/${encodeURIComp
 
 export const fetchCcsStatsToday = (deptCd) => ccsClient.get('/stats/today', { params: { deptCd } });
 
+// 관리자 컨텍스트 — PMS 의 property-complex 선택 모달 대응
+export const fetchAccessibleProperties = ()        => ccsClient.get('/common/properties');
+export const fetchAccessibleComplexes  = (propCd)  => ccsClient.get('/common/complexes', { params: { propCd } });
+export const fetchCurrentContext       = ()        => ccsClient.get('/common/me');
+
 // ─────────────────────────────────────────────
 // CCS 관리자용 — 분실물 / VOC / 대여 / 당직 / 리포트 / 감사 (Phase B/D/E)
 // ─────────────────────────────────────────────
@@ -211,12 +216,13 @@ export const fetchAuditLog        = (params)          => ccsClient.get('/audit',
 // ─────────────────────────────────────────────
 // Admin — /api/concierge/admin/**
 // ─────────────────────────────────────────────
+// 관리자 API 도 스태프 JWT (ccs.token) 를 재사용. 서버가 userTp(PMS_USER_MTR)로 역할 판정.
 function attachAdminAuthHeader(config) {
 	try {
-		const token = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('concierge.adminToken');
+		const token = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ccs.token');
 		if (token) {
 			config.headers = config.headers || {};
-			config.headers['X-Admin-Token'] = token;
+			config.headers.Authorization = `Bearer ${token}`;
 		}
 	} catch {}
 	return config;

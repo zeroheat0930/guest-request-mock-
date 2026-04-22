@@ -3,13 +3,14 @@
 		<div class="head">
 			<h2>🧑‍🍳 {{ t('admin.ccs.title') }}</h2>
 			<div class="bar">
-				<label>propCd
-					<input v-model="propCd" @change="load" />
-				</label>
-				<label>cmpxCd
-					<input v-model="cmpxCd" @change="load" />
-				</label>
-				<button @click="load" :disabled="busy">{{ t('admin.ccs.refresh') }}</button>
+				<span class="ctx-chip">🏨 {{ ctx.propCd.value }} / {{ ctx.cmpxCd.value }}</span>
+				<button v-if="ctx.canPickProperty.value || ctx.canPickComplex.value"
+					class="ghost"
+					@click="goContextSelect"
+					:title="t('ctx.change')">
+					🔄 {{ t('ctx.change') }}
+				</button>
+				<button class="search" @click="load" :disabled="busy">🔍 {{ t('admin.ccs.search') }}</button>
 				<button class="ghost" @click="goBack">{{ t('admin.ccs.back') }}</button>
 			</div>
 		</div>
@@ -137,7 +138,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
 import { API_BASE } from '../api/client.js';
@@ -147,12 +148,17 @@ import {
 	deleteAdminDept,
 } from '../api/client.js';
 import { t } from '../i18n/ui.js';
+import { useAdminContext } from '../composables/useAdminContext.js';
 
-const TOKEN_KEY = 'concierge.adminToken';
+const TOKEN_KEY = 'ccs.token';  // 스태프 JWT 재사용
 
 const router = useRouter();
-const propCd = ref('0000000010');
-const cmpxCd = ref('00001');
+const ctx = useAdminContext();
+// 선택된 호텔 컨텍스트 사용 (ctx.propCd / ctx.cmpxCd 는 이미 computed)
+const propCd = computed(() => ctx.propCd.value);
+const cmpxCd = computed(() => ctx.cmpxCd.value);
+
+function goContextSelect() { router.push('/staff/context'); }
 const depts = ref([]);
 const staffList = ref([]);
 const busy = ref(false);
@@ -173,7 +179,7 @@ function getToken() {
 
 function gotoLogin() {
 	try { sessionStorage.removeItem(TOKEN_KEY); } catch {}
-	router.replace('/admin/login');
+	router.replace('/staff/login');
 }
 
 function goBack() {
@@ -191,7 +197,7 @@ async function load() {
 	err.value = '';
 	busy.value = true;
 	try {
-		const headers = { 'X-Admin-Token': tok };
+		const headers = { Authorization: `Bearer ${tok}` };
 		const params = { propCd: propCd.value, cmpxCd: cmpxCd.value };
 
 		const [deptRes, staffRes] = await Promise.all([
@@ -297,7 +303,21 @@ onMounted(() => {
 .bar input { padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; width: 120px; }
 .bar button { padding: 8px 14px; border: 1px solid #cbd5e0; background: #f7fafc; border-radius: 6px; cursor: pointer; font-size: 13px; }
 .bar button:disabled { opacity: 0.5; cursor: not-allowed; }
+.bar button.search { background: #1a3a6e; color: #fff; border-color: #1a3a6e; font-weight: 600; }
+.bar button.icon { padding: 8px 10px; }
 .bar button.ghost { background: transparent; color: #4a5568; }
+.ctx-chip {
+	display: inline-flex;
+	align-items: center;
+	padding: 6px 12px;
+	background: #edf4ff;
+	color: #1a3a6e;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+	font-family: ui-monospace, Menlo, monospace;
+	letter-spacing: 0.3px;
+}
 
 .err { background: #fff5f5; color: #c53030; padding: 10px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; }
 .success { background: #f0fff4; color: #276749; padding: 10px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; border: 1px solid #c6f6d5; }

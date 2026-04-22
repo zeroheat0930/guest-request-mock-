@@ -112,4 +112,29 @@
 		 ORDER BY A.USER_NM
 	</select>
 
+	<!-- ═══════════ PMS_PROPERTY / PMS_COMPLEX (관리자 컨텍스트 선택) ═══════════ -->
+
+	<select id="selectProperty" resultType="map">
+		SELECT A.PROP_CD AS propCd, A.PROP_SHRT_NM AS propShrtNm, A.PROP_FULL_NM AS propFullNm
+		  FROM PMS.PMS_PROPERTY A
+		 WHERE A.PROP_CD = #{propCd}
+		   AND A.USE_YN  = 'Y'
+	</select>
+
+	<select id="selectPropertyList" resultType="map">
+		SELECT A.PROP_CD AS propCd, A.PROP_SHRT_NM AS propShrtNm, A.PROP_FULL_NM AS propFullNm
+		  FROM PMS.PMS_PROPERTY A
+		 WHERE A.USE_YN = 'Y'
+		 ORDER BY A.PROP_CD
+	</select>
+
+	<select id="selectComplexListByProp" resultType="map">
+		SELECT A.PROP_CD AS propCd, A.CMPX_CD AS cmpxCd, A.CMPX_NM AS cmpxNm,
+		       A.CMPX_REPR_USER_NM AS cmpxReprUserNm, A.CMPX_REPR_TEL AS cmpxReprTel
+		  FROM PMS.PMS_COMPLEX A
+		 WHERE A.PROP_CD = #{propCd}
+		   AND A.USE_YN  = 'Y'
+		 ORDER BY A.CMPX_CD
+	</select>
+
 </mapper>

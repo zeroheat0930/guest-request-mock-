@@ -20,6 +20,17 @@
 				</select>
 			</div>
 
+			<!-- 현재 선택된 호텔 (관리자만) -->
+			<div v-if="hasAdmin && currentPropCd" class="hotel-bar">
+				<div class="hotel-info">
+					<div class="hotel-label">🏨 {{ t('shell.currentHotel') }}</div>
+					<div class="hotel-code">{{ currentPropCd }} / {{ currentCmpxCd }}</div>
+				</div>
+				<button v-if="canChangeHotel" class="hotel-change" @click="goChangeHotel" :title="t('ctx.change')">
+					🔄
+				</button>
+			</div>
+
 			<nav class="nav">
 				<div class="group" v-if="hasStaff">
 					<div class="group-label">{{ t('shell.group.staff') }}</div>
@@ -97,7 +108,6 @@ const route = useRoute();
 const router = useRouter();
 
 const staffToken = ref(null);
-const adminToken = ref(null);
 const staffInfo = ref({});
 const currentLang = ref('ko_KR');
 
@@ -124,7 +134,6 @@ function setLang(value) {
 function refreshAuth() {
 	try {
 		staffToken.value = sessionStorage.getItem('ccs.token');
-		adminToken.value = sessionStorage.getItem('concierge.adminToken');
 		const raw = sessionStorage.getItem('ccs.staff');
 		staffInfo.value = raw ? JSON.parse(raw) : {};
 	} catch {
@@ -139,13 +148,15 @@ onMounted(() => {
 watch(() => route.fullPath, refreshAuth);
 
 const hasStaff = computed(() => !!staffToken.value);
-const hasAdmin = computed(() => !!adminToken.value);
 
-const displayName = computed(() => {
-	if (staffInfo.value?.staffNm) return staffInfo.value.staffNm;
-	if (hasAdmin.value) return t('shell.group.admin');
-	return '—';
-});
+// 관리자 역할은 PMS_USER_MTR.USER_TP 기반 (00001/00002/00003 중 하나)
+const userTp = computed(() => staffInfo.value?.userTp || '');
+const isSystemAdmin   = computed(() => userTp.value === '00001');
+const isPropertyAdmin = computed(() => userTp.value === '00002');
+const isComplexAdmin  = computed(() => userTp.value === '00003');
+const hasAdmin = computed(() => isSystemAdmin.value || isPropertyAdmin.value || isComplexAdmin.value);
+
+const displayName = computed(() => staffInfo.value?.staffNm || '—');
 
 const initial = computed(() => {
 	const n = displayName.value;
@@ -153,26 +164,39 @@ const initial = computed(() => {
 });
 
 const roleLabel = computed(() => {
-	if (hasStaff.value && hasAdmin.value) return 'Staff · Admin';
-	if (hasStaff.value) {
-		const d = staffInfo.value?.deptCd;
-		return d ? `${d} · ${t('shell.group.staff')}` : t('shell.group.staff');
-	}
-	if (hasAdmin.value) return t('shell.group.admin');
-	return '';
+	if (!hasStaff.value) return '';
+	if (isSystemAdmin.value)   return t('role.sysAdmin');
+	if (isPropertyAdmin.value) return t('role.propAdmin');
+	if (isComplexAdmin.value)  return t('role.cmpxAdmin');
+	const d = staffInfo.value?.deptCd;
+	return d ? `${d} · ${t('shell.group.staff')}` : t('shell.group.staff');
 });
 
 function logout() {
 	try {
 		sessionStorage.removeItem('ccs.token');
 		sessionStorage.removeItem('ccs.staff');
-		sessionStorage.removeItem('concierge.adminToken');
+		sessionStorage.removeItem('ccs.context');
+		sessionStorage.removeItem('concierge.adminToken'); // 구버전 흔적 제거
 	} catch {}
-	const target = hasStaff.value ? '/staff/login' : '/admin/login';
 	staffToken.value = null;
-	adminToken.value = null;
-	router.replace(target);
+	staffInfo.value = {};
+	router.replace('/staff/login');
 }
+
+function goChangeHotel() {
+	router.push('/staff/context');
+}
+
+// 현재 선택된 호텔 표시 (context 없으면 빈 값)
+const currentPropCd = computed(() => {
+	try { return JSON.parse(sessionStorage.getItem('ccs.context') || '{}').propCd || ''; } catch { return ''; }
+});
+const currentCmpxCd = computed(() => {
+	try { return JSON.parse(sessionStorage.getItem('ccs.context') || '{}').cmpxCd || ''; } catch { return ''; }
+});
+// CMPX_ADMIN 은 호텔 변경 불가
+const canChangeHotel = computed(() => isSystemAdmin.value || isPropertyAdmin.value);
 </script>
 
 <style scoped>
@@ -244,6 +268,50 @@ function logout() {
 	font-size: 12px;
 	cursor: pointer;
 }
+.lang-select option {
+	color: #1a202c;
+	background: #fff;
+}
+
+/* Current hotel bar (관리자 전용) */
+.hotel-bar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px var(--sp-5);
+	background: rgba(255, 255, 255, 0.04);
+	border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.hotel-info { flex: 1; min-width: 0; }
+.hotel-label {
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	opacity: 0.55;
+	margin-bottom: 2px;
+}
+.hotel-code {
+	font-size: 13px;
+	font-weight: 700;
+	color: #fff;
+	font-family: ui-monospace, Menlo, Consolas, monospace;
+	letter-spacing: 0.5px;
+}
+.hotel-change {
+	background: rgba(255,255,255,0.08);
+	color: #fff;
+	border: 1px solid rgba(255,255,255,0.12);
+	border-radius: 6px;
+	width: 32px;
+	height: 32px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	font-size: 14px;
+	transition: background 0.15s;
+}
+.hotel-change:hover { background: rgba(255,255,255,0.14); }
 
 .nav {
 	flex: 1;

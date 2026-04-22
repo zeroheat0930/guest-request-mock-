@@ -269,6 +269,32 @@ const messages = {
   // Staff layout (Phase C)
   'shell.group.staff':      { ko: '스태프',        en: 'Staff',            ja: 'スタッフ',            zh: '员工' },
   'shell.group.admin':      { ko: '관리자',        en: 'Admin',            ja: '管理者',              zh: '管理员' },
+
+  // PMS_USER_MTR.USER_TP 기반 역할 라벨 (StaffShell.roleLabel 이 사용)
+  'role.sysAdmin':          { ko: '시스템 관리자',  en: 'System Admin',     ja: 'システム管理者',      zh: '系统管理员' },
+  'role.propAdmin':         { ko: '프로퍼티 관리자', en: 'Property Admin',  ja: 'プロパティ管理者',    zh: '物业管理员' },
+  'role.cmpxAdmin':         { ko: '컴플렉스 관리자', en: 'Complex Admin',   ja: 'コンプレックス管理者', zh: '综合体管理员' },
+  'role.staff':             { ko: '스태프',          en: 'Staff',           ja: 'スタッフ',            zh: '员工' },
+
+  // 관리자 화면 공통 스코프 안내
+  'admin.scope.locked':     { ko: '권한상 수정 불가', en: 'Scope locked by role', ja: '権限により変更不可', zh: '权限限制无法修改' },
+
+  // 호텔 선택 (PMS property-complex-modal 대응)
+  'ctx.title':              { ko: '관리할 호텔 선택',      en: 'Select Hotel to Manage',   ja: '管理するホテルを選択',  zh: '选择要管理的酒店' },
+  'ctx.property':           { ko: '프로퍼티',              en: 'Property',                 ja: 'プロパティ',            zh: '物业' },
+  'ctx.complex':            { ko: '호텔 (컴플렉스)',       en: 'Hotel (Complex)',          ja: 'ホテル（コンプレックス）', zh: '酒店 (综合体)' },
+  'ctx.selectProperty':     { ko: '프로퍼티를 선택하세요', en: 'Select a property…',       ja: 'プロパティを選択',      zh: '请选择物业' },
+  'ctx.pickPropertyFirst':  { ko: '먼저 프로퍼티를 선택',  en: 'Pick a property first',    ja: '先にプロパティを選択',  zh: '请先选择物业' },
+  'ctx.noComplex':          { ko: '접근 가능한 호텔이 없습니다', en: 'No accessible hotels', ja: 'アクセス可能なホテルなし', zh: '无可访问的酒店' },
+  'ctx.loading':            { ko: '불러오는 중…',          en: 'Loading…',                 ja: '読み込み中…',           zh: '加载中…' },
+  'ctx.enter':              { ko: '관리 콘솔 진입',        en: 'Enter Console',            ja: 'コンソールに入る',      zh: '进入控制台' },
+  'ctx.entering':           { ko: '진입 중…',              en: 'Entering…',                ja: '進入中…',               zh: '进入中…' },
+  'ctx.change':             { ko: '호텔 변경',             en: 'Change Hotel',             ja: 'ホテル変更',            zh: '更改酒店' },
+  'ctx.propertyLocked':     { ko: '본인 범위의 프로퍼티로 고정됨', en: 'Fixed to your scope', ja: '本人の範囲に固定',     zh: '固定为本人范围' },
+
+  // StaffShell 현재 호텔 배너
+  'shell.currentHotel':     { ko: '현재 관리 호텔',        en: 'Managing',                 ja: '管理中',                zh: '正在管理' },
+
   'shell.nav.dashboard':    { ko: '대시보드',      en: 'Dashboard',        ja: 'ダッシュボード',      zh: '仪表盘' },
   'shell.nav.features':     { ko: '기능 관리',     en: 'Features',         ja: '機能管理',            zh: '功能管理' },
   'shell.nav.ccs':          { ko: '스태프 관리',   en: 'Staff Mgmt',       ja: 'スタッフ管理',        zh: '员工管理' },
@@ -381,6 +407,7 @@ const messages = {
   // Admin Features (Phase C+ sweep)
   'admin.features.manage.title': { ko: '컨시어지 기능 관리', en: 'Concierge Feature Management', ja: 'コンシェルジュ機能管理', zh: '礼宾功能管理' },
   'admin.features.refresh':      { ko: '새로고침',           en: 'Refresh',                      ja: '更新',                   zh: '刷新' },
+  'admin.features.search':       { ko: '조회',               en: 'Search',                       ja: '検索',                   zh: '查询' },
   'admin.features.save':         { ko: '저장',               en: 'Save',                         ja: '保存',                   zh: '保存' },
   'admin.features.on':           { ko: '사용',               en: 'On',                           ja: '有効',                   zh: '启用' },
   'admin.features.off':          { ko: '미사용',             en: 'Off',                          ja: '無効',                   zh: '停用' },
@@ -395,6 +422,7 @@ const messages = {
   // Admin CCS (Phase C+ sweep)
   'admin.ccs.title':             { ko: 'CCS 스태프 관리',   en: 'CCS Staff Management',         ja: 'CCSスタッフ管理',        zh: 'CCS员工管理' },
   'admin.ccs.refresh':           { ko: '새로고침',           en: 'Refresh',                      ja: '更新',                   zh: '刷新' },
+  'admin.ccs.search':            { ko: '조회',               en: 'Search',                       ja: '検索',                   zh: '查询' },
   'admin.ccs.back':              { ko: '뒤로',               en: 'Back',                         ja: '戻る',                   zh: '返回' },
   'admin.ccs.save':              { ko: '저장',               en: 'Save',                         ja: '保存',                   zh: '保存' },
   'admin.ccs.cancel':            { ko: '취소',               en: 'Cancel',                       ja: 'キャンセル',             zh: '取消' },

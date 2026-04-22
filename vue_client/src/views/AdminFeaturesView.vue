@@ -3,10 +3,14 @@
 		<div class="head">
 			<h2>⚙️ {{ t('admin.features.manage.title') }}</h2>
 			<div class="bar">
-				<label>propCd
-					<input v-model="propCd" @change="load" />
-				</label>
-				<button @click="load" :disabled="busy">{{ t('admin.features.refresh') }}</button>
+				<span class="ctx-chip">🏨 {{ ctx.propCd.value }} / {{ ctx.cmpxCd.value }}</span>
+				<button v-if="ctx.canPickProperty.value || ctx.canPickComplex.value"
+					class="ghost"
+					@click="goContextSelect"
+					:title="t('ctx.change')">
+					🔄 {{ t('ctx.change') }}
+				</button>
+				<button class="search" @click="load" :disabled="busy">🔍 {{ t('admin.features.search') }}</button>
 				<button class="primary" @click="save" :disabled="busy || hasJsonErrors">{{ t('admin.features.save') }}</button>
 			</div>
 		</div>
@@ -75,12 +79,18 @@ import { useRouter } from 'vue-router';
 import { API_BASE } from '../api/client.js';
 import { FEATURE_META } from '../features/featureStore.js';
 import { t } from '../i18n/ui.js';
+import { useAdminContext } from '../composables/useAdminContext.js';
 
 const META = FEATURE_META;
-const TOKEN_KEY = 'concierge.adminToken';
+const TOKEN_KEY = 'ccs.token';  // 스태프 JWT 재사용
 
 const router = useRouter();
-const propCd = ref('HQ');
+const ctx = useAdminContext();
+// 조회 대상은 선택된 호텔 컨텍스트를 그대로 사용 (ctx.propCd 자체가 computed).
+const propCd = computed(() => ctx.propCd.value);
+
+function goContextSelect() { router.push('/staff/context'); }
+
 const rows = ref([]);
 const busy = ref(false);
 const err = ref('');
@@ -101,7 +111,7 @@ function getToken() {
 
 function gotoLogin() {
 	try { sessionStorage.removeItem(TOKEN_KEY); } catch {}
-	router.replace('/admin/login');
+	router.replace('/staff/login');
 }
 
 function toggleAdv(cd) {
@@ -151,7 +161,7 @@ async function load() {
 	try {
 		const res = await axios.get(`${API_BASE}/concierge/admin/features`, {
 			params: { propCd: propCd.value },
-			headers: { 'X-Admin-Token': tok },
+			headers: { Authorization: `Bearer ${tok}` },
 			timeout: 8000
 		});
 		hydrateRows(res.data?.list || []);
@@ -190,7 +200,7 @@ async function save() {
 		});
 		const res = await axios.put(`${API_BASE}/concierge/admin/features`, payload, {
 			params: { propCd: propCd.value },
-			headers: { 'X-Admin-Token': tok, 'Content-Type': 'application/json' },
+			headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
 			timeout: 8000
 		});
 		hydrateRows(res.data?.list || payload);
@@ -217,7 +227,22 @@ onMounted(() => {
 .bar label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #4a5568; }
 .bar input { padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; }
 .bar button { padding: 8px 14px; border: 1px solid #cbd5e0; background: #f7fafc; border-radius: 6px; cursor: pointer; font-size: 13px; }
-.bar button.primary { background: #1a3a6e; color: #fff; border-color: #1a3a6e; }
+.bar button.search { background: #1a3a6e; color: #fff; border-color: #1a3a6e; font-weight: 600; }
+.bar button.ghost { background: transparent; color: #4a5568; }
+.bar button.icon { padding: 8px 10px; }
+.bar button.primary { background: #48bb78; color: #fff; border-color: #48bb78; }
+.ctx-chip {
+	display: inline-flex;
+	align-items: center;
+	padding: 6px 12px;
+	background: #edf4ff;
+	color: #1a3a6e;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+	font-family: ui-monospace, Menlo, monospace;
+	letter-spacing: 0.3px;
+}
 .bar button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
 .bar button.ghost { background: transparent; color: #4a5568; }
 

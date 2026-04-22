@@ -101,6 +101,8 @@ async function submit() {
 		}
 		sessionStorage.setItem('ccs.token', map.token);
 		sessionStorage.setItem('ccs.staff', JSON.stringify(map));
+		// 새 로그인 시 이전 세션의 호텔 컨텍스트는 폐기 → 라우터 가드가 /staff/context 로 유도
+		sessionStorage.removeItem('ccs.context');
 		router.replace('/staff');
 	} catch (e) {
 		// 네트워크 실패 / HTTP 5xx 등 throw 되는 경우

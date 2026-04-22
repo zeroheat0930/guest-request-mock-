@@ -34,4 +34,11 @@ public interface PmsMapper {
 	List<Map<String, Object>> selectUsersByDept(@Param("propCd") String propCd,
 	                                             @Param("cmpxCd") String cmpxCd,
 	                                             @Param("deptCd") String deptCd);
+
+	// 관리자 컨텍스트 선택 (호텔/컴플렉스 선택 모달)
+	Map<String, Object> selectProperty(@Param("propCd") String propCd);
+
+	List<Map<String, Object>> selectPropertyList();
+
+	List<Map<String, Object>> selectComplexListByProp(@Param("propCd") String propCd);
 }
