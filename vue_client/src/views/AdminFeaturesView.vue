@@ -3,7 +3,7 @@
 		<div class="head">
 			<h2>⚙️ {{ t('admin.features.manage.title') }}</h2>
 			<div class="bar">
-				<span class="ctx-chip">🏨 {{ ctx.propCd.value }} / {{ ctx.cmpxCd.value }}</span>
+				<span class="ctx-chip">🏨 {{ ctx.hotelNm.value || (ctx.propCd.value + ' / ' + ctx.cmpxCd.value) }}</span>
 				<button v-if="ctx.canPickProperty.value || ctx.canPickComplex.value"
 					class="ghost"
 					@click="goContextSelect"
@@ -160,7 +160,7 @@ async function load() {
 	busy.value = true;
 	try {
 		const res = await axios.get(`${API_BASE}/concierge/admin/features`, {
-			params: { propCd: propCd.value },
+			params: { propCd: propCd.value, cmpxCd: ctx.cmpxCd.value },
 			headers: { Authorization: `Bearer ${tok}` },
 			timeout: 8000
 		});
@@ -199,7 +199,7 @@ async function save() {
 			};
 		});
 		const res = await axios.put(`${API_BASE}/concierge/admin/features`, payload, {
-			params: { propCd: propCd.value },
+			params: { propCd: propCd.value, cmpxCd: ctx.cmpxCd.value },
 			headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
 			timeout: 8000
 		});

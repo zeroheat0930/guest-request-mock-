@@ -18,7 +18,7 @@
 				>
 					<option value="">{{ loadingProps ? t('ctx.loading') : t('ctx.selectProperty') }}</option>
 					<option v-for="p in properties" :key="p.propCd" :value="p.propCd">
-						{{ p.propShrtNm || p.propFullNm || p.propCd }} ({{ p.propCd }})
+						{{ p.propShrtNm || p.propFullNm || p.propCd }}
 					</option>
 				</select>
 				<div v-if="!ctx.canPickProperty.value" class="locked-note">
@@ -41,11 +41,7 @@
 						<input type="radio" v-model="selectedCmpxCd" :value="c.cmpxCd" />
 						<div class="cmpx-body">
 							<div class="cmpx-nm">{{ c.cmpxNm || c.cmpxCd }}</div>
-							<div class="cmpx-sub">
-								{{ c.cmpxReprUserNm || '—' }} · {{ c.cmpxReprTel || '—' }}
-							</div>
 						</div>
-						<span class="cmpx-cd">{{ c.cmpxCd }}</span>
 					</label>
 				</div>
 			</section>
@@ -140,7 +136,12 @@ async function onPropChange() {
 function enter() {
 	if (!selectedPropCd.value || !selectedCmpxCd.value) return;
 	entering.value = true;
-	ctx.setContext(selectedPropCd.value, selectedCmpxCd.value);
+	// 선택한 프로퍼티/컴플렉스의 이름도 같이 저장해 상단 배너/칩에서 쓸 수 있게 함.
+	const prop = properties.value.find(p => p.propCd === selectedPropCd.value) || {};
+	const cmpx = complexes.value.find(c => c.cmpxCd === selectedCmpxCd.value) || {};
+	const propNm = prop.propShrtNm || prop.propFullNm || '';
+	const cmpxNm = cmpx.cmpxNm || '';
+	ctx.setContext(selectedPropCd.value, selectedCmpxCd.value, propNm, cmpxNm);
 	router.replace('/staff');
 }
 
@@ -161,7 +162,14 @@ onMounted(async () => {
 	}
 	// CMPX_ADMIN 은 본인 propCd+cmpxCd 로 자동 고정 — 선택 단계 스킵
 	if (ctx.isComplexAdmin.value) {
-		ctx.setContext(ctx.myPropCd.value, ctx.myCmpxCd.value);
+		try {
+			const res = await fetchAccessibleComplexes(ctx.myPropCd.value);
+			const list = res?.list || res?.map?.list || [];
+			const me = list.find(c => c.cmpxCd === ctx.myCmpxCd.value) || {};
+			ctx.setContext(ctx.myPropCd.value, ctx.myCmpxCd.value, '', me.cmpxNm || '');
+		} catch {
+			ctx.setContext(ctx.myPropCd.value, ctx.myCmpxCd.value, '', '');
+		}
 		router.replace('/staff');
 		return;
 	}
@@ -267,7 +275,6 @@ onMounted(async () => {
 .cmpx-body { flex: 1; min-width: 0; }
 .cmpx-nm { font-weight: 700; font-size: 15px; color: #1a3a6e; }
 .cmpx-sub { font-size: 12px; color: #718096; margin-top: 2px; }
-.cmpx-cd { font-size: 11px; color: #a0aec0; font-family: ui-monospace, Menlo, monospace; }
 
 .err {
 	padding: 10px 14px;

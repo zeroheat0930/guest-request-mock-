@@ -99,9 +99,15 @@
 	</select>
 
 	<select id="selectUsersByDept" resultType="map">
-		SELECT A.USER_ID AS userId, A.USER_NM AS userNm,
-		       A.USER_TP AS userTp, A.DEPT_CD AS deptCd,
-		       A.USER_MOBILE AS userMobile, A.USER_WK_STAT AS userWkStat
+		SELECT A.USER_ID     AS userId,
+		       A.USER_NM     AS userNm,
+		       A.USER_TP     AS userTp,
+		       A.DEPT_CD     AS deptCd,
+		       FN_DIVISION_NM(A.PROP_CD, A.DEPT_CD) AS deptNm,
+		       A.USER_POS_LVL AS userPosLvl,
+		       A.USER_MOBILE AS userMobile,
+		       A.USER_WK_STAT AS userWkStat,
+		       A.USE_YN      AS useYn
 		  FROM PMS.PMS_USER_MTR A
 		 WHERE A.PROP_CD = #{propCd}
 		   AND A.CMPX_CD = #{cmpxCd}
@@ -135,6 +141,18 @@
 		 WHERE A.PROP_CD = #{propCd}
 		   AND A.USE_YN  = 'Y'
 		 ORDER BY A.CMPX_CD
+	</select>
+
+	<!-- 부서 마스터 (한국어 부서명 포함) -->
+	<select id="selectDivisionList" resultType="map">
+		SELECT A.PROP_CD AS propCd,
+		       A.DEPT_CD AS deptCd,
+		       A.DEPT_NM AS deptNm,
+		       A.USE_YN  AS useYn
+		  FROM PMS.PMS_DIVISION A
+		 WHERE A.PROP_CD = #{propCd}
+		   AND A.USE_YN  = 'Y'
+		 ORDER BY A.DEPT_NM
 	</select>
 
 </mapper>

@@ -24,7 +24,7 @@
 			<div v-if="hasAdmin && currentPropCd" class="hotel-bar">
 				<div class="hotel-info">
 					<div class="hotel-label">🏨 {{ t('shell.currentHotel') }}</div>
-					<div class="hotel-code">{{ currentPropCd }} / {{ currentCmpxCd }}</div>
+					<div class="hotel-name">{{ currentHotelNm || `${currentPropCd} / ${currentCmpxCd}` }}</div>
 				</div>
 				<button v-if="canChangeHotel" class="hotel-change" @click="goChangeHotel" :title="t('ctx.change')">
 					🔄
@@ -109,6 +109,9 @@ const router = useRouter();
 
 const staffToken = ref(null);
 const staffInfo = ref({});
+// 관리 중인 호텔 컨텍스트. PropertyContextView 에서 sessionStorage 에 쓰고,
+// refreshAuth() 가 route 변경 시 다시 읽어 reactive 로 갱신한다.
+const ctxData = ref({});
 const currentLang = ref('ko_KR');
 
 function readLang() {
@@ -136,8 +139,11 @@ function refreshAuth() {
 		staffToken.value = sessionStorage.getItem('ccs.token');
 		const raw = sessionStorage.getItem('ccs.staff');
 		staffInfo.value = raw ? JSON.parse(raw) : {};
+		const ctxRaw = sessionStorage.getItem('ccs.context');
+		ctxData.value = ctxRaw ? JSON.parse(ctxRaw) : {};
 	} catch {
 		staffInfo.value = {};
+		ctxData.value = {};
 	}
 }
 
@@ -188,13 +194,10 @@ function goChangeHotel() {
 	router.push('/staff/context');
 }
 
-// 현재 선택된 호텔 표시 (context 없으면 빈 값)
-const currentPropCd = computed(() => {
-	try { return JSON.parse(sessionStorage.getItem('ccs.context') || '{}').propCd || ''; } catch { return ''; }
-});
-const currentCmpxCd = computed(() => {
-	try { return JSON.parse(sessionStorage.getItem('ccs.context') || '{}').cmpxCd || ''; } catch { return ''; }
-});
+// 현재 선택된 호텔 표시 — ctxData ref 기반이라 refreshAuth 호출 시 reactive 갱신됨
+const currentPropCd = computed(() => ctxData.value?.propCd || '');
+const currentCmpxCd = computed(() => ctxData.value?.cmpxCd || '');
+const currentHotelNm = computed(() => ctxData.value?.cmpxNm || ctxData.value?.propNm || '');
 // CMPX_ADMIN 은 호텔 변경 불가
 const canChangeHotel = computed(() => isSystemAdmin.value || isPropertyAdmin.value);
 </script>
@@ -290,12 +293,14 @@ const canChangeHotel = computed(() => isSystemAdmin.value || isPropertyAdmin.val
 	opacity: 0.55;
 	margin-bottom: 2px;
 }
-.hotel-code {
+.hotel-name {
 	font-size: 13px;
 	font-weight: 700;
 	color: #fff;
-	font-family: ui-monospace, Menlo, Consolas, monospace;
-	letter-spacing: 0.5px;
+	letter-spacing: 0.2px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 .hotel-change {
 	background: rgba(255,255,255,0.08);

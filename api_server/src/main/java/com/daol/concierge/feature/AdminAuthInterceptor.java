@@ -6,10 +6,13 @@ import com.daol.concierge.ccs.auth.CcsPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.io.IOException;
+import java.util.Collections;
 
 /**
  * 관리자 API (/api/concierge/admin/**) JWT 기반 인증 인터셉터.
@@ -53,7 +56,19 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
 		}
 
 		request.setAttribute(ATTR_PRINCIPAL, principal);
+		// /api/concierge/admin/** 는 CcsJwtFilter 범위 밖이므로 SecurityContext 가 비어 있음.
+		// 컨트롤러에서 SecurityContextHolder.getAuthentication() 으로 principal 을 꺼낼 수 있도록 박아둠.
+		UsernamePasswordAuthenticationToken auth =
+				new UsernamePasswordAuthenticationToken(principal, token, Collections.emptyList());
+		SecurityContextHolder.getContext().setAuthentication(auth);
 		return true;
+	}
+
+	@Override
+	public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
+	                            Object handler, Exception ex) {
+		// 요청 종료 시 SecurityContext 클리어 (Tomcat 스레드 재사용 대비)
+		SecurityContextHolder.clearContext();
 	}
 
 	private void writeError(HttpServletResponse res, int status, String msg) throws IOException {

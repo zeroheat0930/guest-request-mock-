@@ -3,7 +3,7 @@
 		<div class="head">
 			<h2>🧑‍🍳 {{ t('admin.ccs.title') }}</h2>
 			<div class="bar">
-				<span class="ctx-chip">🏨 {{ ctx.propCd.value }} / {{ ctx.cmpxCd.value }}</span>
+				<span class="ctx-chip">🏨 {{ ctx.hotelNm.value || (ctx.propCd.value + ' / ' + ctx.cmpxCd.value) }}</span>
 				<button v-if="ctx.canPickProperty.value || ctx.canPickComplex.value"
 					class="ghost"
 					@click="goContextSelect"
@@ -16,85 +16,34 @@
 		</div>
 
 		<div v-if="err" class="err">{{ err }}</div>
-		<div v-if="successMsg" class="success">{{ successMsg }}</div>
 
-		<!-- 부서 목록 -->
+		<!-- 부서 목록 (PMS_DIVISION 읽기 전용) -->
 		<section class="section">
 			<div class="section-head">
 				<h3>{{ t('admin.ccs.dept.list') }}</h3>
-				<button class="btn-add" @click="openAddForm" :disabled="busy">+ {{ t('admin.ccs.dept.add') }}</button>
-			</div>
-
-			<!-- 추가 폼 -->
-			<div v-if="addFormOpen" class="inline-form">
-				<div class="form-row">
-					<label>{{ t('admin.ccs.dept.code') }}
-						<input v-model="addForm.deptCd" :placeholder="t('admin.ccs.dept.code.placeholder')" />
-					</label>
-					<label>{{ t('admin.ccs.dept.name') }}
-						<input v-model="addForm.deptNm" :placeholder="t('admin.ccs.dept.name.placeholder')" />
-					</label>
-					<label>{{ t('admin.ccs.dept.sort') }}
-						<input v-model.number="addForm.sortOrd" type="number" placeholder="0" style="width:80px" />
-					</label>
-					<div class="form-actions">
-						<button class="btn-save" @click="createDept" :disabled="busy || !addForm.deptCd">{{ t('admin.ccs.save') }}</button>
-						<button class="btn-cancel" @click="closeAddForm">{{ t('admin.ccs.cancel') }}</button>
-					</div>
-				</div>
 			</div>
 
 			<div class="table-wrap">
 				<table>
 					<thead>
 						<tr>
-							<th>deptCd</th>
-							<th>deptNm</th>
-							<th>sortOrd</th>
-							<th>useYn</th>
-							<th>{{ t('admin.ccs.col.action') }}</th>
+							<th>{{ t('admin.ccs.col.deptCd') }}</th>
+							<th>{{ t('admin.ccs.col.deptNm') }}</th>
+							<th>{{ t('admin.ccs.col.useYn') }}</th>
 						</tr>
 					</thead>
 					<tbody>
-						<template v-for="d in depts" :key="d.deptCd">
-							<!-- 일반 행 -->
-							<tr v-if="editingDeptCd !== d.deptCd">
-								<td>{{ d.deptCd }}</td>
-								<td>{{ d.deptNm }}</td>
-								<td>{{ d.sortOrd ?? '-' }}</td>
-								<td>
-									<span :class="['badge', d.useYn === 'Y' ? 'badge-on' : 'badge-off']">
-										{{ d.useYn === 'Y' ? t('admin.ccs.on') : t('admin.ccs.off') }}
-									</span>
-								</td>
-								<td class="actions">
-									<button class="btn-sm btn-edit" @click="startEdit(d)">{{ t('admin.ccs.edit') }}</button>
-									<button class="btn-sm btn-delete" @click="deleteDept(d.deptCd)">{{ t('admin.ccs.delete') }}</button>
-								</td>
-							</tr>
-							<!-- 인라인 편집 행 -->
-							<tr v-else class="editing-row">
-								<td>{{ d.deptCd }}</td>
-								<td><input class="cell-input" v-model="editForm.deptNm" /></td>
-								<td><input class="cell-input cell-input-sm" v-model.number="editForm.sortOrd" type="number" /></td>
-								<td>
-									<label class="switch" :title="editForm.useYn === 'Y' ? t('admin.ccs.on') : t('admin.ccs.off')">
-										<input
-											type="checkbox"
-											:checked="editForm.useYn === 'Y'"
-											@change="editForm.useYn = $event.target.checked ? 'Y' : 'N'"
-										/>
-										<span class="slider" />
-									</label>
-								</td>
-								<td class="actions">
-									<button class="btn-sm btn-save" @click="saveEdit(d.deptCd)" :disabled="busy">{{ t('admin.ccs.save') }}</button>
-									<button class="btn-sm btn-cancel" @click="cancelEdit">{{ t('admin.ccs.cancel') }}</button>
-								</td>
-							</tr>
-						</template>
+						<tr v-for="d in depts" :key="d.deptCd">
+							<td class="mono">{{ d.deptCd }}</td>
+							<td>{{ d.deptNm || '-' }}</td>
+							<td>
+								<span :class="['badge', d.useYn === 'Y' ? 'badge-on' : 'badge-off']">
+									{{ d.useYn === 'Y' ? t('admin.ccs.on') : t('admin.ccs.off') }}
+								</span>
+							</td>
+						</tr>
 						<tr v-if="!depts.length">
-							<td colspan="5" class="dim">{{ t('admin.ccs.empty') }}</td>
+							<td colspan="3" class="dim">{{ t('admin.ccs.empty') }}</td>
 						</tr>
 					</tbody>
 				</table>
@@ -108,19 +57,21 @@
 				<table>
 					<thead>
 						<tr>
-							<th>loginId</th>
-							<th>staffNm</th>
-							<th>deptCd</th>
-							<th>positionCd</th>
-							<th>useYn</th>
+							<th>{{ t('admin.ccs.col.loginId') }}</th>
+							<th>{{ t('admin.ccs.col.staffNm') }}</th>
+							<th>{{ t('admin.ccs.col.deptNm') }}</th>
+							<th>{{ t('admin.ccs.col.userTp') }}</th>
+							<th>{{ t('admin.ccs.col.useYn') }}</th>
 						</tr>
 					</thead>
 					<tbody>
 						<tr v-for="s in staffList" :key="s.staffId">
-							<td>{{ s.loginId }}</td>
+							<td class="mono">{{ s.loginId }}</td>
 							<td>{{ s.staffNm }}</td>
-							<td>{{ s.deptCd }}</td>
-							<td>{{ s.positionCd ?? '-' }}</td>
+							<td>{{ s.deptNm || s.deptCd || '-' }}</td>
+							<td>
+								<span class="role-chip">{{ roleLabel(s.userTp) }}</span>
+							</td>
 							<td>
 								<span :class="['badge', s.useYn === 'Y' ? 'badge-on' : 'badge-off']">
 									{{ s.useYn === 'Y' ? t('admin.ccs.staff.active') : t('admin.ccs.staff.inactive') }}
@@ -142,11 +93,6 @@ import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
 import { API_BASE } from '../api/client.js';
-import {
-	createAdminDept,
-	updateAdminDept,
-	deleteAdminDept,
-} from '../api/client.js';
 import { t } from '../i18n/ui.js';
 import { useAdminContext } from '../composables/useAdminContext.js';
 
@@ -159,19 +105,25 @@ const propCd = computed(() => ctx.propCd.value);
 const cmpxCd = computed(() => ctx.cmpxCd.value);
 
 function goContextSelect() { router.push('/staff/context'); }
+
+// PMS_USER_MTR.USER_TP → 한국어 라벨 매핑 (i18n 재사용)
+const USER_TP_I18N = {
+	'00001': 'role.sysAdmin',
+	'00002': 'role.propAdmin',
+	'00003': 'role.cmpxAdmin',
+	'00004': 'role.normalUser',
+	'00005': 'role.pos',
+	'00007': 'role.hkMgr',
+	'00008': 'role.hkUser',
+};
+function roleLabel(userTp) {
+	const key = USER_TP_I18N[userTp] || 'role.staff';
+	return t(key);
+}
 const depts = ref([]);
 const staffList = ref([]);
 const busy = ref(false);
 const err = ref('');
-const successMsg = ref('');
-
-// 추가 폼 상태
-const addFormOpen = ref(false);
-const addForm = ref({ deptCd: '', deptNm: '', sortOrd: 0 });
-
-// 인라인 편집 상태
-const editingDeptCd = ref(null);
-const editForm = ref({ deptNm: '', sortOrd: 0, useYn: 'Y' });
 
 function getToken() {
 	try { return sessionStorage.getItem(TOKEN_KEY); } catch { return null; }
@@ -186,11 +138,6 @@ function goBack() {
 	router.push('/admin/features');
 }
 
-function showSuccess(msg) {
-	successMsg.value = msg;
-	setTimeout(() => { successMsg.value = ''; }, 2500);
-}
-
 async function load() {
 	const tok = getToken();
 	if (!tok) { gotoLogin(); return; }
@@ -199,91 +146,16 @@ async function load() {
 	try {
 		const headers = { Authorization: `Bearer ${tok}` };
 		const params = { propCd: propCd.value, cmpxCd: cmpxCd.value };
-
 		const [deptRes, staffRes] = await Promise.all([
 			axios.get(`${API_BASE}/concierge/admin/departments`, { params, headers, timeout: 8000 }),
 			axios.get(`${API_BASE}/concierge/admin/staff`, { params, headers, timeout: 8000 })
 		]);
-
 		depts.value = deptRes.data?.map?.list || deptRes.data?.list || [];
 		staffList.value = staffRes.data?.map?.list || staffRes.data?.list || [];
 	} catch (e) {
 		if (e.response?.status === 401) { gotoLogin(); return; }
 		err.value = `${t('admin.ccs.loadFail')}: ${e.response?.data?.message || e.message}`;
 	} finally {
-		busy.value = false;
-	}
-}
-
-// 추가 폼
-function openAddForm() {
-	addForm.value = { deptCd: '', deptNm: '', sortOrd: 0 };
-	addFormOpen.value = true;
-	cancelEdit();
-}
-
-function closeAddForm() {
-	addFormOpen.value = false;
-}
-
-async function createDept() {
-	if (!addForm.value.deptCd) return;
-	err.value = '';
-	busy.value = true;
-	try {
-		await createAdminDept({
-			...addForm.value,
-			propCd: propCd.value,
-			cmpxCd: cmpxCd.value,
-		});
-		closeAddForm();
-		showSuccess(t('admin.ccs.dept.addOk'));
-		await load();
-	} catch (e) {
-		err.value = `${t('admin.ccs.addFail')}: ${e.response?.data?.message || e.message || t('admin.ccs.unknownErr')}`;
-		busy.value = false;
-	}
-}
-
-// 인라인 편집
-function startEdit(dept) {
-	closeAddForm();
-	editingDeptCd.value = dept.deptCd;
-	editForm.value = { deptNm: dept.deptNm || '', sortOrd: dept.sortOrd ?? 0, useYn: dept.useYn || 'Y' };
-}
-
-function cancelEdit() {
-	editingDeptCd.value = null;
-}
-
-async function saveEdit(deptCd) {
-	err.value = '';
-	busy.value = true;
-	try {
-		await updateAdminDept(deptCd, {
-			...editForm.value,
-			propCd: propCd.value,
-			cmpxCd: cmpxCd.value,
-		});
-		cancelEdit();
-		showSuccess(t('admin.ccs.dept.editOk'));
-		await load();
-	} catch (e) {
-		err.value = `${t('admin.ccs.editFail')}: ${e.response?.data?.message || e.message || t('admin.ccs.unknownErr')}`;
-		busy.value = false;
-	}
-}
-
-async function deleteDept(deptCd) {
-	if (!confirm(t('admin.ccs.dept.deleteConfirm').replace('{0}', deptCd))) return;
-	err.value = '';
-	busy.value = true;
-	try {
-		await deleteAdminDept(deptCd);
-		showSuccess(t('admin.ccs.dept.deleteOk'));
-		await load();
-	} catch (e) {
-		err.value = `${t('admin.ccs.deleteFail')}: ${e.response?.data?.message || e.message || t('admin.ccs.unknownErr')}`;
 		busy.value = false;
 	}
 }
@@ -317,6 +189,17 @@ onMounted(() => {
 	font-weight: 700;
 	font-family: ui-monospace, Menlo, monospace;
 	letter-spacing: 0.3px;
+}
+.mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; color: #4a5568; }
+.dim-note { font-size: 11px; color: #a0aec0; }
+.role-chip {
+	display: inline-block;
+	padding: 2px 10px;
+	background: #e6f6ff;
+	color: #1a3a6e;
+	border-radius: 10px;
+	font-size: 11px;
+	font-weight: 600;
 }
 
 .err { background: #fff5f5; color: #c53030; padding: 10px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; }

@@ -57,9 +57,6 @@ import { useRouter } from 'vue-router';
 import { postCcsLogin } from '../../api/client.js';
 import { t } from '../../i18n/ui.js';
 
-const PROP_CD = '0000000010';
-const CMPX_CD = '00001';
-
 const router = useRouter();
 const loginId = ref('');
 const password = ref('');
@@ -77,11 +74,11 @@ async function submit() {
 	err.value = '';
 	busy.value = true;
 	try {
+		// propCd/cmpxCd 는 서버가 PMS_USER_MTR 의 본인 레코드에서 읽으므로 전송 불필요.
+		// 로그인 성공 후 /staff/context 에서 관리할 호텔을 별도로 선택한다.
 		const res = await postCcsLogin({
 			loginId: loginId.value,
-			password: password.value,
-			propCd: PROP_CD,
-			cmpxCd: CMPX_CD
+			password: password.value
 		});
 		// BaseController 는 ApiException 도 HTTP 200 + body{status:음수} 로 내림.
 		// status: 0=성공, 404=계정없음, -20=비번오류, -30=비활성, 401=입력누락

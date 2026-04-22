@@ -416,6 +416,40 @@ com.daol.concierge.ccs/
 
 ## 🗓️ 진행 로그
 
+### 2026-04-22 오후 — 관리자 화면 데이터 정합성 + 역할 위계 필터 + QA 사이클 ✅
+
+첫 구현 후 실제 운영 데이터(PMS_USER_MTR 80명+)로 돌려보면서 드러난 버그/슬롭 일괄 수정.
+
+**부서 조회 — PMS_DIVISION 연동**
+- `CcsAdminController.listDepartments` 가 PMS_USER_MTR.DEPT_CD 그룹핑으로 `deptNm = deptCd` 하드 박던 로직 폐기
+- `PmsMapper.selectDivisionList(propCd)` 신규 → `PMS.PMS_DIVISION` 에서 한국어 `DEPT_NM` 직접 조회
+- `selectUsersByDept` 쿼리에 `USE_YN`, `USER_POS_LVL`, `FN_DIVISION_NM(PROP_CD, DEPT_CD)` 추가 (USE_YN 누락으로 전원 "미사용" 찍히던 버그 원인)
+
+**역할 위계 필터 — 관리 대상 스코프**
+- `AdminRoles.canManageUser(myUserTp, targetUserTp)` 신규: USER_TP 문자열 lexicographic 비교로 내 역할보다 하위만 관리 가능
+  - SYS_ADMIN(00001) → 00001 제외
+  - PROP_ADMIN(00002) → 00001, 00002 제외
+  - CMPX_ADMIN(00003) → 00001, 00002, 00003 제외
+- 빈 문자열 `myUserTp` 가드 추가 (컴파운드 관리자 오남용 방지)
+- `CcsAdminController.listStaff` 에서 필터 적용 + 상세 로깅
+
+**AdminAuthInterceptor SecurityContext 배선**
+- `/api/concierge/admin/**` 는 `CcsJwtFilter` 범위 밖 → 컨트롤러에서 `SecurityContextHolder` 가 비어 `/staff` 호출 시 ACCESS_DENIED 던지던 버그
+- 인터셉터에서 JWT 파싱 후 `SecurityContextHolder` 에 `UsernamePasswordAuthenticationToken` 세팅 + `afterCompletion` 에서 clear (스레드 재사용 대비)
+
+**기타 슬롭 제거 (UltraQA Cycle 2)**
+- `StaffLoginView` 의 `PROP_CD='0000000010'` / `CMPX_CD='00001'` 하드코딩 제거 → 서버가 PMS_USER_MTR 본인 레코드에서 유도
+- `StaffShell.currentCtx` 를 `computed` + sessionStorage 직독에서 `ref` + `refreshAuth()` 동기화로 전환 (호텔 선택 후 배너가 stale 하던 문제)
+- `AdminFeaturesView` features API 호출에 `cmpxCd` 추가
+- `AdminRoles.canAccess` — CMPX_ADMIN 이 `targetCmpxCd=null` (컴플렉스 목록 조회) 으로 호출 시 자기 propCd 내면 허용
+- `AdminCcsView` 의 디버그 `console.log` 12개 + 죽은 `successMsg`/`showSuccess` 제거
+- 호텔 선택 카드에서 대표자/전화 부제목 제거 (암호화된 값이 그대로 찍히던 것), 프로퍼티 드롭다운에서 괄호 propCd 제거
+- 선택한 호텔의 이름(`propNm/cmpxNm`)도 `ccs.context` 에 함께 저장 → LNB 배너/칩이 이름 기반
+- `AdminCcsView` 테이블 헤더 한국어화 (`부서 코드/부서명/사용여부`, `로그인 ID/이름/부서명/역할/사용여부`) + `USER_TP` 7종 한국어 라벨(시스템/프로퍼티/컴플렉스 관리자, 일반 사용자, POS, 객실정비 관리자/사용자) 4개국어 i18n
+
+**QA 사이클**
+- Maven compile / Vue build 모두 exit 0, `critic` 리뷰로 latent bug 12종 스캔 후 6종 수정
+
 ### 2026-04-22 — 관리자 권한 모델 + 호텔 선택 플로우 (PMS 이식) ✅
 
 단일 `CONCIERGE_ADMIN_PW` + `X-Admin-Token` 방식 폐기, **PMS `property-complex-modal` 그대로 이식**.

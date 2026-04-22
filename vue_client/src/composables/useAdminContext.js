@@ -25,8 +25,8 @@ export function useAdminContext() {
 		try { return JSON.parse(sessionStorage.getItem('ccs.context') || '{}'); } catch { return {}; }
 	}
 	function refresh() { staff.value = readStaff(); ctxData.value = readContext(); }
-	function setContext(propCd, cmpxCd) {
-		const c = { propCd, cmpxCd };
+	function setContext(propCd, cmpxCd, propNm = '', cmpxNm = '') {
+		const c = { propCd, cmpxCd, propNm, cmpxNm };
 		sessionStorage.setItem('ccs.context', JSON.stringify(c));
 		ctxData.value = c;
 	}
@@ -48,6 +48,10 @@ export function useAdminContext() {
 	// "지금 관리 중인" 호텔 — ctx 선택값 우선, 없으면 로그인 기본값
 	const propCd = computed(() => ctxData.value?.propCd || myPropCd.value);
 	const cmpxCd = computed(() => ctxData.value?.cmpxCd || myCmpxCd.value);
+	const propNm = computed(() => ctxData.value?.propNm || '');
+	const cmpxNm = computed(() => ctxData.value?.cmpxNm || '');
+	// 화면에 표시할 "호텔 이름" — cmpxNm 우선 (개별 호텔), 없으면 propNm, 그래도 없으면 코드
+	const hotelNm = computed(() => ctxData.value?.cmpxNm || ctxData.value?.propNm || `${propCd.value}/${cmpxCd.value}`);
 
 	const hasContext = computed(() => !!(ctxData.value?.propCd && ctxData.value?.cmpxCd));
 
@@ -69,7 +73,7 @@ export function useAdminContext() {
 		userTp,
 		isSystemAdmin, isPropertyAdmin, isComplexAdmin, isAdmin,
 		myPropCd, myCmpxCd,
-		propCd, cmpxCd,
+		propCd, cmpxCd, propNm, cmpxNm, hotelNm,
 		hasContext,
 		canPickProperty, canPickComplex,
 		roleLabelKey,

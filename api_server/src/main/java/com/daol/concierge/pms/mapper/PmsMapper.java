@@ -41,4 +41,7 @@ public interface PmsMapper {
 	List<Map<String, Object>> selectPropertyList();
 
 	List<Map<String, Object>> selectComplexListByProp(@Param("propCd") String propCd);
+
+	// 부서 마스터 (PMS_DIVISION) — 한국어 부서명 조회
+	List<Map<String, Object>> selectDivisionList(@Param("propCd") String propCd);
 }
