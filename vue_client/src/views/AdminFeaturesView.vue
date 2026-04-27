@@ -134,8 +134,32 @@ function showToast(msg) {
 	setTimeout(() => { toast.value = ''; }, 2000);
 }
 
+// DB 응답 + 카탈로그(FEATURE_META) 머지. 새 프로퍼티라 DB 행 없는 기능은 useYn='N' 기본행으로 채워서
+// 어드민이 토글하면 첫 저장 시 INSERT 되도록 함. HISTORY 는 게스트 LNB 에 항상 노출되는 특수 항목이라 제외.
+function mergeWithCatalog(list) {
+	const byCd = new Map();
+	for (const r of list || []) byCd.set(r.featureCd, r);
+	const catalogKeys = Object.keys(META).filter(cd => cd !== 'HISTORY');
+	const out = [];
+	catalogKeys.forEach((cd, idx) => {
+		const existing = byCd.get(cd);
+		if (existing) {
+			out.push(existing);
+		} else {
+			out.push({
+				featureCd: cd,
+				useYn: 'N',
+				sortOrd: (idx + 1) * 10,
+				configJson: null
+			});
+		}
+	});
+	return out;
+}
+
 function hydrateRows(list) {
-	const sorted = [...list].sort((a, b) => (a.sortOrd || 0) - (b.sortOrd || 0));
+	const merged = mergeWithCatalog(list);
+	const sorted = merged.sort((a, b) => (a.sortOrd || 0) - (b.sortOrd || 0));
 	rows.value = sorted;
 	for (const k of Object.keys(cfgText)) delete cfgText[k];
 	for (const k of Object.keys(cfgErr)) delete cfgErr[k];

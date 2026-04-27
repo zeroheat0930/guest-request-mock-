@@ -214,8 +214,6 @@ Base: `http://localhost:8080/api`
 |---|---|---|
 | GET  | `/features`           | 게스트용 — `useYn=Y` 기능 목록 |
 | GET  | `/nearby?category=`   | 주변 정보 (food/cafe/conv/tour/pharmacy) |
-| GET  | `/admin/features?propCd=` | 어드민 — 전체 기능 (X-Admin-Token) |
-| PUT  | `/admin/features?propCd=` | 어드민 — bulk upsert |
 
 ### `/api/ai` (LLM 프록시)
 | Method | Path | 설명 |
@@ -234,22 +232,27 @@ Base: `http://localhost:8080/api`
 | GET  | `/dept/{deptCd}/load` | 부서원별 담당 건수 |
 | GET  | `/stats/today?deptCd=` | 오늘 접수/완료/평균 처리시간 |
 
-### `/api/concierge/admin` (어드민 — CCS 추가분)
-| Method | Path | 설명 |
-|---|---|---|
-| GET  | `/admin/departments` | 부서 목록 (Bearer JWT + userTp ∈ {00001,00002,00003}) |
-| POST | `/admin/departments` | 부서 등록 |
-| PUT  | `/admin/departments/{deptCd}` | 부서 수정 |
-| DELETE | `/admin/departments/{deptCd}` | 부서 삭제 |
-| GET/PUT | `/admin/staff` | 직원 목록/수정 |
-| GET  | `/admin/features?propCd=` | 기능 플래그 조회/수정 |
+### `/api/concierge/admin` (어드민 — Bearer JWT + USER_TP ∈ {00001, 00002, 00003} + 메뉴 권한)
+모든 엔드포인트는 `AdminAuthInterceptor` 가 1차 차단(role 검증) 후 `MenuAccess.assertCanAccess` 가 메뉴별 2차 차단.
+| Method | Path | 설명 | 메뉴 |
+|---|---|---|---|
+| GET    | `/departments`              | 부서 목록 (PMS_DIVISION 조인) | `ccs.routing` |
+| POST   | `/departments`              | 부서 등록 | `ccs.routing` |
+| PUT    | `/departments/{deptCd}`     | 부서 수정 | `ccs.routing` |
+| DELETE | `/departments/{deptCd}`     | 부서 삭제 | `ccs.routing` |
+| GET    | `/staff`                    | 직원 목록 (역할 위계 필터 적용) | `ccs.routing` |
+| GET    | `/features?propCd=&cmpxCd=` | 기능 플래그 조회 | `ccs.features` |
+| PUT    | `/features?propCd=&cmpxCd=` | 기능 플래그 bulk upsert | `ccs.features` |
+| GET    | `/role-grant?userId=`       | 사용자 메뉴 권한 현황 | SYS_ADMIN 전용 |
+| PUT    | `/role-grant`               | 단일 메뉴 권한 토글 | SYS_ADMIN 전용 |
+| PUT    | `/role-grant/bulk`          | 여러 메뉴 일괄 저장 | SYS_ADMIN 전용 |
 
 ### `/api/ccs/common` (관리자 컨텍스트 — 호텔 선택)
 | Method | Path | 설명 |
 |---|---|---|
-| GET  | `/common/me` | 내 JWT 정보 + 역할(SYS/PROP/CMPX/STAFF) |
-| GET  | `/common/properties` | 접근 가능한 프로퍼티 목록 (SYS=전체, 그 외=본인 하나) |
-| GET  | `/common/complexes?propCd=` | 해당 프로퍼티의 컴플렉스 목록 (역할별 자동 필터) |
+| GET  | `/me` | 내 JWT 정보 + 역할(SYS/PROP/CMPX/STAFF) + 접근 가능 메뉴 코드 목록 |
+| GET  | `/properties` | 접근 가능한 프로퍼티 목록 (SYS=전체, 그 외=본인 하나) |
+| GET  | `/complexes?propCd=` | 해당 프로퍼티의 컴플렉스 목록 (역할별 자동 필터) |
 
 ### 응답 코드 (ApiStatus)
 | Code | 의미 |
@@ -263,11 +266,10 @@ Base: `http://localhost:8080/api`
 | `404` | NOT_FOUND |
 | `-500` | SYSTEM_ERROR |
 
-### 샘플 데이터 (InvSeedRunner + INV_SEED.sql)
-- 프로퍼티: `HQ` (서울시청 좌표 `37.5665, 126.9780`)
-- 예약: `R2026041300001` (1205호/HONG GILDONG/ko_KR), `R2026041300002` (0807호/JOHN SMITH/en_US)
-- 품목: `AM001~AM005` (수건/생수/비누/샴푸/칫솔세트)
-- 기능 플래그 6건: AMENITY/HK/LATE_CO/CHAT/NEARBY/PARKING 전부 Y
+### 데이터 출처
+- **로컬 dev**: `InvSeedRunner` + `INV_SEED.sql` 이 INV 스키마에 어메니티 품목 5종(AM001~AM005) 등 최소 데모 데이터 시드.
+- **사내 운영**: `dev` 프로파일 + `211.34.228.191:3336` MariaDB 직결. 프로퍼티/예약/사용자 등 마스터는 PMS 본업 테이블 그대로 사용 (시드 안 함).
+- 어드민 화면에서 새 (propCd, cmpxCd) 진입 시 `CONCIERGE_FEATURE` 가 비어있어도 카탈로그 9종이 default `useYn='N'` 으로 노출되어 첫 토글/저장이 INSERT 처리됨.
 
 ---
 
@@ -279,7 +281,7 @@ Base: `http://localhost:8080/api`
 - 파라미터: `RequestParams requestParams` → `requestParams.getParams()` / `getString()` / `getInt()`
 - Response: `Responses.MapResponse.of(map)` / `ListResponse.of(list)` / `ok()` / `ok(message)`
 - 예외: `ApiException(ApiStatus, message)` → `BaseController @ExceptionHandler` 자동 처리
-- DAO: `CommonDAO` (MyBatis SqlSession 래퍼, snake_case → camelCase 자동 변환) + Mapper 인터페이스
+- DAO: Mapper 인터페이스 + `_SQL.xml` MyBatis 매퍼. 컬럼은 `AS camelCase` 별칭 명시 (PMS 본업 표준, `resultType="map"` 환경 호환성)
 - 트랜잭션: `TxAdviceConfig` AOP — `insert*/update*/delete*/save*/proc*` 메서드 자동 트랜잭션
 - 네이밍: camelCase 약어 (`rsvNo`, `roomNo`, `chkOutTm`, `hkStatCd`, `procStatCd`, `rateTpCd`, `addAmt`, `curCd`)
 - 서비스: 한국어 주석만 (변수/메서드명은 영문)
@@ -446,7 +448,7 @@ com.daol.concierge.ccs/
 **부서 조회 — PMS_DIVISION 연동**
 - `CcsAdminController.listDepartments` 가 PMS_USER_MTR.DEPT_CD 그룹핑으로 `deptNm = deptCd` 하드 박던 로직 폐기
 - `PmsMapper.selectDivisionList(propCd)` 신규 → `PMS.PMS_DIVISION` 에서 한국어 `DEPT_NM` 직접 조회
-- `selectUsersByDept` 쿼리에 `USE_YN`, `USER_POS_LVL`, `FN_DIVISION_NM(PROP_CD, DEPT_CD)` 추가 (USE_YN 누락으로 전원 "미사용" 찍히던 버그 원인)
+- `selectUsersByDept` 쿼리에 `USE_YN`, `USER_POS_LVL`, `PMS_DIVISION` LEFT JOIN 으로 부서명(`DEPT_NM`) 결합 (USE_YN 누락으로 전원 "미사용" 찍히던 버그 원인). 초기엔 `FN_DIVISION_NM` stored function 호출이었으나 INV 스키마에 함수가 없어 SQL 예외 → 2026-04-27 LEFT JOIN 으로 교체
 
 **역할 위계 필터 — 관리 대상 스코프**
 - `AdminRoles.canManageUser(myUserTp, targetUserTp)` 신규: USER_TP 문자열 lexicographic 비교로 내 역할보다 하위만 관리 가능
@@ -628,7 +630,7 @@ Phase C 완료. 스태프 번들의 **모든 상호작용 UI 가 4개 국어(ko/
 
 **언어 스위처 UX** — 게스트 앱과 동일한 스토리지 키 `concierge.perUseLang` 을 보조로 동기화해, 운영자가 스태프/게스트 번들 양쪽을 같은 기기에서 전환해도 일관된 언어가 유지되게 설정.
 
-**범위 외(의도적 연기)**: AdminFeaturesView / AdminCcsView / QrGeneratorView — 관리자 고급 기능, 한국 운영팀만 접근, i18n 필요성 낮음. 추후 Phase G 확장 가능.
+**범위 외(의도적 연기)**: AdminFeaturesView / AdminCcsView / QrGeneratorView — 관리자 고급 기능, 한국 운영팀만 접근, i18n 필요성 낮음. *(이후 Phase C+ 커밋 `a4c7cf3` 에서 4개국어로 전체 i18n 완료)*
 
 ---
 
@@ -1096,15 +1098,13 @@ LostFoundService.create(req)
 7. 체크아웃 → 게스트 앱 자동 종료 화면
 
 ### 스코프 아웃 (의식적으로 안 만듦)
-- ❌ SLA 타이머 + 자동 에스컬레이션
 - ❌ 직원간 채팅 (개발2팀 영역)
 - ❌ 음성/무전 연동
 - ❌ 유료 결제 PG
-- ❌ 고급 분석 대시보드
+- ❌ 고급 분석 대시보드 (BI 도구 연동 등)
 
 ### 장기 과제 (심사 후)
 - 멀티 프로퍼티 온보딩 플로우 (여러 호텔 자동 등록)
 - 외부 운영 시스템 REST 훅 어댑터 (`CONCIERGE_DISPATCHER_EXTERNAL=true` 경로 활용)
 - 직원간 채팅
-- SLA + 에스컬레이션
 - 유료 결제 PG
