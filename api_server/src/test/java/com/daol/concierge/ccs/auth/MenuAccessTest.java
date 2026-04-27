@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class MenuAccessTest {
 
 	private CcsPrincipal principal(String userTp, String staffId) {
-		return new CcsPrincipal(staffId, staffId, "HK", "0000000010", "00001", "Tester", userTp);
+		return new CcsPrincipal(staffId, staffId, "HK", "0000000001", "00001", "Tester", userTp);
 	}
 
 	@Test

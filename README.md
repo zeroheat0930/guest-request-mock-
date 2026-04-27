@@ -49,7 +49,7 @@ npm run dev
 ANTHROPIC_API_KEY=...               # AI 챗봇 활성화 (비어있으면 룰 기반 폴백)
 CONCIERGE_DISPATCHER_CCS=true       # 게스트 요청 → CCS 부서 라우팅 (기본 ON, 끄면 요청 삼켜짐)
 CONCIERGE_DISPATCHER_EXTERNAL=false # 외부 REST 훅(옵션, 커스텀 연동)
-CONCIERGE_TENANT_PROP_CD=0000000010 # 멀티 테넌시 — 호텔 프로퍼티 코드
+CONCIERGE_TENANT_PROP_CD=<운영 호텔 PROP_CD>  # 멀티 테넌시 — PMS_PROPERTY 마스터에서 받아 주입
 CONCIERGE_TENANT_CMPX_CD=00001      # 멀티 테넌시 — 부속건물 코드
 CONCIERGE_ADMIN_PW=...              # 어드민 UI 패스워드 (미설정 시 /admin/** = 503)
 JWT_SECRET=...                      # 32바이트 이상 랜덤 시크릿 (prod 필수)
@@ -354,6 +354,7 @@ Base: `http://localhost:8080/api`
 
 ### 🎬 시연 스크립트
 - `docs/DEMO_SCRIPT.md` — 7단계 90초 시연 시나리오 (심사 대응).
+- `docs/LOCAL_DEMO.md` — 로컬 LAN 데모 셋업 매뉴얼 (IP 고정 / 방화벽 / 기기별 URL / 시드 점검 / T-5분 체크리스트).
 
 > **스코프 아웃**: HSKP (플로어 그리드 / 룸메이드 / 청소 이력) / HES (Work Order) — PMS 본업 모듈에 이미 완성도 높게 구현 존재. CCS 는 필요 시 `PMS_ROOM_NUMBER.HK_STAT` 등을 **읽기 전용** 조회.
 
@@ -420,6 +421,18 @@ com.daol.concierge.ccs/
 
 ## 🗓️ 진행 로그
 
+### 2026-04-27 저녁 — 로컬 LAN 데모 매뉴얼 + 운영 PROP_CD 코드 제거 ✅
+
+심사 직전 셋업 단계용 작업.
+
+**`docs/LOCAL_DEMO.md` 신규** — 클라우드 배포 없이 사내 LAN 노트북에서 시연하기 위한 환경 매뉴얼. IP 고정 / Windows 방화벽 (8080·5173) / T-30 ping 검증 / 백엔드·프론트 기동 / 게스트·스태프·러너 기기별 URL + QR 사전발급 / 시드 점검 4종 (오늘 체크인 예약·SYS+PROP+부서 스태프·PMS_DIVISION·기능 플래그) / T-5분 13개 체크박스 / 트러블슈팅 표 / DEMO_SCRIPT.md 의 stale 표기(`admin/admin`, `fr001/fr001`, `X-Admin-Token` 등) 정정 안내.
+
+**운영 PROP_CD 하드코딩 제거** — 코드/문서/테스트에서 운영 호텔 코드 7군데 제거:
+- `README.md` 4곳: env 예시는 `<운영 호텔 PROP_CD>` placeholder 로, 진행 로그의 잔재는 일반화 표현으로
+- `docs/LOCAL_DEMO.md` 4곳: env / 설명문 / SQL 예시(`:propCd` 바인드) / 시드 점검 항목
+- `MenuAccessTest.java`: fixture 더미값을 `application.yml` dev 기본값(`0000000001`) 과 동일하게 정렬 — 운영 코드 아님을 시각적으로 구분
+- 검증: `mvn -Dtest=MenuAccessTest test` 통과, repo grep `0000000010` 0건
+
 ### 2026-04-27 — Phase G: 하위 관리자 메뉴 권한 부여 ✅
 
 심사 전 남은 코드 작업으로 박혀 있던 "하위 관리자 권한 부여 UI" 풀구현. SYS_ADMIN 이 PROP/CMPX_ADMIN 에게 어드민 메뉴 9종(라우팅/기능/분실물/VOC/대여/당직/리포트/감사/QR) 을 단위로 토글하여 부여/회수.
@@ -463,7 +476,7 @@ com.daol.concierge.ccs/
 - 인터셉터에서 JWT 파싱 후 `SecurityContextHolder` 에 `UsernamePasswordAuthenticationToken` 세팅 + `afterCompletion` 에서 clear (스레드 재사용 대비)
 
 **기타 슬롭 제거 (UltraQA Cycle 2)**
-- `StaffLoginView` 의 `PROP_CD='0000000010'` / `CMPX_CD='00001'` 하드코딩 제거 → 서버가 PMS_USER_MTR 본인 레코드에서 유도
+- `StaffLoginView` 의 `PROP_CD`/`CMPX_CD` 하드코딩 제거 → 서버가 PMS_USER_MTR 본인 레코드에서 유도
 - `StaffShell.currentCtx` 를 `computed` + sessionStorage 직독에서 `ref` + `refreshAuth()` 동기화로 전환 (호텔 선택 후 배너가 stale 하던 문제)
 - `AdminFeaturesView` features API 호출에 `cmpxCd` 추가
 - `AdminRoles.canAccess` — CMPX_ADMIN 이 `targetCmpxCd=null` (컴플렉스 목록 조회) 으로 호출 시 자기 propCd 내면 허용
@@ -808,7 +821,7 @@ LostFoundService.create(req)
 
 **남은 런타임 검증**: 브라우저 DevTools Network → WS 탭 에서 `/ws-ccs` `101 Switching Protocols` + STOMP CONNECTED 확인. 게스트 요청 1건 → 스태프 대시보드 30s 내 즉시 업데이트되면 WS 작동.
 
-**주의**: 프론트 `StaffLoginView.vue` 의 `PROP_CD = '0000000010'` 하드코딩은 데드코드 — 백엔드(`CcsAuthController`) 가 request param 을 무시하고 `PMS_USER_MTR` 로우에서 propCd/cmpxCd 를 직접 읽음. 추후 청소 예정.
+**주의**: 프론트 `StaffLoginView.vue` 의 `PROP_CD` 하드코딩은 데드코드 — 백엔드(`CcsAuthController`) 가 request param 을 무시하고 `PMS_USER_MTR` 로우에서 propCd/cmpxCd 를 직접 읽음. 추후 청소 예정.
 
 ### 2026-04-16 (맥북 야간 세션 2 — 상용화 보안 수정 + 테스트 + UI 완성)
 
@@ -946,7 +959,7 @@ LostFoundService.create(req)
 4. 신규 `PropertyExt` 엔티티 — `CONCIERGE_PROPERTY_EXT` (lat/lng/nearbyRadius)
 5. Repository/Service/Controller 전역 시그니처에 `cmpxCd` 파라미터 추가
 6. `JwtService` / `GuestPrincipal` / `SecurityContextUtil` 에 cmpxCd 클레임
-7. `SeedDataRunner` 재작성 — 컨시어지 시드만, PMS 쪽은 건드리지 않음 (`propCd='0000000010'`, `cmpxCd='00001'` 실제 값)
+7. `SeedDataRunner` 재작성 — 컨시어지 시드만, PMS 쪽은 건드리지 않음 (운영 `propCd/cmpxCd` 값으로 주입)
 8. `SchemaProbeRunner` 삭제 (일회성 툴)
 9. `V2`/`V3`/`V4` Flyway 스크립트 아카이브 + `V5__inv_schema.sql` 신규 (실제 DDL과 일치)
 
@@ -1077,7 +1090,7 @@ LostFoundService.create(req)
 > **현황 (2026-04-27)**: 상용화 1.0 Phase A~G 완료 (메뉴별 하위 관리자 권한 부여 UI 추가) + 호텔 선택 플로우 완료. 심사 2026-05-20.
 
 ### 남은 것 (심사 전, 로컬 데모 기준)
-1. **로컬 시연 셋업** — 노트북 IP 고정, 같은 LAN 기기에서 접속 가능한 QR/짧은링크 발급, 시드 데이터 점검
+1. **로컬 시연 셋업** — `docs/LOCAL_DEMO.md` 의 매뉴얼대로: 노트북 IP 고정, 방화벽, 같은 LAN 기기 접속 URL/QR, 시드 데이터 점검
 2. **심사 리허설** — `docs/DEMO_SCRIPT.md` 90초 시나리오, 노트북 + 태블릿 + 휴대폰 3기기
 
 ### 상용 배포 단계 (심사 후로 연기)
