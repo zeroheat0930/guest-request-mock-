@@ -421,6 +421,12 @@ com.daol.concierge.ccs/
 
 ## 🗓️ 진행 로그
 
+### 2026-04-27 마감 — 어드민 QA 결과 + 부서 삭제 버튼 즉시 fix ✅
+
+회사 환경에서 어드민 9개 메뉴 들어가본 결과 일부 화면이 "관리"라 해놓고 read-only / 입력 폼 누락. §남은 것 1번에 9개 화면 진단 표 + 1·2·3차 작업 순서 박아둠 (내일 2026-04-28 본격 fix).
+
+**오늘 마감 직전 즉시 처리** — `AdminCcsView` 부서 행에 [삭제] 버튼 추가. `DELETE /api/concierge/admin/departments/{deptCd}` (이미 백엔드 풀구현) 호출. confirm prompt + 401 재로그인 처리 + 실패 메시지 노출.
+
 ### 2026-04-27 저녁 — 로컬 LAN 데모 매뉴얼 + 운영 PROP_CD 코드 제거 ✅
 
 심사 직전 셋업 단계용 작업.
@@ -1090,8 +1096,24 @@ LostFoundService.create(req)
 > **현황 (2026-04-27)**: 상용화 1.0 Phase A~G 완료 (메뉴별 하위 관리자 권한 부여 UI 추가) + 호텔 선택 플로우 완료. 심사 2026-05-20.
 
 ### 남은 것 (심사 전, 로컬 데모 기준)
-1. **로컬 시연 셋업** — `docs/LOCAL_DEMO.md` 의 매뉴얼대로: 노트북 IP 고정, 방화벽, 같은 LAN 기기 접속 URL/QR, 시드 데이터 점검
-2. **심사 리허설** — `docs/DEMO_SCRIPT.md` 90초 시나리오, 노트북 + 태블릿 + 휴대폰 3기기
+1. **어드민 화면 QA fix (내일 작업, 2026-04-28 예정)** — 회사 환경에서 어드민 9개 메뉴 들어가본 결과 일부 화면이 "관리"라고 해놓고 read-only 거나 입력 폼 누락. 백엔드 ↔ 프론트 매칭 진단:
+
+   | 화면 | 현재 동작 | 빠진 동작 | 백엔드 |
+   |---|---|---|---|
+   | **AdminCcsView** | 부서·직원 read-only 표 | 부서 등록/수정/삭제, 직원 USE_YN 토글 | ✅ 다 있음 (`POST/PUT/DELETE /api/concierge/admin/departments`, `PUT /api/concierge/admin/staff`). CSS(`.btn-add/.btn-edit/.cell-input/.editing-row/.inline-form`) 데드 클래스 — template 만 깎인 상태 |
+   | **AdminDutyView** | DAY/NIGHT 시작 버튼만 | summary/incidents 입력, 인수인계 모달, 종료 버튼, **삭제** | POST/handover/close 있음. **DELETE 없음 → 백엔드부터 추가 필요** |
+   | AdminLostFoundView | 상태 전이 OK | 관리자 직접 등록, 매칭 UI | POST/match 있는데 UI 미사용 |
+   | AdminVocView | (재확인) | 만족도 표시/해결 처리 보강 | satisfaction/resolve 있음 |
+   | AdminRentalView | 카탈로그 추가/수정 + loan/return | **카탈로그 삭제/비활성화** | DELETE 미존재 + USE_YN 컬럼 없음 → DDL 변경 동반 |
+   | AdminFeaturesView / Reports / Audit / RoleGrant | OK | — | — |
+
+   **작업 순서**:
+   - **1차 (백엔드 무수정)**: AdminCcsView 부서 CRUD 인라인 폼 + 직원 USE_YN 토글 / AdminDutyView 본문 입력 폼 + 인수인계 모달 + 종료 버튼 (등록·인수인계·종료 백엔드 이미 존재, 화면만)
+   - **2차 (백엔드 추가)**: `DELETE /api/ccs/duty/{logId}` 신규 (Service+Mapper+xml+Controller) + 화면 삭제 버튼 / `CCS_RENTAL_ITEM.USE_YN` 컬럼 마이그레이션 + 비활성화 토글
+   - **3차 (여유 시)**: LostFound 관리자 직접 등록 + 매칭 UI / VOC 만족도·해결 처리 보강
+
+2. **로컬 시연 셋업** — `docs/LOCAL_DEMO.md` 의 매뉴얼대로: 노트북 IP 고정, 방화벽, 같은 LAN 기기 접속 URL/QR, 시드 데이터 점검
+3. **심사 리허설** — `docs/DEMO_SCRIPT.md` 90초 시나리오, 노트북 + 태블릿 + 휴대폰 3기기
 
 ### 상용 배포 단계 (심사 후로 연기)
 - **`DaolPmsSyncAdapter` 실 구현** — 현재 `syncLostFound/Voc/Rental/Duty` 는 로그만. 상용 배포 전 PMS 테이블 INSERT 작성

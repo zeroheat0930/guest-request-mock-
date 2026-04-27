@@ -30,6 +30,7 @@
 							<th>{{ t('admin.ccs.col.deptCd') }}</th>
 							<th>{{ t('admin.ccs.col.deptNm') }}</th>
 							<th>{{ t('admin.ccs.col.useYn') }}</th>
+							<th></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -41,9 +42,12 @@
 									{{ d.useYn === 'Y' ? t('admin.ccs.on') : t('admin.ccs.off') }}
 								</span>
 							</td>
+							<td class="actions">
+								<button class="btn-sm btn-delete" :disabled="busy" @click="deleteDept(d)">삭제</button>
+							</td>
 						</tr>
 						<tr v-if="!depts.length">
-							<td colspan="3" class="dim">{{ t('admin.ccs.empty') }}</td>
+							<td colspan="4" class="dim">{{ t('admin.ccs.empty') }}</td>
 						</tr>
 					</tbody>
 				</table>
@@ -136,6 +140,25 @@ function gotoLogin() {
 
 function goBack() {
 	router.push('/admin/features');
+}
+
+async function deleteDept(d) {
+	if (!confirm(`부서 ${d.deptCd}${d.deptNm ? ' (' + d.deptNm + ')' : ''} 을(를) 삭제할까요?`)) return;
+	const tok = getToken();
+	if (!tok) { gotoLogin(); return; }
+	err.value = '';
+	busy.value = true;
+	try {
+		const headers = { Authorization: `Bearer ${tok}` };
+		const params = { propCd: propCd.value, cmpxCd: cmpxCd.value };
+		await axios.delete(`${API_BASE}/concierge/admin/departments/${encodeURIComponent(d.deptCd)}`, { params, headers, timeout: 8000 });
+		await load();
+	} catch (e) {
+		if (e.response?.status === 401) { gotoLogin(); return; }
+		err.value = `삭제 실패: ${e.response?.data?.message || e.message}`;
+	} finally {
+		busy.value = false;
+	}
 }
 
 async function load() {
