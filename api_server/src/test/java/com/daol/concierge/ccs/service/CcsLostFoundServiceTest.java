@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class CcsLostFoundServiceTest {
+public class CcsLostFoundServiceTest {
 
 	private CcsLostFoundService service;
 	private AtomicInteger insertCalls;
@@ -79,9 +79,9 @@ class CcsLostFoundServiceTest {
 	}
 
 	/** 최소한의 no-op 매퍼 stub — 실제 DB 접근 없이 메서드 호출만 카운트. */
-	static class InvMapperStub implements InvMapper {
+	public static class InvMapperStub implements InvMapper {
 		private final AtomicInteger insertCalls;
-		InvMapperStub(AtomicInteger insertCalls) { this.insertCalls = insertCalls; }
+		public InvMapperStub(AtomicInteger insertCalls) { this.insertCalls = insertCalls; }
 
 		@Override public int insertLostFound(Map<String, Object> param) { insertCalls.incrementAndGet(); return 1; }
 		@Override public Map<String, Object> selectLostFound(String lfId) {
@@ -154,5 +154,8 @@ class CcsLostFoundServiceTest {
 		@Override public java.util.List<Map<String, Object>> selectDailyReport(Map<String, Object> p) { return null; }
 		@Override public java.util.List<Map<String, Object>> selectSlaReport(Map<String, Object> p) { return null; }
 		@Override public java.util.List<Map<String, Object>> selectHeatmapReport(Map<String, Object> p) { return null; }
+		@Override public java.util.List<Map<String, Object>> selectRoleGrantsByUser(String userId) { return java.util.Collections.emptyList(); }
+		@Override public java.util.List<String> selectGrantedMenuCdsByUser(String userId) { return java.util.Collections.emptyList(); }
+		@Override public int upsertRoleGrant(Map<String, Object> p) { return 1; }
 	}
 }

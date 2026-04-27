@@ -1,7 +1,9 @@
 package com.daol.concierge.ccs.admin;
 
+import com.daol.concierge.ccs.auth.AdminMenu;
 import com.daol.concierge.ccs.auth.AdminRoles;
 import com.daol.concierge.ccs.auth.CcsPrincipal;
+import com.daol.concierge.ccs.auth.MenuAccess;
 import com.daol.concierge.core.api.ApiException;
 import com.daol.concierge.core.api.ApiResponse;
 import com.daol.concierge.core.api.ApiStatus;
@@ -49,6 +51,7 @@ public class CcsAdminController extends BaseController {
 	@ResponseBody
 	@RequestMapping(value = "/departments", method = RequestMethod.GET, produces = APPLICATION_JSON)
 	public ApiResponse listDepartments(RequestParams requestParams) {
+		MenuAccess.assertCanAccess(principal(), AdminMenu.ROUTING, invMapper);
 		String propCd = requestParams.getString("propCd");
 		log.info("[ADMIN] /departments 호출 propCd={}", propCd);
 		List<Map<String, Object>> depts = pmsMapper.selectDivisionList(propCd);
@@ -68,6 +71,7 @@ public class CcsAdminController extends BaseController {
 	@RequestMapping(value = "/staff", method = RequestMethod.GET, produces = APPLICATION_JSON)
 	public ApiResponse listStaff(RequestParams requestParams) {
 		CcsPrincipal me = principal();
+		MenuAccess.assertCanAccess(me, AdminMenu.ROUTING, invMapper);
 		String propCd = requestParams.getString("propCd");
 		String cmpxCd = requestParams.getString("cmpxCd");
 		String deptCd = requestParams.getString("deptCd");
@@ -106,6 +110,7 @@ public class CcsAdminController extends BaseController {
 	@ResponseBody
 	@RequestMapping(value = "/departments", method = RequestMethod.POST, produces = APPLICATION_JSON)
 	public ApiResponse createDept(RequestParams requestParams) {
+		MenuAccess.assertCanAccess(principal(), AdminMenu.ROUTING, invMapper);
 		Map<String, Object> params = requestParams.getParams();
 		invMapper.insertDepartment(params);
 		return ok("등록 완료");
@@ -114,6 +119,7 @@ public class CcsAdminController extends BaseController {
 	@ResponseBody
 	@RequestMapping(value = "/departments/{deptCd}", method = RequestMethod.PUT, produces = APPLICATION_JSON)
 	public ApiResponse updateDept(@PathVariable String deptCd, RequestParams requestParams) {
+		MenuAccess.assertCanAccess(principal(), AdminMenu.ROUTING, invMapper);
 		Map<String, Object> params = requestParams.getParams();
 		params.put("deptCd", deptCd);
 		invMapper.updateDepartment(params);
@@ -123,6 +129,7 @@ public class CcsAdminController extends BaseController {
 	@ResponseBody
 	@RequestMapping(value = "/departments/{deptCd}", method = RequestMethod.DELETE, produces = APPLICATION_JSON)
 	public ApiResponse deleteDept(@PathVariable String deptCd, RequestParams requestParams) {
+		MenuAccess.assertCanAccess(principal(), AdminMenu.ROUTING, invMapper);
 		String propCd = requestParams.getString("propCd");
 		String cmpxCd = requestParams.getString("cmpxCd");
 		invMapper.deleteDepartment(propCd, cmpxCd, deptCd);

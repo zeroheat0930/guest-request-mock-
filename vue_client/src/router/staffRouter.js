@@ -8,8 +8,10 @@ import StaffLoginView from '../views/staff/StaffLoginView.vue';
 import StaffDashboardView from '../views/staff/StaffDashboardView.vue';
 import AdminFeaturesView from '../views/AdminFeaturesView.vue';
 import AdminCcsView from '../views/AdminCcsView.vue';
+import { ADMIN_MENU, PATH_TO_MENU } from '../admin/menus.js';
 
 const ADMIN_USER_TPS = ['00001', '00002', '00003']; // SYS/PROP/CMPX
+const SYS_ADMIN = '00001';
 
 const routes = [
 	{ path: '/',               redirect: '/staff' },
@@ -28,6 +30,7 @@ const routes = [
 	{ path: '/admin/duty',     component: () => import('../views/AdminDutyView.vue'),       meta: { admin: true } },
 	{ path: '/admin/reports',  component: () => import('../views/AdminReportsView.vue'),    meta: { admin: true } },
 	{ path: '/admin/audit',    component: () => import('../views/AdminAuditView.vue'),      meta: { admin: true } },
+	{ path: '/admin/role-grant', component: () => import('../views/AdminRoleGrantView.vue'), meta: { admin: true, sysAdminOnly: true } },
 	// 스태프 번들로 잘못 들어온 미지 경로는 스태프 로그인으로
 	{ path: '/:pathMatch(.*)*', redirect: '/staff/login' }
 ];
@@ -50,6 +53,12 @@ function hasContext() {
 function tokenOf() {
 	try { return sessionStorage.getItem('ccs.token'); } catch { return null; }
 }
+function readMenus() {
+	try {
+		const raw = sessionStorage.getItem('ccs.menus');
+		return raw ? JSON.parse(raw) : null;
+	} catch { return null; }
+}
 
 router.beforeEach((to) => {
 	if (to.meta?.public) return true;
@@ -59,6 +68,7 @@ router.beforeEach((to) => {
 
 	const staff = readStaff();
 	const isAdmin = ADMIN_USER_TPS.includes(staff.userTp);
+	const isSysAdmin = staff.userTp === SYS_ADMIN;
 
 	// 호텔 선택 단계 (/staff/context) — 관리자만 허용, 비관리자는 /staff 로 튕김
 	if (to.meta?.context) {
@@ -69,6 +79,16 @@ router.beforeEach((to) => {
 	if (to.meta?.admin) {
 		if (!isAdmin) return '/staff';
 		if (!hasContext()) return '/staff/context';
+		// SYS_ADMIN 전용 경로 (권한 관리)
+		if (to.meta?.sysAdminOnly && !isSysAdmin) return '/staff';
+		// 메뉴별 권한 체크 — me() 가 채운 ccs.menus 와 대조 (없으면 백엔드 가드에 위임)
+		const requiredMenu = PATH_TO_MENU[to.path];
+		if (requiredMenu && !isSysAdmin) {
+			const menus = readMenus();
+			if (Array.isArray(menus) && !menus.includes(requiredMenu)) {
+				return '/staff';
+			}
+		}
 		return true;
 	}
 

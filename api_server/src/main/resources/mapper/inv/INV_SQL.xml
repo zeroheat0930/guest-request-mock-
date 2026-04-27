@@ -584,4 +584,31 @@
 		 ORDER BY dow, hour
 	</select>
 
+	<!-- ═══════════ CCS_ROLE_GRANT (Phase G — 메뉴별 권한 부여) ═══════════ -->
+
+	<select id="selectRoleGrantsByUser" resultType="map">
+		SELECT MENU_CD    AS menuCd,
+		       GRANTED    AS granted,
+		       GRANTED_BY AS grantedBy,
+		       GRANTED_AT AS grantedAt
+		  FROM INV.CCS_ROLE_GRANT
+		 WHERE USER_ID = #{userId}
+		 ORDER BY MENU_CD
+	</select>
+
+	<select id="selectGrantedMenuCdsByUser" resultType="string">
+		SELECT MENU_CD
+		  FROM INV.CCS_ROLE_GRANT
+		 WHERE USER_ID = #{userId} AND GRANTED = 'Y'
+	</select>
+
+	<insert id="upsertRoleGrant" parameterType="map">
+		INSERT INTO INV.CCS_ROLE_GRANT (USER_ID, MENU_CD, GRANTED, GRANTED_BY, GRANTED_AT)
+		VALUES (#{userId}, #{menuCd}, #{granted}, #{grantedBy}, NOW())
+		ON DUPLICATE KEY UPDATE
+		    GRANTED    = VALUES(GRANTED),
+		    GRANTED_BY = VALUES(GRANTED_BY),
+		    GRANTED_AT = VALUES(GRANTED_AT)
+	</insert>
+
 </mapper>

@@ -309,6 +309,7 @@ const messages = {
   'shell.nav.duty':         { ko: '당직 로그',     en: 'Duty Log',         ja: '当直ログ',            zh: '值班日志' },
   'shell.nav.reports':      { ko: '리포트',        en: 'Reports',          ja: 'レポート',            zh: '报表' },
   'shell.nav.audit':        { ko: '감사 로그',     en: 'Audit Log',        ja: '監査ログ',            zh: '审计日志' },
+  'shell.nav.roleGrant':    { ko: '권한 관리',     en: 'Role Grants',      ja: '権限管理',            zh: '权限管理' },
   'shell.logout':           { ko: '로그아웃',      en: 'Logout',           ja: 'ログアウト',          zh: '退出' },
   'shell.lang':             { ko: '언어',          en: 'Language',         ja: '言語',                zh: '语言' },
 
@@ -322,6 +323,24 @@ const messages = {
   // Admin generic (Phase C / E)
   'admin.common.back':      { ko: '← 뒤로',        en: '← Back',           ja: '← 戻る',              zh: '← 返回' },
   'admin.common.save':      { ko: '저장',          en: 'Save',             ja: '保存',                zh: '保存' },
+
+  // Admin Role Grant (Phase G — 하위 관리자 권한 부여)
+  'admin.roleGrant.title':       { ko: '권한 관리',                              en: 'Role Grants',                              ja: '権限管理',                                  zh: '权限管理' },
+  'admin.roleGrant.hint':        { ko: 'PROP/CMPX 관리자에게 메뉴별 접근 권한을 부여합니다. SYS 관리자는 모든 메뉴에 자동 접근.',
+                                   en: 'Grant per-menu access to PROP / CMPX admins. SYS admins always have full access.',
+                                   ja: 'PROP/CMPX 管理者にメニュー単位のアクセス権を付与します。SYS 管理者は常に全メニューアクセス可。',
+                                   zh: '为 PROP/CMPX 管理员授予各菜单的访问权限。SYS 管理员始终可访问全部菜单。' },
+  'admin.roleGrant.refresh':     { ko: '새로고침',           en: 'Refresh',           ja: '再読込',                zh: '刷新' },
+  'admin.roleGrant.userList':    { ko: '대상 관리자 목록',   en: 'Target Admins',     ja: '対象管理者リスト',      zh: '目标管理员列表' },
+  'admin.roleGrant.menuList':    { ko: '메뉴 권한',          en: 'Menu Permissions',  ja: 'メニュー権限',          zh: '菜单权限' },
+  'admin.roleGrant.search':      { ko: '검색…',              en: 'Search…',           ja: '検索…',                 zh: '搜索…' },
+  'admin.roleGrant.selectUser':  { ko: '왼쪽에서 관리자를 선택하세요.', en: 'Select an admin from the left.', ja: '左側から管理者を選択してください。', zh: '请从左侧选择管理员。' },
+  'admin.roleGrant.save':        { ko: '저장',               en: 'Save',              ja: '保存',                  zh: '保存' },
+  'admin.roleGrant.saving':      { ko: '저장 중…',           en: 'Saving…',           ja: '保存中…',               zh: '保存中…' },
+  'admin.roleGrant.saved':       { ko: '저장 완료',          en: 'Saved',             ja: '保存しました',          zh: '已保存' },
+  'admin.roleGrant.loadFail':    { ko: '불러오기 실패',      en: 'Load failed',       ja: '読み込み失敗',          zh: '加载失败' },
+  'admin.roleGrant.saveFail':    { ko: '저장 실패',          en: 'Save failed',       ja: '保存失敗',              zh: '保存失败' },
+
   'admin.common.delete':    { ko: '삭제',          en: 'Delete',           ja: '削除',                zh: '删除' },
   'admin.common.edit':      { ko: '수정',          en: 'Edit',             ja: '編集',                zh: '编辑' },
   'admin.common.add':       { ko: '추가',          en: 'Add',              ja: '追加',                zh: '添加' },

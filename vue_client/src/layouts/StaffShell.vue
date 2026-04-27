@@ -44,32 +44,35 @@
 
 				<div class="group" v-if="hasAdmin">
 					<div class="group-label">{{ t('shell.group.admin') }}</div>
-					<router-link to="/admin/features" class="item">
+					<router-link v-if="canSee(MENU.FEATURES)" to="/admin/features" class="item">
 						<span class="ic">⚙️</span><span class="label">{{ t('shell.nav.features') }}</span>
 					</router-link>
-					<router-link to="/admin/ccs" class="item">
+					<router-link v-if="canSee(MENU.ROUTING)" to="/admin/ccs" class="item">
 						<span class="ic">👥</span><span class="label">{{ t('shell.nav.ccs') }}</span>
 					</router-link>
-					<router-link to="/admin/lostfound" class="item">
+					<router-link v-if="canSee(MENU.LOSTFOUND)" to="/admin/lostfound" class="item">
 						<span class="ic">🔍</span><span class="label">{{ t('shell.nav.lostfound') }}</span>
 					</router-link>
-					<router-link to="/admin/voc" class="item">
+					<router-link v-if="canSee(MENU.VOC)" to="/admin/voc" class="item">
 						<span class="ic">💬</span><span class="label">{{ t('shell.nav.voc') }}</span>
 					</router-link>
-					<router-link to="/admin/rental" class="item">
+					<router-link v-if="canSee(MENU.RENTAL)" to="/admin/rental" class="item">
 						<span class="ic">🏷️</span><span class="label">{{ t('shell.nav.rental') }}</span>
 					</router-link>
-					<router-link to="/admin/duty" class="item">
+					<router-link v-if="canSee(MENU.DUTY)" to="/admin/duty" class="item">
 						<span class="ic">🗓️</span><span class="label">{{ t('shell.nav.duty') }}</span>
 					</router-link>
-					<router-link to="/admin/reports" class="item">
+					<router-link v-if="canSee(MENU.REPORTS)" to="/admin/reports" class="item">
 						<span class="ic">📊</span><span class="label">{{ t('shell.nav.reports') }}</span>
 					</router-link>
-					<router-link to="/admin/audit" class="item">
+					<router-link v-if="canSee(MENU.AUDIT)" to="/admin/audit" class="item">
 						<span class="ic">📜</span><span class="label">{{ t('shell.nav.audit') }}</span>
 					</router-link>
-					<router-link to="/admin/qr" class="item">
+					<router-link v-if="canSee(MENU.QR)" to="/admin/qr" class="item">
 						<span class="ic">📷</span><span class="label">{{ t('shell.nav.qr') }}</span>
+					</router-link>
+					<router-link v-if="isSystemAdmin" to="/admin/role-grant" class="item">
+						<span class="ic">🔐</span><span class="label">{{ t('shell.nav.roleGrant') }}</span>
 					</router-link>
 				</div>
 			</nav>
@@ -102,16 +105,22 @@
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import axios from 'axios';
+import { API_BASE } from '../api/client.js';
 import { t } from '../i18n/ui.js';
+import { ADMIN_MENU } from '../admin/menus.js';
 
 const route = useRoute();
 const router = useRouter();
+
+const MENU = ADMIN_MENU;
 
 const staffToken = ref(null);
 const staffInfo = ref({});
 // 관리 중인 호텔 컨텍스트. PropertyContextView 에서 sessionStorage 에 쓰고,
 // refreshAuth() 가 route 변경 시 다시 읽어 reactive 로 갱신한다.
 const ctxData = ref({});
+const allowedMenus = ref(null); // null = 미로딩 (모두 허용), 배열 = 그 코드만 허용
 const currentLang = ref('ko_KR');
 
 function readLang() {
@@ -141,19 +150,50 @@ function refreshAuth() {
 		staffInfo.value = raw ? JSON.parse(raw) : {};
 		const ctxRaw = sessionStorage.getItem('ccs.context');
 		ctxData.value = ctxRaw ? JSON.parse(ctxRaw) : {};
+		const menusRaw = sessionStorage.getItem('ccs.menus');
+		allowedMenus.value = menusRaw ? JSON.parse(menusRaw) : null;
 	} catch {
 		staffInfo.value = {};
 		ctxData.value = {};
+		allowedMenus.value = null;
 	}
 }
 
-onMounted(() => {
+async function fetchMenus() {
+	const tok = staffToken.value || sessionStorage.getItem('ccs.token');
+	if (!tok) return;
+	try {
+		const res = await axios.get(`${API_BASE}/ccs/common/me`, {
+			headers: { Authorization: `Bearer ${tok}` },
+			timeout: 6000
+		});
+		const m = res.data?.map?.menus;
+		if (Array.isArray(m)) {
+			allowedMenus.value = m;
+			try { sessionStorage.setItem('ccs.menus', JSON.stringify(m)); } catch {}
+		}
+	} catch {
+		// /me 실패는 치명적 아님 — 백엔드 가드가 결국 차단함
+	}
+}
+
+onMounted(async () => {
 	refreshAuth();
 	currentLang.value = readLang();
+	await fetchMenus();
 });
 watch(() => route.fullPath, refreshAuth);
 
 const hasStaff = computed(() => !!staffToken.value);
+
+// 메뉴 가시성: SYS_ADMIN 은 항상 노출, 그 외는 허용 메뉴 목록과 대조.
+// allowedMenus 가 null (아직 /me 응답 도착 전) 이면 일단 노출 — 백엔드가 최종 차단.
+function canSee(menuCd) {
+	if (!hasAdmin.value) return false;
+	if (isSystemAdmin.value) return true;
+	if (allowedMenus.value === null) return true;
+	return allowedMenus.value.includes(menuCd);
+}
 
 // 관리자 역할은 PMS_USER_MTR.USER_TP 기반 (00001/00002/00003 중 하나)
 const userTp = computed(() => staffInfo.value?.userTp || '');
@@ -183,6 +223,7 @@ function logout() {
 		sessionStorage.removeItem('ccs.token');
 		sessionStorage.removeItem('ccs.staff');
 		sessionStorage.removeItem('ccs.context');
+		sessionStorage.removeItem('ccs.menus');
 		sessionStorage.removeItem('concierge.adminToken'); // 구버전 흔적 제거
 	} catch {}
 	staffToken.value = null;

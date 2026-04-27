@@ -120,4 +120,9 @@ public interface InvMapper {
 	List<Map<String, Object>> selectDailyReport(Map<String, Object> param);
 	List<Map<String, Object>> selectSlaReport(Map<String, Object> param);
 	List<Map<String, Object>> selectHeatmapReport(Map<String, Object> param);
+
+	// ── CCS_ROLE_GRANT (Phase G — 메뉴별 권한) ──
+	List<Map<String, Object>> selectRoleGrantsByUser(@Param("userId") String userId);
+	List<String> selectGrantedMenuCdsByUser(@Param("userId") String userId);
+	int upsertRoleGrant(Map<String, Object> param);
 }

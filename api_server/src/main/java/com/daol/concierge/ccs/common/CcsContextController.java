@@ -2,11 +2,13 @@ package com.daol.concierge.ccs.common;
 
 import com.daol.concierge.ccs.auth.AdminRoles;
 import com.daol.concierge.ccs.auth.CcsPrincipal;
+import com.daol.concierge.ccs.auth.MenuAccess;
 import com.daol.concierge.core.api.ApiException;
 import com.daol.concierge.core.api.ApiResponse;
 import com.daol.concierge.core.api.ApiStatus;
 import com.daol.concierge.core.api.Responses;
 import com.daol.concierge.core.controller.BaseController;
+import com.daol.concierge.inv.mapper.InvMapper;
 import com.daol.concierge.pms.mapper.PmsMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -36,6 +38,7 @@ import java.util.stream.Collectors;
 public class CcsContextController extends BaseController {
 
 	@Autowired private PmsMapper pmsMapper;
+	@Autowired private InvMapper invMapper;
 
 	private CcsPrincipal principal() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -110,6 +113,8 @@ public class CcsContextController extends BaseController {
 		out.put("deptCd", cp.deptCd());
 		out.put("role", AdminRoles.label(cp.userTp()));
 		out.put("isAdmin", AdminRoles.isAdmin(cp.userTp()));
+		// 어드민 메뉴 접근 가능한 코드 목록 — 프론트 StaffShell 이 노출 결정에 사용
+		out.put("menus", MenuAccess.menusFor(cp, invMapper));
 		return Responses.MapResponse.of(out);
 	}
 }
