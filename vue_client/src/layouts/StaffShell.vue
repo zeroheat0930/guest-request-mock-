@@ -99,6 +99,9 @@
 		<main class="ccs-main">
 			<slot />
 		</main>
+
+		<!-- 다국어 통역 도우미 — 어느 페이지에서도 항상 호출 가능 -->
+		<StaffTranslatorWidget />
 	</div>
 </template>
 
@@ -109,6 +112,7 @@ import axios from 'axios';
 import { API_BASE } from '../api/client.js';
 import { t } from '../i18n/ui.js';
 import { ADMIN_MENU } from '../admin/menus.js';
+import StaffTranslatorWidget from '../views/staff/StaffTranslatorWidget.vue';
 
 const route = useRoute();
 const router = useRouter();

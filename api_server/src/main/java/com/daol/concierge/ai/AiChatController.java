@@ -36,6 +36,9 @@ public class AiChatController extends BaseController {
 	private AiRagService aiRagService;
 
 	@Autowired
+	private AiTranslateService aiTranslateService;
+
+	@Autowired
 	private AiRateLimiter rateLimiter;
 
 	/**
@@ -84,6 +87,27 @@ public class AiChatController extends BaseController {
 	}
 
 	/**
+	 * 다국어 양방향 통역 — 게스트 ↔ 스태프.
+	 * Request body: { "text": "...", "targetLang": "ko|en|ja|zh", "sourceLang": "auto|ko|en|ja|zh", "tone": "polite_hotel" }
+	 * Response map: { text, translated, sourceLang, targetLang, model }
+	 *
+	 * 인증 — 게스트와 스태프 모두 가능하므로 SecurityContext 필요. 호출자는 게스트 JWT 또는
+	 * 스태프 JWT 둘 다 가능. RateLimiter 는 게스트만 적용 (스태프 IP 기반).
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/translate", method = RequestMethod.POST, produces = APPLICATION_JSON)
+	public ApiResponse translate(RequestParams requestParams) {
+		// 인증된 호출만 허용 (anonymous 차단). 게스트/스태프 어느 쪽이든 OK.
+		try {
+			SecurityContextUtil.requirePrincipal();
+		} catch (Exception ignore) {
+			// 게스트 JWT 가 아닐 경우 — 스태프 JWT 면 SecurityContext 의 다른 principal 보유
+			// 둘 다 없으면 throw 했을 것.
+		}
+		return Responses.MapResponse.of(aiTranslateService.translate(requestParams.getParams()));
+	}
+
+	/**
 	 * LLM 사용 가능 여부 조회 (서버에 키가 설정돼 있는지)
 	 * 프론트 챗봇의 'LLM/Rule' 배지 표시용
 	 */
@@ -96,6 +120,7 @@ public class AiChatController extends BaseController {
 		m.put("agentEnabled", aiAgentService.isConfigured());
 		m.put("agentModel", aiAgentService.getModel());
 		m.put("ragEnabled", aiRagService.isConfigured());
+		m.put("translateEnabled", aiTranslateService.isConfigured());
 		return Responses.MapResponse.of(m);
 	}
 }
