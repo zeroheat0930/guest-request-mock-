@@ -9,7 +9,7 @@
  * intent: 'amenity' | 'housekeeping' | 'late_checkout' | 'chat'
  */
 import { t } from '../i18n/messages.js';
-import { postAiChat, postAiAgent, getAiStatus } from '../api/client.js';
+import { postAiChat, postAiAgent, postAiRag, getAiStatus } from '../api/client.js';
 
 // ─────────────────────────────────────────────
 // 룰 기반 키워드 사전 (4개 언어)
@@ -188,6 +188,28 @@ export function parseIntentRule(text, ctx) {
 // 서버가 키 없음(-500)이라고 응답하면 이후 LLM 시도 차단.
 let llmDisabledForSession = false;
 let agentEnabledForSession = false;
+let ragEnabledForSession = false;
+
+/**
+ * RAG 호텔 챗봇 호출 — 호텔 KB 검색 + Claude 답변 + 출처.
+ * 응답: { answer, citations: [{docId, title, section, score}], model, hits }
+ */
+export async function askRag(query, ctx) {
+	if (!ragEnabledForSession) return null;
+	try {
+		const res = await postAiRag({ query, ctx });
+		if (res.status !== 0) {
+			if (res.status === -500) ragEnabledForSession = false;
+			return null;
+		}
+		return res.map;
+	} catch (e) {
+		console.warn('[chat] RAG 호출 실패:', e?.message || e);
+		return null;
+	}
+}
+
+export function isRagEnabled() { return ragEnabledForSession; }
 
 async function parseIntentLLM(text, ctx) {
 	const res = await postAiChat({ text, ctx });
@@ -290,12 +312,18 @@ export async function checkLlmStatus() {
 		const res = await getAiStatus();
 		const enabled = res?.map?.enabled === true;
 		const agentEn = res?.map?.agentEnabled === true;
+		const ragEn = res?.map?.ragEnabled === true;
 		if (!enabled) llmDisabledForSession = true;
 		agentEnabledForSession = agentEn;
-		return { llm: enabled, agent: agentEn, model: res?.map?.model, agentModel: res?.map?.agentModel };
+		ragEnabledForSession = ragEn;
+		return {
+			llm: enabled, agent: agentEn, rag: ragEn,
+			model: res?.map?.model, agentModel: res?.map?.agentModel
+		};
 	} catch {
 		llmDisabledForSession = true;
 		agentEnabledForSession = false;
-		return { llm: false, agent: false };
+		ragEnabledForSession = false;
+		return { llm: false, agent: false, rag: false };
 	}
 }

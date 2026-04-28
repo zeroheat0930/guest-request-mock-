@@ -421,6 +421,40 @@ com.daol.concierge.ccs/
 
 ## 🗓️ 진행 로그
 
+### 2026-04-28 — 헤비 카드 2: RAG 호텔 챗봇 (KB 검색 + 출처 인용) ✅
+
+게스트가 일반 질문을 던지면 호텔 KB 에서 검색 → Claude 답변 + 출처 표시.
+
+**호텔 지식베이스 (`resources/kb/hotel.json`)**
+- 14개 시드 항목 — 조식 / 체크인·체크아웃 / Wi-Fi / 수영장·피트니스 / 룸서비스 / 주차 / 셔틀 / 객실 냉난방 / 비상 / 세탁 / 수하물 / 스파 / 주변 명소 / 반려동물
+- 각 항목: `id`, `title`, `section` (예: `시설 §3.1`), `tags[]` (4개국어 키워드), `content`
+
+**`KbStore` — in-memory 검색**
+- 부팅 시 로드, 전 항목 토큰화 + character bigram 인덱싱 (CJK 안전)
+- `search(query, k)` — BM25-lite 점수 (태그 정확매치 ×5 / 토큰 교집합 / 제목 부분매치 ×2 / bigram 비율 ×3)
+- 다국어 안전 — 한·영·일·중 모두 동일 검색 경로
+
+**`AiRagService` — RAG 답변**
+- 질문 → top-K (기본 4) 문서 검색 → 컨텍스트 블록 빌드 → Claude (`claude-haiku-4-5`) 호출
+- system prompt 가 "주어진 컨텍스트로만 답변, 모르면 모른다고 말하기 + `[출처: §section]` 마커 부착" 강제
+- KB 0 건이면 사과 메시지, Claude 키 없으면 KB top1 raw 반환 (graceful degrade)
+
+**엔드포인트 + 프론트 통합**
+- `POST /api/ai/rag` — body: `{query, ctx}` → `{answer, citations: [{docId, title, section, score}], model, hits}`
+- `/api/ai/status.ragEnabled` 추가
+- `intent.js` `askRag()` + `isRagEnabled()` 노출
+- `ChatView` — agent 가 `general_chat` 액션을 반환하면 → 게스트 원문으로 RAG 호출 → 답변 + 출처(`📖 제목 §section`) 표시
+- 챗 헤더 배지 `Agent + RAG` 4단계로 확장
+
+**시연 시나리오**
+- 게스트: "조식 시간이 어떻게 돼요?" → Claude Tool Use → `general_chat` 결정 → RAG 검색 → "06:30~10:00, 2층 이솝 레스토랑..." + 📖 조식/Breakfast (시설 §3.1)
+- 다국어: "What time is breakfast?" / "朝食は何時ですか？" / "早餐几点？" 모두 동일 KB 매칭
+- 액션 + RAG 혼합: "수건 두 개랑 와이파이 비밀번호 알려줘" → `request_amenity` 실행 + `general_chat` → RAG 답변
+
+**검증**
+- `mvn -q -o compile` 클린
+- `npx vite build` 클린
+
 ### 2026-04-28 — 헤비 카드 1: Claude Tool Use 자율 에이전트 (다중 의도) ✅
 
 경쟁 트랙 차별화. 게스트 한 줄에서 Claude 가 호텔 도구 1~N 개를 자율 호출.

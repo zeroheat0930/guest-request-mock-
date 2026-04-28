@@ -130,6 +130,7 @@ export const fetchRentalItems = ()      => client.get('/rental/items');
 // AI (LLM 프록시 — Spring Boot가 Anthropic 키를 보관/호출)
 export const postAiChat   = (body) => aiClient.post('/chat', body);
 export const postAiAgent  = (body) => aiClient.post('/agent', body);  // Claude Tool Use 다중 액션
+export const postAiRag    = (body) => aiClient.post('/rag', body);    // RAG 호텔 챗봇 — KB 검색 + 출처
 export const getAiStatus  = ()     => aiClient.get('/status');
 
 // 주변 안내 (NEARBY) — category: food|cafe|conv|tour|pharmacy

@@ -33,6 +33,9 @@ public class AiChatController extends BaseController {
 	private AiAgentService aiAgentService;
 
 	@Autowired
+	private AiRagService aiRagService;
+
+	@Autowired
 	private AiRateLimiter rateLimiter;
 
 	/**
@@ -66,6 +69,21 @@ public class AiChatController extends BaseController {
 	}
 
 	/**
+	 * RAG 호텔 챗봇 — 호텔 지식베이스 검색 + Claude 답변 + 출처 인용.
+	 * Request body: { "query": "조식 시간?", "ctx": { perUseLang } }
+	 * Response map: { answer, citations: [{docId, title, section, score}], model, hits }
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/rag", method = RequestMethod.POST, produces = APPLICATION_JSON)
+	public ApiResponse rag(RequestParams requestParams) {
+		String rsvNo = SecurityContextUtil.requirePrincipal().rsvNo();
+		if (!rateLimiter.isAllowed(rsvNo)) {
+			throw new ApiException(ApiStatus.BAD_REQUEST, "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.");
+		}
+		return Responses.MapResponse.of(aiRagService.ask(requestParams.getParams()));
+	}
+
+	/**
 	 * LLM 사용 가능 여부 조회 (서버에 키가 설정돼 있는지)
 	 * 프론트 챗봇의 'LLM/Rule' 배지 표시용
 	 */
@@ -77,6 +95,7 @@ public class AiChatController extends BaseController {
 		m.put("model", aiChatService.getModel());
 		m.put("agentEnabled", aiAgentService.isConfigured());
 		m.put("agentModel", aiAgentService.getModel());
+		m.put("ragEnabled", aiRagService.isConfigured());
 		return Responses.MapResponse.of(m);
 	}
 }

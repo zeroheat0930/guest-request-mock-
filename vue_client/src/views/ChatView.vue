@@ -42,7 +42,7 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue';
 import { t } from '../i18n/messages.js';
-import { parseAgent, checkLlmStatus } from '../chat/intent.js';
+import { parseAgent, checkLlmStatus, askRag, isRagEnabled } from '../chat/intent.js';
 import {
 	fetchReservation,
 	requestAmenity,
@@ -57,12 +57,21 @@ import {
 
 const llmEnabled = ref(false);
 const agentEnabled = ref(false);
+const ragEnabled = ref(false);
 const llmModel = ref('');
-const aiBadge = computed(() => agentEnabled.value ? 'Agent' : (llmEnabled.value ? 'AI' : 'Bot'));
+const aiBadge = computed(() => {
+	if (agentEnabled.value && ragEnabled.value) return 'Agent + RAG';
+	if (agentEnabled.value) return 'Agent';
+	if (llmEnabled.value)   return 'AI';
+	return 'Bot';
+});
 const aiTitle = computed(() => {
-	if (agentEnabled.value) return 'Claude Tool Use 자율 에이전트 (' + llmModel.value + ')';
-	if (llmEnabled.value)   return 'Claude (' + llmModel.value + ')';
-	return '룰 기반 의도 파서';
+	const parts = [];
+	if (agentEnabled.value) parts.push('Claude Tool Use Agent (' + llmModel.value + ')');
+	else if (llmEnabled.value) parts.push('Claude (' + llmModel.value + ')');
+	else parts.push('룰 기반 의도 파서');
+	if (ragEnabled.value) parts.push('+ RAG 호텔 KB');
+	return parts.join(' ');
 });
 
 const draft = ref('');
@@ -88,6 +97,7 @@ onMounted(async () => {
 		if (typeof s === 'object' && s) {
 			llmEnabled.value = !!s.llm;
 			agentEnabled.value = !!s.agent;
+			ragEnabled.value = !!s.rag;
 			llmModel.value = s.agentModel || s.model || '';
 		} else {
 			llmEnabled.value = !!s;
@@ -130,14 +140,20 @@ async function send() {
 		}
 
 		const r = await parseAgent(text, rsv.value || { perUseLang: 'ko_KR' });
-		// 에이전트 reply (다중 액션 요약 멘트) 가 있으면 먼저 표시
-		if (r.reply) {
+		// 에이전트 reply (다중 액션 요약 멘트) 가 있으면 먼저 표시 — chat-only 액션이면 reply 보다 RAG 답변을 우선하기 위해 보류
+		const actions = r.actions && r.actions.length ? r.actions : [{ intent: 'chat', payload: {} }];
+		const chatOnly = actions.length === 1 && actions[0].intent === 'chat';
+		if (r.reply && !chatOnly) {
 			messages.value.push({ role: 'assistant', text: r.reply });
 			scrollDown();
 		}
-		const actions = r.actions && r.actions.length ? r.actions : [{ intent: 'chat', payload: {} }];
 		for (const action of actions) {
-			await handleIntent({ intent: action.intent, payload: action.payload || {}, reply: r.reply });
+			await handleIntent({
+				intent: action.intent,
+				payload: action.payload || {},
+				reply: chatOnly ? null : r.reply,
+				_guestQuery: text
+			});
 			scrollDown();
 		}
 	} catch (e) {
@@ -155,7 +171,16 @@ async function handleIntent(parsed) {
 	const { intent, reply, payload } = parsed;
 
 	if (intent === 'chat') {
-		// reply 가 있으면 위 단계에서 이미 표시. 추가 안내는 생략.
+		// 일반 질문 → RAG 호텔 챗봇 시도. 답변 + 출처 인용.
+		if (isRagEnabled() && parsed._guestQuery) {
+			const r = await askRag(parsed._guestQuery, rsv.value || { perUseLang: 'ko_KR' });
+			if (r && r.answer) {
+				const citations = (r.citations || []).map(c => `📖 ${c.title}${c.section ? ' (' + c.section + ')' : ''}`).join(' · ');
+				const body = citations ? `${r.answer}\n\n${citations}` : r.answer;
+				messages.value.push({ role: 'assistant', text: body });
+				return;
+			}
+		}
 		if (!reply) messages.value.push({ role: 'assistant', text: t(lang.value, 'intentChat') });
 		return;
 	}
