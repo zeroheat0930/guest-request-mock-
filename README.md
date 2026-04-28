@@ -421,6 +421,40 @@ com.daol.concierge.ccs/
 
 ## 🗓️ 진행 로그
 
+### 2026-04-28 — 헤비 카드 1: Claude Tool Use 자율 에이전트 (다중 의도) ✅
+
+경쟁 트랙 차별화. 게스트 한 줄에서 Claude 가 호텔 도구 1~N 개를 자율 호출.
+
+**`AiAgentService` 신규 — Anthropic Tool Use Function Calling**
+- 모델: `claude-sonnet-4-6` (config: `anthropic.agent.model`)
+- 8개 도구 등록: `request_amenity` / `set_housekeeping` / `request_late_checkout` / `report_lostfound` / `submit_voc` / `request_rental` / `register_parking` / `general_chat`
+- 각 도구는 JSON Schema 기반 입력 검증 — itemCd enum, severity enum, reqOutTm pattern 등
+- 응답 `content[]` 의 `tool_use` 블록 N 개 → `mapToAction()` 으로 기존 ChatView 가 처리하는 `{intent, payload}` 포맷으로 정규화
+- system prompt 에 "ALL distinct requests in the message" 명시 — 다중 의도 강제
+- `POST /api/ai/agent` 엔드포인트, `/api/ai/status` 에 `agentEnabled`/`agentModel` 추가
+
+**프론트 `parseAgent` + ChatView 다중 액션 루프**
+- `intent.js` 에 `parseAgent()` 신설 — agent 모드 가능 시 `/agent` 호출, 아니면 단일 chat → 룰 폴백 (3단계)
+- `parseIntent()` 도 agent 결과의 첫 액션을 단일 의도로 평탄화 (역호환)
+- `ChatView` 가 `parseAgent` 사용으로 전환. `r.actions[]` 순차 실행, 각 액션마다 분기 핸들러 호출
+- 에이전트 reply (다중 액션 종합 멘트) 가 있으면 액션 실행 전에 표시
+- 새 핸들러 추가: `lostfound`, `voc`, `rental`, `parking` (기존 `amenity/housekeeping/late_checkout/chat` 외)
+- 챗 헤더 배지: `Bot` → `AI` → `Agent` 3단계 (`agentEnabled` 기준), title 호버에 모델명 노출
+
+**시연 시나리오 예시**
+- 입력: *"내일 7시 모닝콜이랑 수건 두 개 부탁드리고, 11시 체크아웃 1시간 늦출 수 있을까요?"*
+- Claude tool_use 3개 동시 호출 → `set_housekeeping` (모닝콜=메모) + `request_amenity (towel x2)` + `request_late_checkout (1200)` → ChatView 가 3개 부서 자동 라우팅
+- 다국어: 같은 시나리오를 일본어/영어/중국어로 입력해도 모두 동일하게 N개 액션 추출
+
+**비용·안전**
+- API 키 미설정 시 자동으로 룰 모드 폴백 (`agentEnabled=false` 응답)
+- 기존 rate limiter 가 agent 엔드포인트도 적용 (rsvNo 단위)
+- Tool 입력 enum/pattern 검증으로 LLM 잘못된 출력 방어
+
+**검증**
+- `mvn -q -o compile` 클린
+- `npx vite build` 클린
+
 ### 2026-04-28 — 어드민 QA fix 풀스택 + PmsRemoteApi 어댑터 도입 ✅
 
 §남은 것 1번 표의 1·2차 작업 일괄 처리 + 새 어댑터 아키텍처 박음.

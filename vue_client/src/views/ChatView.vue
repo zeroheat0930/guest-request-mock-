@@ -6,7 +6,7 @@
 				{{ t(lang, 'chatTitle') }}
 			</div>
 			<div class="chat-head__meta">
-				<small class="llm-badge">{{ llmEnabled ? 'AI' : 'Bot' }}</small>
+				<small class="llm-badge" :title="aiTitle">{{ aiBadge }}</small>
 				<span class="room-chip">{{ guestRoom }}호</span>
 			</div>
 		</header>
@@ -42,16 +42,28 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue';
 import { t } from '../i18n/messages.js';
-import { parseIntent, checkLlmStatus } from '../chat/intent.js';
+import { parseAgent, checkLlmStatus } from '../chat/intent.js';
 import {
 	fetchReservation,
 	requestAmenity,
 	updateHousekeeping,
 	checkLateCheckout,
-	requestLateCheckout
+	requestLateCheckout,
+	submitLostFound,
+	submitVoc,
+	submitRental,
+	requestParking
 } from '../api/client.js';
 
 const llmEnabled = ref(false);
+const agentEnabled = ref(false);
+const llmModel = ref('');
+const aiBadge = computed(() => agentEnabled.value ? 'Agent' : (llmEnabled.value ? 'AI' : 'Bot'));
+const aiTitle = computed(() => {
+	if (agentEnabled.value) return 'Claude Tool Use 자율 에이전트 (' + llmModel.value + ')';
+	if (llmEnabled.value)   return 'Claude (' + llmModel.value + ')';
+	return '룰 기반 의도 파서';
+});
 
 const draft = ref('');
 const busy = ref(false);
@@ -71,7 +83,15 @@ const HK_NAME_KEY = { MU: 'hkMu', DND: 'hkDnd', CLR: 'hkClr' };
 
 onMounted(async () => {
 	try {
-		llmEnabled.value = await checkLlmStatus();
+		const s = await checkLlmStatus();
+		// 호환: 구버전(boolean) / 신버전(object)
+		if (typeof s === 'object' && s) {
+			llmEnabled.value = !!s.llm;
+			agentEnabled.value = !!s.agent;
+			llmModel.value = s.agentModel || s.model || '';
+		} else {
+			llmEnabled.value = !!s;
+		}
 	} catch (e) {
 		console.warn('[chat] LLM 상태 조회 실패', e);
 	}
@@ -109,8 +129,17 @@ async function send() {
 			return;
 		}
 
-		const parsed = await parseIntent(text, rsv.value || { perUseLang: 'ko_KR' });
-		await handleIntent(parsed);
+		const r = await parseAgent(text, rsv.value || { perUseLang: 'ko_KR' });
+		// 에이전트 reply (다중 액션 요약 멘트) 가 있으면 먼저 표시
+		if (r.reply) {
+			messages.value.push({ role: 'assistant', text: r.reply });
+			scrollDown();
+		}
+		const actions = r.actions && r.actions.length ? r.actions : [{ intent: 'chat', payload: {} }];
+		for (const action of actions) {
+			await handleIntent({ intent: action.intent, payload: action.payload || {}, reply: r.reply });
+			scrollDown();
+		}
 	} catch (e) {
 		messages.value.push({
 			role: 'assistant',
@@ -126,7 +155,8 @@ async function handleIntent(parsed) {
 	const { intent, reply, payload } = parsed;
 
 	if (intent === 'chat') {
-		messages.value.push({ role: 'assistant', text: reply || t(lang.value, 'intentChat') });
+		// reply 가 있으면 위 단계에서 이미 표시. 추가 안내는 생략.
+		if (!reply) messages.value.push({ role: 'assistant', text: t(lang.value, 'intentChat') });
 		return;
 	}
 
@@ -175,6 +205,87 @@ async function handleIntent(parsed) {
 			role: 'assistant',
 			text: t(lang.value, 'lateInfo', { tm: formatHHMM(payload.reqOutTm), amt: m.addAmt.toLocaleString() })
 		});
+		return;
+	}
+
+	if (intent === 'lostfound') {
+		try {
+			const res = await submitLostFound({
+				rsvNo: rsv.value.rsvNo,
+				roomNo: rsv.value.roomNo,
+				category: payload.category || 'OTHER',
+				itemName: payload.itemName || '',
+				description: payload.description || payload.reqMemo || '',
+				locationHint: payload.locationHint || ''
+			});
+			messages.value.push({
+				role: 'assistant',
+				text: `🔍 분실물 신고 접수 — ${payload.itemName || '항목'}${res?.map?.lfId ? ' (' + res.map.lfId + ')' : ''}`
+			});
+		} catch (e) {
+			messages.value.push({ role: 'assistant', text: `${t(lang.value, 'failPrefix')} ${e.message || ''}` });
+		}
+		return;
+	}
+
+	if (intent === 'voc') {
+		try {
+			const res = await submitVoc({
+				rsvNo: rsv.value.rsvNo,
+				roomNo: rsv.value.roomNo,
+				category: payload.category || 'OTHER',
+				severity: payload.severity || 'NORMAL',
+				title: payload.title || (payload.content || '').slice(0, 30),
+				content: payload.content || payload.reqMemo || ''
+			});
+			const sev = (payload.severity || 'NORMAL').toUpperCase();
+			const sevTag = sev === 'URGENT' ? '🚨' : (sev === 'HIGH' ? '⚠️' : '💬');
+			messages.value.push({
+				role: 'assistant',
+				text: `${sevTag} 불편사항 접수 (${sev})${res?.map?.vocId ? ' — ' + res.map.vocId : ''}`
+			});
+		} catch (e) {
+			messages.value.push({ role: 'assistant', text: `${t(lang.value, 'failPrefix')} ${e.message || ''}` });
+		}
+		return;
+	}
+
+	if (intent === 'rental') {
+		try {
+			const res = await submitRental({
+				rsvNo: rsv.value.rsvNo,
+				itemId: payload.itemId || null,
+				itemName: payload.itemName || payload.note || '',
+				qty: payload.qty || 1,
+				note: payload.note || payload.itemName || ''
+			});
+			messages.value.push({
+				role: 'assistant',
+				text: `🏷️ 대여 요청 — ${payload.itemName || '품목'} × ${payload.qty || 1}${res?.map?.orderId ? ' (' + res.map.orderId + ')' : ''}`
+			});
+		} catch (e) {
+			messages.value.push({ role: 'assistant', text: `${t(lang.value, 'failPrefix')} ${e.message || ''}` });
+		}
+		return;
+	}
+
+	if (intent === 'parking') {
+		try {
+			const res = await requestParking({
+				rsvNo: rsv.value.rsvNo,
+				roomNo: rsv.value.roomNo,
+				carNo: payload.carNo || '',
+				carTp: payload.carTp || '',
+				memo: payload.memo || ''
+			});
+			messages.value.push({
+				role: 'assistant',
+				text: `🚗 차량 등록 — ${payload.carNo || ''}${res?.map?.reqNo ? ' (' + res.map.reqNo + ')' : ''}`
+			});
+		} catch (e) {
+			messages.value.push({ role: 'assistant', text: `${t(lang.value, 'failPrefix')} ${e.message || ''}` });
+		}
+		return;
 	}
 }
 

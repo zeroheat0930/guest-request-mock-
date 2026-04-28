@@ -30,6 +30,9 @@ public class AiChatController extends BaseController {
 	private AiChatService aiChatService;
 
 	@Autowired
+	private AiAgentService aiAgentService;
+
+	@Autowired
 	private AiRateLimiter rateLimiter;
 
 	/**
@@ -48,6 +51,21 @@ public class AiChatController extends BaseController {
 	}
 
 	/**
+	 * Tool Use 자율 에이전트 — 한 메시지에서 여러 액션을 동시 추출.
+	 * Request body: { "text": "...", "ctx": { rsvNo, roomNo, chkOutTm, perUseLang } }
+	 * Response map: { actions: [{ intent, payload }, ...], reply, model }
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/agent", method = RequestMethod.POST, produces = APPLICATION_JSON)
+	public ApiResponse agent(RequestParams requestParams) {
+		String rsvNo = SecurityContextUtil.requirePrincipal().rsvNo();
+		if (!rateLimiter.isAllowed(rsvNo)) {
+			throw new ApiException(ApiStatus.BAD_REQUEST, "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.");
+		}
+		return Responses.MapResponse.of(aiAgentService.run(requestParams.getParams()));
+	}
+
+	/**
 	 * LLM 사용 가능 여부 조회 (서버에 키가 설정돼 있는지)
 	 * 프론트 챗봇의 'LLM/Rule' 배지 표시용
 	 */
@@ -57,6 +75,8 @@ public class AiChatController extends BaseController {
 		Map<String, Object> m = new HashMap<>();
 		m.put("enabled", aiChatService.isConfigured());
 		m.put("model", aiChatService.getModel());
+		m.put("agentEnabled", aiAgentService.isConfigured());
+		m.put("agentModel", aiAgentService.getModel());
 		return Responses.MapResponse.of(m);
 	}
 }

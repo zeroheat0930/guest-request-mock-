@@ -9,7 +9,7 @@
  * intent: 'amenity' | 'housekeeping' | 'late_checkout' | 'chat'
  */
 import { t } from '../i18n/messages.js';
-import { postAiChat, getAiStatus } from '../api/client.js';
+import { postAiChat, postAiAgent, getAiStatus } from '../api/client.js';
 
 // ─────────────────────────────────────────────
 // 룰 기반 키워드 사전 (4개 언어)
@@ -185,8 +185,9 @@ export function parseIntentRule(text, ctx) {
 // ─────────────────────────────────────────────
 // LLM 모드 (서버 프록시 경유)
 // ─────────────────────────────────────────────
-// 서버가 키 없음(9501)이라고 응답하면 이후 LLM 시도 차단.
+// 서버가 키 없음(-500)이라고 응답하면 이후 LLM 시도 차단.
 let llmDisabledForSession = false;
+let agentEnabledForSession = false;
 
 async function parseIntentLLM(text, ctx) {
 	const res = await postAiChat({ text, ctx });
@@ -198,13 +199,46 @@ async function parseIntentLLM(text, ctx) {
 	return res.map;
 }
 
+/**
+ * Claude Tool Use 자율 에이전트 — 다중 액션 추출.
+ * 응답 포맷: { actions: [{intent, payload}, ...], reply, model }
+ * 단일 의도 응답({intent, payload, reply}) 으로의 자동 평탄화는 호출자에서 처리.
+ */
+async function parseAgentLLM(text, ctx) {
+	const res = await postAiAgent({ text, ctx });
+	if (res.status !== 0) {
+		const err = new Error(`[${res.status}] ${res.message}`);
+		err.status = res.status;
+		throw err;
+	}
+	return res.map;
+}
+
+/**
+ * 단일 의도 호환 인터페이스 (기존 ChatView 용).
+ * agent 모드가 켜져 있으면 첫 액션만 추려서 반환. 다중 액션을 활용하려면
+ * {@link parseAgent} 직접 호출.
+ */
 export async function parseIntent(text, ctx) {
+	if (!llmDisabledForSession && agentEnabledForSession) {
+		try {
+			const r = await parseAgentLLM(text, ctx);
+			const first = (r.actions && r.actions[0]) || { intent: 'chat', payload: {} };
+			return { intent: first.intent, payload: first.payload || {}, reply: r.reply, _agent: r };
+		} catch (e) {
+			if (e.status === -500) {
+				agentEnabledForSession = false;
+				console.info('[chat] agent 미설정, chat 모드로 폴백');
+			} else {
+				console.warn('[chat] agent 호출 실패, chat 폴백:', e.message);
+			}
+		}
+	}
 	if (!llmDisabledForSession) {
 		try {
 			return await parseIntentLLM(text, ctx);
 		} catch (e) {
 			if (e.status === -500) {
-				// 서버에 키가 없음 → 이번 세션 내내 룰로만 동작
 				llmDisabledForSession = true;
 				console.info('[chat] 서버 LLM 키 미설정, 룰 모드로 고정');
 			} else {
@@ -216,17 +250,52 @@ export async function parseIntent(text, ctx) {
 }
 
 /**
- * 서버의 /api/ai/status 를 읽어서 LLM 배지 표시 여부 결정.
+ * 다중 액션 추출 — Tool Use agent 모드 필수.
+ * agent 미사용 시 단일 액션 배열로 폴백.
+ */
+export async function parseAgent(text, ctx) {
+	if (!llmDisabledForSession && agentEnabledForSession) {
+		try {
+			const r = await parseAgentLLM(text, ctx);
+			return {
+				actions: r.actions || [],
+				reply: r.reply,
+				model: r.model,
+				stopReason: r.stopReason,
+				_mode: 'agent'
+			};
+		} catch (e) {
+			if (e.status === -500) {
+				agentEnabledForSession = false;
+				console.info('[chat] agent 미설정, single-intent 폴백');
+			} else {
+				console.warn('[chat] agent 호출 실패, single-intent 폴백:', e.message);
+			}
+		}
+	}
+	const single = await parseIntent(text, ctx);
+	return {
+		actions: [{ intent: single.intent, payload: single.payload }],
+		reply: single.reply,
+		_mode: llmDisabledForSession ? 'rule' : 'single'
+	};
+}
+
+/**
+ * 서버의 /api/ai/status 를 읽어서 LLM/Agent 배지 표시 여부 결정.
  * 서버가 꺼져 있거나 키 미설정이면 false.
  */
 export async function checkLlmStatus() {
 	try {
 		const res = await getAiStatus();
 		const enabled = res?.map?.enabled === true;
+		const agentEn = res?.map?.agentEnabled === true;
 		if (!enabled) llmDisabledForSession = true;
-		return enabled;
+		agentEnabledForSession = agentEn;
+		return { llm: enabled, agent: agentEn, model: res?.map?.model, agentModel: res?.map?.agentModel };
 	} catch {
 		llmDisabledForSession = true;
-		return false;
+		agentEnabledForSession = false;
+		return { llm: false, agent: false };
 	}
 }
