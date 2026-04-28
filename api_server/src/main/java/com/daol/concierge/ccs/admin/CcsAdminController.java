@@ -1,5 +1,6 @@
 package com.daol.concierge.ccs.admin;
 
+import com.daol.concierge.ai.AiReportService;
 import com.daol.concierge.ccs.auth.AdminMenu;
 import com.daol.concierge.ccs.auth.AdminRoles;
 import com.daol.concierge.ccs.auth.CcsPrincipal;
@@ -38,6 +39,7 @@ public class CcsAdminController extends BaseController {
 	@Autowired private PmsMapper pmsMapper;
 	@Autowired private InvMapper invMapper;
 	@Autowired private PmsRemoteApi pmsRemoteApi;
+	@Autowired private AiReportService aiReportService;
 
 	/** 현재 로그인 관리자 principal 얻기. 미인증 시 401. */
 	private CcsPrincipal principal() {
@@ -215,6 +217,21 @@ public class CcsAdminController extends BaseController {
 		pmsRemoteApi.updateUserDept(userId, deptCd, me.staffId());
 		log.info("[ADMIN] /staff/{}/dept → {} (mode={})", userId, deptCd, pmsRemoteApi.isEnabled() ? "PMS_REST" : "MOCK");
 		return ok("부서 변경 완료");
+	}
+
+	/**
+	 * 매니저 일일 AI 리포트 — Claude 가 어제 모든 운영 데이터를 1페이지 요약.
+	 * Query: ?date=YYYY-MM-DD (생략 시 어제)
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/ai-report", method = RequestMethod.GET, produces = APPLICATION_JSON)
+	public ApiResponse aiReport(RequestParams requestParams) {
+		MenuAccess.assertCanAccess(principal(), AdminMenu.REPORTS, invMapper);
+		String propCd = requestParams.getString("propCd");
+		String cmpxCd = requestParams.getString("cmpxCd");
+		String date   = requestParams.getString("date");
+		Map<String, Object> r = aiReportService.generate(propCd, cmpxCd, date);
+		return Responses.MapResponse.of(r);
 	}
 
 	private static String str(Object o) { return o == null ? null : String.valueOf(o); }

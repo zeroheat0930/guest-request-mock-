@@ -421,6 +421,37 @@ com.daol.concierge.ccs/
 
 ## 🗓️ 진행 로그
 
+### 2026-04-28 — 헤비 카드 3: 매니저 일일 AI 리포트 ✅
+
+매니저가 출근하면 어제 운영 데이터를 Claude 가 자동으로 1페이지 마크다운 요약. 데이터에서 패턴/이상치 직접 발견.
+
+**`AiReportService` 백엔드**
+- 모델 `claude-sonnet-4-6` (config: `anthropic.report.model`)
+- 데이터 수집 (기준일 ±00:00 ~ 23:59):
+  - `selectDailyReport` — 부서·요청유형별 집계 (총 / 완료 / 평균분)
+  - `selectSlaReport` — SLA 준수율
+  - `selectVocList` (날짜 후필터) — 본문 + 심각도 + 카테고리
+  - `selectLostFoundList` (날짜 후필터)
+  - `selectDutyLogList` (`dutyDateFrom/To`)
+- system prompt 가 한국어 마크다운 3 섹션 강제 — 📊 요약 / ⚠️ 이상 패턴 / 🎯 권장 액션
+- "데이터에 없는 추측 금지, 숫자는 그대로 인용" 명시
+- LLM 키 미설정 시 단순 통계 모드 (graceful degrade)
+
+**`GET /api/concierge/admin/ai-report?propCd&cmpxCd&date` 엔드포인트**
+- `MenuAccess.assertCanAccess(REPORTS)` 가드
+- 응답: `{ date, model, stats: {totalTasks, doneTasks, vocCount, lostFoundCount, dutyCount}, dailyByDept, slaBreakdown, summary: "마크다운" }`
+
+**`AdminReportsView` — '🤖 AI 인사이트' 첫 탭**
+- 기준일 입력 + 실행 버튼 (기본 어제)
+- KPI 5개 stat 카드 (전체 태스크 / 완료 / VOC / 분실물 / 당직)
+- Claude 답변 마크다운 그대로 렌더 (pre-wrap)
+- 분석 중 typing dot 인디케이터 + 모델명 표시
+
+**시연 데모 임팩트**
+- 매니저: 출근 → AI 인사이트 탭 → 기준일 선택 → 5초 안에 어제 운영 분석 완성
+- AI 가 "FR 부서 SLA 미준수 18% 증가, 새벽 2시대 5건 집중" 같은 데이터 직접 도출 인사이트 제공
+- 경쟁 트랙(콜센터 AIA `AIA_CALL_ANALYSIS`) 대비 우리는 호텔 운영 전체 시야
+
 ### 2026-04-28 — 헤비 카드 2: RAG 호텔 챗봇 (KB 검색 + 출처 인용) ✅
 
 게스트가 일반 질문을 던지면 호텔 KB 에서 검색 → Claude 답변 + 출처 표시.

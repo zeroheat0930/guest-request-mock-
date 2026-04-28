@@ -15,9 +15,43 @@
 		</div>
 
 		<div class="tabs">
+			<button :class="['tab', { active: tab === 'ai' }]" @click="tab = 'ai'">🤖 AI 인사이트</button>
 			<button :class="['tab', { active: tab === 'daily' }]" @click="tab = 'daily'">{{ t('admin.reports.daily') }}</button>
 			<button :class="['tab', { active: tab === 'sla' }]" @click="tab = 'sla'">{{ t('admin.reports.sla') }}</button>
 			<button :class="['tab', { active: tab === 'heatmap' }]" @click="tab = 'heatmap'">{{ t('admin.reports.heatmap') }}</button>
+		</div>
+
+		<!-- AI 인사이트 -->
+		<div v-if="tab === 'ai'" class="ai-card">
+			<div class="ai-head">
+				<div class="ai-title">
+					<span class="ai-emoji">🤖</span>
+					<div>
+						<div class="ai-h1">매니저 일일 AI 리포트</div>
+						<div class="ai-h2" v-if="aiReport.date">기준일 {{ aiReport.date }} · {{ aiReport.model || '...' }}</div>
+					</div>
+				</div>
+				<div class="ai-controls">
+					<input type="date" v-model="aiDate" class="ai-date" />
+					<button class="ai-run" :disabled="aiBusy" @click="loadAiReport">{{ aiBusy ? '분석 중…' : '실행' }}</button>
+				</div>
+			</div>
+
+			<div v-if="aiReport.stats" class="ai-stats">
+				<div class="stat-cell"><div class="stat-num">{{ aiReport.stats.totalTasks }}</div><div class="stat-lbl">전체 태스크</div></div>
+				<div class="stat-cell"><div class="stat-num">{{ aiReport.stats.doneTasks }}</div><div class="stat-lbl">완료</div></div>
+				<div class="stat-cell"><div class="stat-num">{{ aiReport.stats.vocCount }}</div><div class="stat-lbl">VOC</div></div>
+				<div class="stat-cell"><div class="stat-num">{{ aiReport.stats.lostFoundCount }}</div><div class="stat-lbl">분실물</div></div>
+				<div class="stat-cell"><div class="stat-num">{{ aiReport.stats.dutyCount }}</div><div class="stat-lbl">당직 로그</div></div>
+			</div>
+
+			<div v-if="aiBusy" class="ai-loading">
+				<span class="dot" /><span class="dot" /><span class="dot" />
+				<small>Claude 가 어제 데이터를 읽고 있습니다…</small>
+			</div>
+
+			<pre v-else-if="aiReport.summary" class="ai-summary">{{ aiReport.summary }}</pre>
+			<div v-else class="dim">실행 버튼을 눌러 AI 분석을 시작하세요.</div>
 		</div>
 
 		<!-- Daily -->
@@ -86,10 +120,36 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import { fetchReportDaily, fetchReportSla, fetchReportHeatmap } from '../api/client.js';
+import { fetchReportDaily, fetchReportSla, fetchReportHeatmap, fetchAdminAiReport } from '../api/client.js';
 import { t } from '../i18n/ui.js';
+import { useAdminContext } from '../composables/useAdminContext.js';
 
-const tab = ref('daily');
+const tab = ref('ai');
+const ctx = useAdminContext();
+const aiDate = ref(yesterday());
+const aiBusy = ref(false);
+const aiReport = ref({});
+
+function yesterday() {
+	const d = new Date(); d.setDate(d.getDate() - 1);
+	return d.toISOString().slice(0, 10);
+}
+
+async function loadAiReport() {
+	aiBusy.value = true;
+	try {
+		const r = await fetchAdminAiReport({
+			propCd: ctx.propCd.value,
+			cmpxCd: ctx.cmpxCd.value,
+			date: aiDate.value
+		});
+		aiReport.value = r?.map || {};
+	} catch (e) {
+		aiReport.value = { summary: 'AI 리포트 호출 실패: ' + (e?.response?.data?.message || e?.message || '') };
+	} finally {
+		aiBusy.value = false;
+	}
+}
 const filter = reactive({ from: '', to: '' });
 const daily = ref([]);
 const sla = ref([]);
@@ -178,6 +238,28 @@ onMounted(reload);
 .bar-fill { height: 100%; transition: width 0.3s; }
 .rate { font-weight: 700; color: #1a3a6e; }
 .meta { display: flex; justify-content: space-between; font-size: 11px; color: #8492a6; }
+
+/* AI 인사이트 카드 */
+.ai-card { background: linear-gradient(135deg, #fff 0%, #f0f7ff 100%); border-radius: 14px; padding: 22px 24px; box-shadow: 0 2px 8px rgba(26,58,110,0.08); margin-bottom: 16px; border: 1px solid #d9e8ff; }
+.ai-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+.ai-title { display: flex; gap: 12px; align-items: center; }
+.ai-emoji { font-size: 28px; }
+.ai-h1 { font-size: 16px; font-weight: 800; color: #1a3a6e; }
+.ai-h2 { font-size: 11px; color: #8492a6; font-family: ui-monospace, Menlo, monospace; margin-top: 2px; }
+.ai-controls { display: flex; gap: 8px; align-items: center; }
+.ai-date { padding: 7px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 13px; background: #fff; }
+.ai-run { padding: 8px 18px; background: #1a3a6e; color: #fff; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 13px; }
+.ai-run:disabled { opacity: 0.5; cursor: not-allowed; }
+.ai-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.stat-cell { background: #fff; border: 1px solid #e6efff; border-radius: 10px; padding: 12px 14px; text-align: center; }
+.stat-num { font-size: 24px; font-weight: 800; color: #1a3a6e; line-height: 1.1; }
+.stat-lbl { font-size: 11px; color: #8492a6; margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+.ai-loading { display: flex; gap: 8px; align-items: center; padding: 24px; color: #4a5568; font-size: 13px; justify-content: center; }
+.ai-loading .dot { width: 8px; height: 8px; border-radius: 50%; background: #1a3a6e; opacity: 0.3; animation: dot-pulse 1.2s infinite; }
+.ai-loading .dot:nth-child(2) { animation-delay: 0.2s; }
+.ai-loading .dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dot-pulse { 0%, 80%, 100% { opacity: 0.3; transform: scale(0.85); } 40% { opacity: 1; transform: scale(1.1); } }
+.ai-summary { background: #fff; border: 1px solid #e6efff; border-radius: 10px; padding: 18px 22px; font-size: 13px; line-height: 1.85; color: #2d3748; white-space: pre-wrap; word-break: break-word; font-family: -apple-system, "Pretendard", "Apple SD Gothic Neo", "Segoe UI", sans-serif; }
 
 .heatmap-wrap { overflow-x: auto; }
 .heatmap { border-collapse: collapse; background: #fff; font-size: 11px; }

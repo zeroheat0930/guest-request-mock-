@@ -257,6 +257,9 @@ export function deleteAdminDept(deptCd, params) {
 // Duty 삭제 — /api/ccs/duty/{logId}
 export const deleteDutyShift = (logId) => ccsClient.delete(`/duty/${encodeURIComponent(logId)}`);
 
+// 매니저 일일 AI 리포트
+export const fetchAdminAiReport = (params) => adminClient.get('/ai-report', { params }).then(unwrap);
+
 // 직원 USE_YN 토글 / 부서 변경 — PMS REST API 어댑터로 위임
 export function updateAdminStaffUseYn(userId, useYn) {
 	return adminClient.put(`/staff/${encodeURIComponent(userId)}/use-yn`, { useYn }).then(unwrap);
