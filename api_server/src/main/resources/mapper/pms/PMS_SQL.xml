@@ -117,8 +117,7 @@
 		<if test="deptCd != null and deptCd != ''">
 		   AND A.DEPT_CD = #{deptCd}
 		</if>
-		   AND A.USE_YN  = 'Y'
-		 ORDER BY A.USER_NM
+		 ORDER BY A.USE_YN DESC, A.USER_NM
 	</select>
 
 	<!-- ═══════════ PMS_PROPERTY / PMS_COMPLEX (관리자 컨텍스트 선택) ═══════════ -->

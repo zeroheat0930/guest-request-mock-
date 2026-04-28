@@ -421,6 +421,52 @@ com.daol.concierge.ccs/
 
 ## 🗓️ 진행 로그
 
+### 2026-04-28 — 어드민 QA fix 풀스택 + PmsRemoteApi 어댑터 도입 ✅
+
+§남은 것 1번 표의 1·2차 작업 일괄 처리 + 새 어댑터 아키텍처 박음.
+
+**AdminCcsView 재작성 — PMS 마스터 / 컨시어지 부서 / 직원 분리**
+- 회사 PMS 부서 마스터(`PMS.PMS_DIVISION`) 섹션은 read-only 유지 (회사 master, 우리가 변경하면 안 됨)
+- 컨시어지 라우팅 부서(`INV.CCS_DEPARTMENT`) 섹션 신설 — 인라인 추가 폼 / 인라인 편집 / 삭제 / iOS 토글 / sortOrd. 백엔드 `GET /api/concierge/admin/inv-departments` + 기존 POST/PUT/DELETE 그대로
+- 직원 표 — 부서 변경 dropdown + USE_YN 토글 추가. 자기자신/동급·상위 역할은 비활성 (백엔드 `AdminRoles.canManageUser` + 프론트 `canManageStaff` 이중 가드)
+- `selectUsersByDept` 의 `WHERE A.USE_YN = 'Y'` 필터 제거 — 비활성 직원도 표시되되 row dim/strike-through 로 시각 구분 (`ORDER BY A.USE_YN DESC`)
+
+**AdminDutyView 재작성 — 모달 3종 + 삭제**
+- Start 모달: shiftCd + summary + incidents (시작 시점 인수사항·진행 이슈)
+- 인수인계 모달: handoverTo + summary + incidents
+- Close 모달: summary + incidents + PMS 야간감사 체크박스
+- 오늘 카드 + History 행별 [↪ 인수인계 / ✓ 종료 / 🗑 삭제] 버튼
+
+**AdminRentalView — USE_YN 토글 UI**
+- 카탈로그 표에 토글 스위치 추가, 비활성 행 dim/strike-through
+- 편집 모달에 USE_YN 체크박스. `INV.CCS_RENTAL_ITEM.USE_YN` 컬럼은 이미 존재 (DDL 마이그레이션 불필요)
+
+**Duty DELETE 백엔드**
+- `DELETE /api/ccs/duty/{logId}` — `CcsDutyController.delete` + `CcsDutyService.delete` + `InvMapper.deleteDutyLog` + INV_SQL.xml `<delete>`
+- 존재 검증 후 INV.CCS_DUTY_LOG 삭제, WebSocket 토픽으로 변경 푸시
+
+**🔌 `PmsRemoteApi` 어댑터 — PMS 데이터 변경 위임 경계 신설** ⭐
+
+PMS 테이블을 컨시어지가 직접 UPDATE 하면 PMS 본 시스템에 직접 영향 → 어드민의 직원 USE_YN 토글·부서 변경은 PMS REST API 호출로 위임하는 어댑터 추상화 도입.
+
+```
+PmsRemoteApi (interface)
+├─ MockPmsRemoteApi  (default — concierge.pms.api.enabled 미설정 시)
+│    └─ ConcurrentHashMap 기반 메모리 오버라이드 + applyUserOverrides() 후처리
+└─ DaolPmsRemoteApi  (concierge.pms.api.enabled=true 시 활성)
+     └─ java.net.http 로 PMS REST PUT 호출 (X-Internal-Token 헤더)
+```
+
+- `PUT /api/concierge/admin/staff/{userId}/use-yn` body `{useYn:Y|N}`
+- `PUT /api/concierge/admin/staff/{userId}/dept` body `{deptCd}`
+- 시연 환경: Mock 자동 활성. 어드민이 토글하면 메모리에 저장 후 `applyUserOverrides()` 가 다음 listStaff 응답에 반영. PMS_USER_MTR 자체는 절대 안 만짐, 서버 재시작 시 원본 상태 복구
+- 실 운영: `concierge.pms.api.enabled=true` + `concierge.pms.api.base-url` + `concierge.pms.api.token` 설정만 추가하면 PMS 본 시스템 REST 엔드포인트(`/api/users/{userId}/use-yn`, `/api/users/{userId}/dept`)로 자동 위임. 본 시스템 측에 해당 엔드포인트는 별도 추가 필요 (시연 직전 PMS 소스 작업 트랙)
+- 자기자신·동급/상위 역할은 백엔드에서 `BAD_REQUEST`/`ACCESS_DENIED` 던짐
+
+**검증**
+- `mvn -q -o compile` 클린 (백엔드 0 warning)
+- `npx vite build` 클린 (3.76s, AdminDutyView 9.45kB / AdminCcsView staff 번들 등 정상 출력)
+
 ### 2026-04-27 마감 — 어드민 QA 결과 + 부서 삭제 버튼 즉시 fix ✅
 
 회사 환경에서 어드민 9개 메뉴 들어가본 결과 일부 화면이 "관리"라 해놓고 read-only / 입력 폼 누락. §남은 것 1번에 9개 화면 진단 표 + 1·2·3차 작업 순서 박아둠 (내일 2026-04-28 본격 fix).
@@ -1096,24 +1142,20 @@ LostFoundService.create(req)
 > **현황 (2026-04-27)**: 상용화 1.0 Phase A~G 완료 (메뉴별 하위 관리자 권한 부여 UI 추가) + 호텔 선택 플로우 완료. 심사 2026-05-20.
 
 ### 남은 것 (심사 전, 로컬 데모 기준)
-1. **어드민 화면 QA fix (내일 작업, 2026-04-28 예정)** — 회사 환경에서 어드민 9개 메뉴 들어가본 결과 일부 화면이 "관리"라고 해놓고 read-only 거나 입력 폼 누락. 백엔드 ↔ 프론트 매칭 진단:
+1. **어드민 화면 QA fix** — 1·2차 완료 ✅ (2026-04-28). 3차(LostFound 관리자 직접 등록·매칭 UI / VOC 만족도·해결 처리 보강)는 헤비 AI 카드 이후 시간 남으면 진행
 
-   | 화면 | 현재 동작 | 빠진 동작 | 백엔드 |
-   |---|---|---|---|
-   | **AdminCcsView** | 부서·직원 read-only 표 | 부서 등록/수정/삭제, 직원 USE_YN 토글 | ✅ 다 있음 (`POST/PUT/DELETE /api/concierge/admin/departments`, `PUT /api/concierge/admin/staff`). CSS(`.btn-add/.btn-edit/.cell-input/.editing-row/.inline-form`) 데드 클래스 — template 만 깎인 상태 |
-   | **AdminDutyView** | DAY/NIGHT 시작 버튼만 | summary/incidents 입력, 인수인계 모달, 종료 버튼, **삭제** | POST/handover/close 있음. **DELETE 없음 → 백엔드부터 추가 필요** |
-   | AdminLostFoundView | 상태 전이 OK | 관리자 직접 등록, 매칭 UI | POST/match 있는데 UI 미사용 |
-   | AdminVocView | (재확인) | 만족도 표시/해결 처리 보강 | satisfaction/resolve 있음 |
-   | AdminRentalView | 카탈로그 추가/수정 + loan/return | **카탈로그 삭제/비활성화** | DELETE 미존재 + USE_YN 컬럼 없음 → DDL 변경 동반 |
-   | AdminFeaturesView / Reports / Audit / RoleGrant | OK | — | — |
+   | 화면 | 상태 |
+   |---|---|
+   | **AdminCcsView** | ✅ PMS 부서 read-only / INV.CCS 부서 CRUD / 직원 USE_YN 토글·부서 변경 (PmsRemoteApi 위임) |
+   | **AdminDutyView** | ✅ Start 모달 / 인수인계 모달 / Close 모달 / 삭제 버튼 |
+   | **AdminRentalView** | ✅ 카탈로그 USE_YN 토글 + 모달 체크박스 + 비활성 행 dim |
+   | AdminLostFoundView | ⏳ 3차 (관리자 직접 등록 + 매칭 UI) |
+   | AdminVocView | ⏳ 3차 (만족도/해결 처리 보강) |
+   | AdminFeaturesView / Reports / Audit / RoleGrant | ✅ |
 
-   **작업 순서**:
-   - **1차 (백엔드 무수정)**: AdminCcsView 부서 CRUD 인라인 폼 + 직원 USE_YN 토글 / AdminDutyView 본문 입력 폼 + 인수인계 모달 + 종료 버튼 (등록·인수인계·종료 백엔드 이미 존재, 화면만)
-   - **2차 (백엔드 추가)**: `DELETE /api/ccs/duty/{logId}` 신규 (Service+Mapper+xml+Controller) + 화면 삭제 버튼 / `CCS_RENTAL_ITEM.USE_YN` 컬럼 마이그레이션 + 비활성화 토글
-   - **3차 (여유 시)**: LostFound 관리자 직접 등록 + 매칭 UI / VOC 만족도·해결 처리 보강
-
-2. **로컬 시연 셋업** — `docs/LOCAL_DEMO.md` 의 매뉴얼대로: 노트북 IP 고정, 방화벽, 같은 LAN 기기 접속 URL/QR, 시드 데이터 점검
-3. **심사 리허설** — `docs/DEMO_SCRIPT.md` 90초 시나리오, 노트북 + 태블릿 + 휴대폰 3기기
+2. **헤비 AI 풀패키지** (2026-04-28~) — 경쟁 트랙 차별화. AI 모델 4개(Claude/Voyage/Qdrant/Whisper) + Tool Use + RAG + 다국어 통역 카드들 박는 중
+3. **로컬 시연 셋업** — `docs/LOCAL_DEMO.md` 의 매뉴얼대로: 노트북 IP 고정, 방화벽, 같은 LAN 기기 접속 URL/QR, 시드 데이터 점검
+4. **심사 리허설** — `docs/DEMO_SCRIPT.md` 90초 시나리오, 노트북 + 태블릿 + 휴대폰 3기기
 
 ### 상용 배포 단계 (심사 후로 연기)
 - **`DaolPmsSyncAdapter` 실 구현** — 현재 `syncLostFound/Voc/Rental/Duty` 는 로그만. 상용 배포 전 PMS 테이블 INSERT 작성

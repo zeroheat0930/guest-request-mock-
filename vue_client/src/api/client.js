@@ -239,12 +239,26 @@ function unwrap(r) { return r.data; }
 export const fetchAdminDepts = (params) => adminClient.get('/departments', { params }).then(unwrap);
 export const fetchAdminStaff = (params) => adminClient.get('/staff', { params }).then(unwrap);
 
+// 컨시어지 자체 부서 (INV.CCS_DEPARTMENT) — CRUD
+export const fetchAdminInvDepts = (params) => adminClient.get('/inv-departments', { params }).then(unwrap);
+
 export function createAdminDept(data) {
 	return adminClient.post('/departments', data).then(unwrap);
 }
-export function updateAdminDept(deptCd, data) {
-	return adminClient.put(`/departments/${encodeURIComponent(deptCd)}`, data).then(unwrap);
+export function updateAdminDept(deptCd, data, params) {
+	return adminClient.put(`/departments/${encodeURIComponent(deptCd)}`, data, { params }).then(unwrap);
 }
-export function deleteAdminDept(deptCd) {
-	return adminClient.delete(`/departments/${encodeURIComponent(deptCd)}`).then(unwrap);
+export function deleteAdminDept(deptCd, params) {
+	return adminClient.delete(`/departments/${encodeURIComponent(deptCd)}`, { params }).then(unwrap);
+}
+
+// Duty 삭제 — /api/ccs/duty/{logId}
+export const deleteDutyShift = (logId) => ccsClient.delete(`/duty/${encodeURIComponent(logId)}`);
+
+// 직원 USE_YN 토글 / 부서 변경 — PMS REST API 어댑터로 위임
+export function updateAdminStaffUseYn(userId, useYn) {
+	return adminClient.put(`/staff/${encodeURIComponent(userId)}/use-yn`, { useYn }).then(unwrap);
+}
+export function updateAdminStaffDept(userId, deptCd) {
+	return adminClient.put(`/staff/${encodeURIComponent(userId)}/dept`, { deptCd }).then(unwrap);
 }

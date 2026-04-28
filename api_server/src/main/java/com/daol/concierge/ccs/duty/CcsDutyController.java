@@ -80,4 +80,13 @@ public class CcsDutyController extends BaseController {
 		Map<String, Object> saved = service.close(logId, requestParams.getParams());
 		return Responses.MapResponse.of(saved);
 	}
+
+	@Operation(summary = "당직 로그 삭제 (관리자)")
+	@ResponseBody
+	@RequestMapping(value = "/{logId}", method = RequestMethod.DELETE, produces = APPLICATION_JSON)
+	public ApiResponse delete(@PathVariable String logId) {
+		CcsSecurityContextUtil.requireCcsPrincipal();
+		service.delete(logId);
+		return ok("삭제 완료");
+	}
 }

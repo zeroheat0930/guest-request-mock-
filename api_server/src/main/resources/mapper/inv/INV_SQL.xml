@@ -140,6 +140,21 @@
 
 	<!-- ═══════════ CCS_DEPARTMENT ═══════════ -->
 
+	<select id="selectDepartmentList" resultType="map">
+		SELECT PROP_CD AS propCd, CMPX_CD AS cmpxCd, DEPT_CD AS deptCd,
+		       DEPT_NM AS deptNm, SORT_ORD AS sortOrd, USE_YN AS useYn
+		  FROM INV.CCS_DEPARTMENT
+		 WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd}
+		 ORDER BY SORT_ORD, DEPT_CD
+	</select>
+
+	<select id="selectDepartment" resultType="map">
+		SELECT PROP_CD AS propCd, CMPX_CD AS cmpxCd, DEPT_CD AS deptCd,
+		       DEPT_NM AS deptNm, SORT_ORD AS sortOrd, USE_YN AS useYn
+		  FROM INV.CCS_DEPARTMENT
+		 WHERE PROP_CD = #{propCd} AND CMPX_CD = #{cmpxCd} AND DEPT_CD = #{deptCd}
+	</select>
+
 	<insert id="insertDepartment" parameterType="map">
 		INSERT INTO INV.CCS_DEPARTMENT (PROP_CD, CMPX_CD, DEPT_CD, DEPT_NM, SORT_ORD, USE_YN, REG_USER, REG_DT)
 		VALUES (#{propCd}, #{cmpxCd}, #{deptCd}, #{deptNm}, #{sortOrd}, 'Y', 'ADMIN', NOW())
@@ -508,6 +523,11 @@
 		       UPDATED_AT = NOW()
 		 WHERE LOG_ID = #{logId}
 	</update>
+
+	<delete id="deleteDutyLog" parameterType="map">
+		DELETE FROM INV.CCS_DUTY_LOG
+		 WHERE LOG_ID = #{logId}
+	</delete>
 
 	<!-- PMS 야간감사 상태 placeholder — 실제 PMS 테이블(NIGHT_AUDIT 등) 미접근, 고정 'N' 리턴.
 	     VPN 접속 후 PMS.HT_ROOM_PRICE / PMS.NIGHT_AUDIT_STATUS 등으로 교체 예정 -->

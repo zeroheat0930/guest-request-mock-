@@ -45,7 +45,9 @@ public interface InvMapper {
 	int insertLateCo(Map<String, Object> param);
 	int updateLateCoStatus(Map<String, Object> param);
 
-	// ── CCS_DEPARTMENT ──
+	// ── CCS_DEPARTMENT — 컨시어지 자체 라우팅 부서 (PMS_DIVISION 와 별개) ──
+	List<Map<String, Object>> selectDepartmentList(@Param("propCd") String propCd, @Param("cmpxCd") String cmpxCd);
+	Map<String, Object> selectDepartment(@Param("propCd") String propCd, @Param("cmpxCd") String cmpxCd, @Param("deptCd") String deptCd);
 	int insertDepartment(Map<String, Object> param);
 	int updateDepartment(Map<String, Object> param);
 	int deleteDepartment(@Param("propCd") String propCd, @Param("cmpxCd") String cmpxCd, @Param("deptCd") String deptCd);
@@ -110,6 +112,7 @@ public interface InvMapper {
 	                                        @Param("shift") String shift);
 	int updateDutyLogHandover(Map<String, Object> param);
 	int updateDutyLogClose(Map<String, Object> param);
+	int deleteDutyLog(@Param("logId") String logId);
 	Map<String, Object> selectPmsNightAuditStatus(@Param("propCd") String propCd, @Param("dateYmd") String dateYmd);
 
 	// ── CCS_AUDIT_LOG (Phase E) ──

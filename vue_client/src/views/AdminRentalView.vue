@@ -58,14 +58,21 @@
 						<th>{{ t('admin.lf.itemName') }}</th>
 						<th>{{ t('admin.lf.category') }}</th>
 						<th>{{ t('admin.rental.stock') }}</th>
+						<th>{{ t('admin.ccs.col.useYn') }}</th>
 						<th></th>
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="i in catalog" :key="i.itemId">
+					<tr v-for="i in catalog" :key="i.itemId" :class="{ 'row-disabled': i.useYn === 'N' }">
 						<td>{{ i.name }}</td>
 						<td>{{ catLabel(i.category) }}</td>
 						<td>{{ i.stockAvailable }} / {{ i.stockTotal }}</td>
+						<td>
+							<label class="switch" :title="i.useYn === 'Y' ? t('admin.ccs.on') : t('admin.ccs.off')">
+								<input type="checkbox" :checked="i.useYn !== 'N'" :disabled="busy" @change="toggleActive(i, $event.target.checked)" />
+								<span class="slider"></span>
+							</label>
+						</td>
 						<td class="actions"><button @click="openEdit(i)">{{ t('admin.common.edit') }}</button></td>
 					</tr>
 				</tbody>
@@ -93,6 +100,10 @@
 					<label><span class="lbl">{{ t('lostfound.description') }}</span><textarea v-model="editing.description" rows="2"></textarea></label>
 					<label><span class="lbl">{{ t('admin.rental.stock') }} (total)</span><input type="number" v-model.number="editing.stockTotal" /></label>
 					<label v-if="!editing.itemId"><span class="lbl">{{ t('admin.rental.stock') }} (avail)</span><input type="number" v-model.number="editing.stockAvailable" /></label>
+					<label v-if="editing.itemId" class="check-row">
+						<input type="checkbox" :checked="editing.useYn !== 'N'" @change="editing.useYn = ($event.target.checked ? 'Y' : 'N')" />
+						<span>{{ t('admin.ccs.on') }} ({{ t('admin.ccs.col.useYn') }})</span>
+					</label>
 				</div>
 				<div class="modal-actions">
 					<button class="ghost" @click="editing = null">{{ t('staff.action.cancel') }}</button>
@@ -116,10 +127,30 @@ const catalog = ref([]);
 const orders = ref([]);
 const orderFilter = reactive({ statusCd: '' });
 const editing = ref(null);
+const busy = ref(false);
 
 async function loadCatalog() {
 	const res = await fetchRentalCatalog();
 	catalog.value = res?.map?.list || res?.list || [];
+}
+
+async function toggleActive(item, checked) {
+	const useYn = checked ? 'Y' : 'N';
+	busy.value = true;
+	try {
+		await updateRentalItem(item.itemId, {
+			itemId: item.itemId,
+			name: item.name,
+			description: item.description,
+			category: item.category,
+			stockTotal: item.stockTotal,
+			useYn
+		});
+		item.useYn = useYn;
+	} catch (e) {
+		alert('변경 실패: ' + (e?.message || ''));
+		await loadCatalog();
+	} finally { busy.value = false; }
 }
 async function loadOrders() {
 	const params = {};
@@ -128,8 +159,8 @@ async function loadOrders() {
 	orders.value = res?.map?.list || res?.list || [];
 }
 
-function openNew() { editing.value = { name: '', category: 'UMBRELLA', description: '', stockTotal: 1, stockAvailable: 1 }; }
-function openEdit(i) { editing.value = { ...i }; }
+function openNew() { editing.value = { name: '', category: 'UMBRELLA', description: '', stockTotal: 1, stockAvailable: 1, useYn: 'Y' }; }
+function openEdit(i) { editing.value = { ...i, useYn: i.useYn || 'Y' }; }
 
 async function save() {
 	if (!editing.value) return;
@@ -182,6 +213,21 @@ onMounted(async () => { await loadCatalog(); await loadOrders(); });
 .actions { display: flex; gap: 6px; }
 .actions button { padding: 5px 10px; border-radius: 5px; border: 1px solid #cbd5e0; background: #f7fafc; font-size: 12px; font-weight: 700; cursor: pointer; }
 .dim { padding: 32px; text-align: center; color: #a0aec0; background: #fff; border-radius: 10px; }
+
+.tbl tbody tr.row-disabled td { background: #fafafa; color: #a0aec0; }
+.tbl tbody tr.row-disabled td:not(:nth-last-child(-n+2)) { text-decoration: line-through; }
+
+/* iOS 토글 */
+.switch { position: relative; display: inline-block; width: 38px; height: 20px; vertical-align: middle; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; inset: 0; background: #cbd5e0; border-radius: 20px; transition: background 0.2s; }
+.slider::before { content: ''; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: transform 0.2s; }
+.switch input:checked + .slider { background: #48bb78; }
+.switch input:checked + .slider::before { transform: translateX(18px); }
+.switch input:disabled + .slider { opacity: 0.5; cursor: not-allowed; }
+
+.check-row { flex-direction: row !important; align-items: center; gap: 8px !important; font-size: 13px !important; }
+.check-row input { margin: 0; }
 
 .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
 .pill.st-requested { background: #fff4e6; color: #ad6200; }

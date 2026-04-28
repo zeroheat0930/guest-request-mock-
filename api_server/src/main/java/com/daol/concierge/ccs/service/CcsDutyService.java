@@ -78,6 +78,13 @@ public class CcsDutyService {
 		return saved;
 	}
 
+	public void delete(String logId) {
+		Map<String, Object> o = invMapper.selectDutyLog(logId);
+		if (o == null) throw new ApiException(ApiStatus.NOT_FOUND, "당직 로그 없음");
+		invMapper.deleteDutyLog(logId);
+		publish(o);
+	}
+
 	private static void require(Map<String, Object> p, String... keys) {
 		for (String k : keys) {
 			Object v = p.get(k);
