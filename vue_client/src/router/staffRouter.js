@@ -19,12 +19,14 @@ const routes = [
 	{ path: '/staff/context',  component: () => import('../views/PropertyContextView.vue'), meta: { staff: true, context: true } },
 	{ path: '/staff',          component: StaffDashboardView, meta: { staff: true } },
 	{ path: '/staff/duty',     component: () => import('../views/staff/DutyLogView.vue'), meta: { staff: true } },
+	{ path: '/staff/lostfound',component: () => import('../views/AdminLostFoundView.vue'),meta: { staff: true } },
 	// 구 /admin/login 은 스태프 로그인으로 통합
 	{ path: '/admin/login',    redirect: '/staff/login' },
 	{ path: '/admin/features', component: AdminFeaturesView,  meta: { admin: true } },
 	{ path: '/admin/ccs',      component: AdminCcsView,       meta: { admin: true } },
 	{ path: '/admin/qr',       component: () => import('../views/staff/QrGeneratorView.vue'), meta: { admin: true } },
-	{ path: '/admin/lostfound',component: () => import('../views/AdminLostFoundView.vue'), meta: { admin: true } },
+	// 분실물 관리는 일선 스태프 업무로 이전됨 — /staff/lostfound 로 redirect
+	{ path: '/admin/lostfound',redirect: '/staff/lostfound' },
 	{ path: '/admin/voc',      component: () => import('../views/AdminVocView.vue'),        meta: { admin: true } },
 	{ path: '/admin/rental',   component: () => import('../views/AdminRentalView.vue'),     meta: { admin: true } },
 	{ path: '/admin/duty',     component: () => import('../views/AdminDutyView.vue'),       meta: { admin: true } },

@@ -37,6 +37,9 @@
 					<router-link to="/staff" class="item">
 						<span class="ic">📋</span><span class="label">{{ t('shell.nav.dashboard') }}</span>
 					</router-link>
+					<router-link to="/staff/lostfound" class="item">
+						<span class="ic">🔍</span><span class="label">{{ t('shell.nav.lostfound') }}</span>
+					</router-link>
 					<router-link to="/staff/duty" class="item" v-if="hasStaff">
 						<span class="ic">🗓️</span><span class="label">{{ t('shell.nav.duty') }}</span>
 					</router-link>
@@ -49,9 +52,6 @@
 					</router-link>
 					<router-link v-if="canSee(MENU.ROUTING)" to="/admin/ccs" class="item">
 						<span class="ic">👥</span><span class="label">{{ t('shell.nav.ccs') }}</span>
-					</router-link>
-					<router-link v-if="canSee(MENU.LOSTFOUND)" to="/admin/lostfound" class="item">
-						<span class="ic">🔍</span><span class="label">{{ t('shell.nav.lostfound') }}</span>
 					</router-link>
 					<router-link v-if="canSee(MENU.VOC)" to="/admin/voc" class="item">
 						<span class="ic">💬</span><span class="label">{{ t('shell.nav.voc') }}</span>
