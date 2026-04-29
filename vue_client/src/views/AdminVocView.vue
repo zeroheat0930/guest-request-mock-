@@ -33,7 +33,7 @@
 		<div v-if="!rows.length && !busy" class="dim">{{ t('admin.common.empty') }}</div>
 
 		<div class="voc-list">
-			<div v-for="r in rows" :key="r.vocId" :class="['voc-card', 'sev-' + (r.severity || '').toLowerCase()]">
+			<div v-for="r in sortedRows" :key="r.vocId" :class="['voc-card', 'sev-' + (r.severity || '').toLowerCase()]">
 				<div class="voc-head">
 					<span :class="['sev-badge', 'sev-' + (r.severity || 'normal').toLowerCase()]">{{ sevLabel(r.severity) }}</span>
 					<span class="cat">{{ catLabel(r.category) }}</span>
@@ -43,8 +43,23 @@
 				<h4 class="voc-title">{{ r.title }}</h4>
 				<p class="voc-content">{{ r.content }}</p>
 				<div v-if="r.resolution" class="voc-resolution">
-					<span class="res-label">✓ {{ t('admin.voc.action.resolve') }}</span>
-					{{ r.resolution }}
+					<div class="res-meta">
+						<span class="res-label">✓ {{ t('admin.voc.action.resolve') }}</span>
+						<span v-if="r.handlerId" class="res-handler">{{ t('admin.voc.handler') }}: {{ r.handlerId }}</span>
+						<span v-if="r.resolvedAt" class="res-time">{{ fmt(r.resolvedAt) }}</span>
+					</div>
+					<div class="res-text">{{ r.resolution }}</div>
+				</div>
+				<div v-if="hasSatisfaction(r)" class="voc-satisfaction">
+					<span class="sat-label">{{ t('admin.voc.satisfaction') }}</span>
+					<span class="stars" :title="`${r.satisfaction} / 5`">
+						<span v-for="n in 5" :key="n" :class="['star', { filled: n <= Number(r.satisfaction) }]">★</span>
+					</span>
+					<span class="sat-num">{{ Number(r.satisfaction).toFixed(1) }} / 5</span>
+				</div>
+				<div v-else-if="r.statusCd === 'RESOLVED' || r.statusCd === 'CLOSED'" class="voc-satisfaction unrated">
+					<span class="sat-label">{{ t('admin.voc.satisfaction') }}</span>
+					<span class="dim">{{ t('admin.voc.unrated') }}</span>
 				</div>
 				<div class="voc-actions">
 					<button v-if="r.statusCd === 'OPEN'" @click="transition(r, 'IN_PROG')">{{ t('staff.action.start') }}</button>
@@ -73,7 +88,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { fetchVocList, updateVocStatus, resolveVoc } from '../api/client.js';
 import { t } from '../i18n/ui.js';
 
@@ -83,6 +98,23 @@ const busy = ref(false);
 const err = ref('');
 const resolving = ref(null);
 const resolutionText = ref('');
+
+const SEV_RANK = { URGENT: 0, HIGH: 1, NORMAL: 2, LOW: 3 };
+const sortedRows = computed(() => {
+	return [...rows.value].sort((a, b) => {
+		const ra = SEV_RANK[a.severity] ?? 9;
+		const rb = SEV_RANK[b.severity] ?? 9;
+		if (ra !== rb) return ra - rb;
+		const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+		const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+		return tb - ta;
+	});
+});
+
+function hasSatisfaction(r) {
+	const s = r?.satisfaction;
+	return s !== null && s !== undefined && s !== '' && Number(s) > 0;
+}
 
 async function load() {
 	busy.value = true; err.value = '';
@@ -194,7 +226,23 @@ onMounted(load);
 .voc-title { margin: 4px 0; font-size: 15px; color: #1a3a6e; font-weight: 700; }
 .voc-content { margin: 4px 0 8px; font-size: 13px; color: #4a5568; white-space: pre-wrap; }
 .voc-resolution { padding: 8px 10px; background: #f0fff4; border-radius: 6px; font-size: 12px; color: #276749; margin-top: 6px; }
-.res-label { display: block; font-weight: 700; margin-bottom: 3px; }
+.voc-resolution .res-meta { display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap; }
+.res-label { font-weight: 700; }
+.res-handler { color: #4a5568; font-size: 11px; }
+.res-time { color: #8492a6; font-size: 11px; margin-left: auto; }
+.res-text { line-height: 1.4; white-space: pre-wrap; }
+
+.voc-satisfaction {
+	display: flex; gap: 10px; align-items: center; margin-top: 6px;
+	padding: 6px 10px; background: #fffbf0; border-radius: 6px; font-size: 12px;
+}
+.voc-satisfaction.unrated { background: #f7fafc; }
+.voc-satisfaction .sat-label { font-weight: 700; color: #4a5568; font-size: 11px; text-transform: uppercase; }
+.voc-satisfaction .stars { display: inline-flex; gap: 1px; }
+.voc-satisfaction .star { color: #cbd5e0; font-size: 16px; line-height: 1; }
+.voc-satisfaction .star.filled { color: #f6ad55; }
+.voc-satisfaction .sat-num { color: #8492a6; font-size: 11px; margin-left: auto; }
+.voc-satisfaction .dim { color: #a0aec0; font-size: 11px; }
 
 .voc-actions { display: flex; gap: 6px; margin-top: 10px; }
 .voc-actions button {

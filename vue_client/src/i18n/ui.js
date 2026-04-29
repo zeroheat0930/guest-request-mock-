@@ -375,6 +375,13 @@ const messages = {
   'admin.lf.st.matched':    { ko: '매칭됨',        en: 'Matched',          ja: 'マッチ済',            zh: '已匹配' },
   'admin.lf.st.returned':   { ko: '반환됨',        en: 'Returned',         ja: '返却済',              zh: '已归还' },
   'admin.lf.st.disposed':   { ko: '폐기됨',        en: 'Disposed',         ja: '廃棄済',              zh: '已处置' },
+  'admin.lf.action.add':    { ko: '+ 등록',        en: '+ New',            ja: '+ 登録',              zh: '+ 登记' },
+  'admin.lf.create.title':  { ko: '습득물 등록',   en: 'Register Found Item', ja: '習得物登録',       zh: '登记拾获物' },
+  'admin.lf.create.hint':   { ko: '스태프가 발견한 물품을 직접 등록합니다', en: 'Register an item found by staff', ja: 'スタッフが発見したアイテムを登録します', zh: '由员工直接登记拾获的物品' },
+  'admin.lf.match.title':   { ko: '매칭 후보 선택', en: 'Select Match',    ja: 'マッチ候補選択',      zh: '选择匹配项' },
+  'admin.lf.match.empty':   { ko: '매칭 후보 없음', en: 'No candidates',   ja: 'マッチ候補なし',      zh: '无匹配候选' },
+  'admin.lf.match.hint':    { ko: '같은 카테고리 + 미매칭 항목', en: 'Same category, not yet matched', ja: '同カテゴリ・未マッチのみ', zh: '同类别且未匹配' },
+  'admin.lf.rmNo':          { ko: '객실',          en: 'Room',             ja: '客室',                zh: '客房' },
 
   // Admin VOC (Phase B)
   'admin.voc.title':        { ko: 'VOC 관리',      en: 'Feedback Mgmt',    ja: 'VOC管理',             zh: '投诉管理' },
@@ -388,6 +395,10 @@ const messages = {
   'admin.voc.st.inProg':    { ko: '처리중',        en: 'In Progress',      ja: '処理中',              zh: '处理中' },
   'admin.voc.st.resolved':  { ko: '해결됨',        en: 'Resolved',         ja: '解決済',              zh: '已解决' },
   'admin.voc.st.closed':    { ko: '종료됨',        en: 'Closed',           ja: '終了',                zh: '已关闭' },
+  'admin.voc.satisfaction': { ko: '만족도',        en: 'Satisfaction',     ja: '満足度',              zh: '满意度' },
+  'admin.voc.resolvedAt':   { ko: '해결일시',      en: 'Resolved At',      ja: '解決日時',            zh: '解决时间' },
+  'admin.voc.handler':      { ko: '담당자',        en: 'Handler',          ja: '担当者',              zh: '负责人' },
+  'admin.voc.unrated':      { ko: '미평가',        en: 'Not rated',        ja: '未評価',              zh: '未评价' },
 
   // Admin Rental (Phase D)
   'admin.rental.title':     { ko: '대여 관리',     en: 'Rental Mgmt',      ja: 'レンタル管理',        zh: '租借管理' },

@@ -1,6 +1,9 @@
 <template>
 	<div class="admin-lf">
-		<h2 class="title">{{ t('admin.lf.title') }}</h2>
+		<div class="head-row">
+			<h2 class="title">{{ t('admin.lf.title') }}</h2>
+			<button class="btn-add" @click="openCreate">{{ t('admin.lf.action.add') }}</button>
+		</div>
 
 		<div class="filter-row">
 			<select v-model="filter.statusCd" @change="load">
@@ -45,12 +48,14 @@
 					<td class="item-cell" @click="detail = r">
 						<strong>{{ r.itemName }}</strong>
 						<span class="desc" v-if="r.description">{{ r.description }}</span>
+						<span v-if="r.matchedLfId" class="matched-tag">⇄ {{ r.matchedLfId.slice(-6) }}</span>
 					</td>
 					<td>{{ r.locationHint || '—' }}</td>
 					<td>{{ (r.reporterType || '-') + (r.reporterRef ? ' · ' + r.reporterRef : '') }}</td>
 					<td><span :class="['pill', 'st-' + (r.statusCd || '').toLowerCase()]">{{ stLabel(r.statusCd) }}</span></td>
 					<td class="actions">
 						<button v-if="r.statusCd === 'REPORTED'" @click="transition(r, 'FOUND')">{{ t('admin.lf.action.found') }}</button>
+						<button v-if="!r.matchedLfId && (r.statusCd === 'REPORTED' || r.statusCd === 'FOUND')" class="ghost" @click="openMatch(r)">{{ t('admin.lf.action.match') }}</button>
 						<button v-if="r.statusCd === 'FOUND' || r.statusCd === 'MATCHED'" @click="transition(r, 'RETURNED')">{{ t('admin.lf.action.return') }}</button>
 						<button class="warn" v-if="r.statusCd !== 'DISPOSED' && r.statusCd !== 'RETURNED'" @click="transition(r, 'DISPOSED')">{{ t('admin.lf.action.dispose') }}</button>
 					</td>
@@ -70,12 +75,87 @@
 					<div class="row"><span class="lbl">{{ t('admin.lf.location') }}</span><span>{{ detail.locationHint || '—' }}</span></div>
 					<div class="row" v-if="detail.description"><span class="lbl">{{ t('lostfound.description') }}</span><span>{{ detail.description }}</span></div>
 					<div class="row" v-if="detail.reporterType"><span class="lbl">{{ t('admin.lf.reporter') }}</span><span>{{ detail.reporterType }} · {{ detail.reporterRef || '—' }}</span></div>
-					<div class="row" v-if="detail.rmNo"><span class="lbl">{{ t('staff.detail.room') }}</span><span>{{ detail.rmNo }}</span></div>
+					<div class="row" v-if="detail.rmNo"><span class="lbl">{{ t('admin.lf.rmNo') }}</span><span>{{ detail.rmNo }}</span></div>
 					<div class="row"><span class="lbl">{{ t('admin.lf.reportedAt') }}</span><span>{{ fmt(detail.createdAt) }}</span></div>
 					<div class="row" v-if="detail.handlerId"><span class="lbl">{{ t('admin.lf.handler') }}</span><span>{{ detail.handlerId }}</span></div>
+					<div class="row" v-if="detail.matchedLfId"><span class="lbl">⇄</span><span>{{ detail.matchedLfId }}</span></div>
 				</div>
 				<div class="modal-actions">
 					<button class="ghost" @click="detail = null">{{ t('staff.action.close') }}</button>
+				</div>
+			</div>
+		</div>
+
+		<div v-if="creating" class="modal-overlay" @click.self="closeCreate">
+			<div class="modal-card">
+				<div class="modal-head">
+					<h3>{{ t('admin.lf.create.title') }}</h3>
+					<button class="modal-close" @click="closeCreate">✕</button>
+				</div>
+				<div class="modal-body form">
+					<p class="hint">{{ t('admin.lf.create.hint') }}</p>
+					<label class="field">
+						<span>{{ t('admin.lf.category') }}</span>
+						<select v-model="createForm.category">
+							<option value="WALLET">{{ t('lostfound.cat.wallet') }}</option>
+							<option value="PHONE">{{ t('lostfound.cat.phone') }}</option>
+							<option value="CLOTHING">{{ t('lostfound.cat.clothing') }}</option>
+							<option value="ACCESSORY">{{ t('lostfound.cat.accessory') }}</option>
+							<option value="DOCUMENT">{{ t('lostfound.cat.document') }}</option>
+							<option value="ETC">{{ t('lostfound.cat.etc') }}</option>
+						</select>
+					</label>
+					<label class="field">
+						<span>{{ t('admin.lf.itemName') }} *</span>
+						<input v-model="createForm.itemName" :placeholder="t('lostfound.item.placeholder')" />
+					</label>
+					<label class="field">
+						<span>{{ t('admin.lf.location') }}</span>
+						<input v-model="createForm.locationHint" :placeholder="t('lostfound.location.placeholder')" />
+					</label>
+					<label class="field">
+						<span>{{ t('admin.lf.rmNo') }}</span>
+						<input v-model="createForm.rmNo" placeholder="702" />
+					</label>
+					<label class="field">
+						<span>{{ t('lostfound.description') }}</span>
+						<textarea v-model="createForm.description" rows="3"></textarea>
+					</label>
+				</div>
+				<div class="modal-actions">
+					<button class="ghost" @click="closeCreate">{{ t('staff.action.cancel') }}</button>
+					<button class="primary" :disabled="!createForm.itemName.trim() || createBusy" @click="doCreate">
+						{{ t('admin.lf.action.add') }}
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<div v-if="matching" class="modal-overlay" @click.self="closeMatch">
+			<div class="modal-card">
+				<div class="modal-head">
+					<h3>{{ t('admin.lf.match.title') }}</h3>
+					<button class="modal-close" @click="closeMatch">✕</button>
+				</div>
+				<div class="modal-body">
+					<div class="match-source">
+						<span :class="['pill', 'st-' + (matching.statusCd || '').toLowerCase()]">{{ stLabel(matching.statusCd) }}</span>
+						<strong>{{ matching.itemName }}</strong>
+						<span class="dim-text">{{ catLabel(matching.category) }} · {{ matching.reporterType }}</span>
+					</div>
+					<p class="hint">{{ t('admin.lf.match.hint') }}</p>
+					<div v-if="!matchCandidates.length" class="dim center">{{ t('admin.lf.match.empty') }}</div>
+					<ul v-else class="cand-list">
+						<li v-for="c in matchCandidates" :key="c.lfId" @click="doMatch(c)">
+							<span :class="['pill', 'st-' + (c.statusCd || '').toLowerCase()]">{{ stLabel(c.statusCd) }}</span>
+							<strong>{{ c.itemName }}</strong>
+							<span class="dim-text">{{ c.reporterType }} · {{ fmt(c.createdAt) }}</span>
+							<span class="loc" v-if="c.locationHint">📍 {{ c.locationHint }}</span>
+						</li>
+					</ul>
+				</div>
+				<div class="modal-actions">
+					<button class="ghost" @click="closeMatch">{{ t('staff.action.cancel') }}</button>
 				</div>
 			</div>
 		</div>
@@ -83,8 +163,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { fetchLostFoundList, updateLostFoundStatus } from '../api/client.js';
+import { ref, reactive, computed, onMounted } from 'vue';
+import { fetchLostFoundList, updateLostFoundStatus, createLostFound, matchLostFound } from '../api/client.js';
 import { t } from '../i18n/ui.js';
 
 const rows = ref([]);
@@ -92,6 +172,21 @@ const filter = reactive({ statusCd: '', category: '' });
 const busy = ref(false);
 const err = ref('');
 const detail = ref(null);
+
+const creating = ref(false);
+const createBusy = ref(false);
+const createForm = reactive({ category: 'ETC', itemName: '', locationHint: '', rmNo: '', description: '' });
+
+const matching = ref(null);
+const matchCandidates = computed(() => {
+	if (!matching.value) return [];
+	return rows.value.filter(r =>
+		r.lfId !== matching.value.lfId &&
+		!r.matchedLfId &&
+		r.category === matching.value.category &&
+		(r.statusCd === 'REPORTED' || r.statusCd === 'FOUND')
+	);
+});
 
 async function load() {
 	busy.value = true; err.value = '';
@@ -114,6 +209,51 @@ async function transition(row, statusCd) {
 		await load();
 	} catch (e) {
 		err.value = e?.message || 'update error';
+	}
+}
+
+function openCreate() {
+	createForm.category = 'ETC';
+	createForm.itemName = '';
+	createForm.locationHint = '';
+	createForm.rmNo = '';
+	createForm.description = '';
+	creating.value = true;
+}
+function closeCreate() { creating.value = false; }
+
+async function doCreate() {
+	if (!createForm.itemName.trim()) return;
+	createBusy.value = true; err.value = '';
+	try {
+		await createLostFound({
+			category: createForm.category,
+			itemName: createForm.itemName.trim(),
+			locationHint: createForm.locationHint.trim() || undefined,
+			rmNo: createForm.rmNo.trim() || undefined,
+			description: createForm.description.trim() || undefined,
+			statusCd: 'FOUND'
+		});
+		creating.value = false;
+		await load();
+	} catch (e) {
+		err.value = e?.message || 'create error';
+	} finally {
+		createBusy.value = false;
+	}
+}
+
+function openMatch(row) { matching.value = row; }
+function closeMatch() { matching.value = null; }
+
+async function doMatch(candidate) {
+	if (!matching.value) return;
+	try {
+		await matchLostFound(matching.value.lfId, { matchedLfId: candidate.lfId });
+		matching.value = null;
+		await load();
+	} catch (e) {
+		err.value = e?.message || 'match error';
 	}
 }
 
@@ -148,7 +288,13 @@ onMounted(load);
 
 <style scoped>
 .admin-lf { max-width: 1100px; }
-.title { margin: 0 0 16px; color: #1a3a6e; font-size: 22px; font-weight: 800; }
+.head-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.title { margin: 0; color: #1a3a6e; font-size: 22px; font-weight: 800; }
+.btn-add {
+	padding: 8px 16px; background: #1a3a6e; color: #fff; border: none;
+	border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;
+}
+.btn-add:hover { background: #2c4f87; }
 .filter-row { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
 .filter-row select {
 	padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 13px; background: #fff;
@@ -158,6 +304,8 @@ onMounted(load);
 }
 .err { background: #fff5f5; color: #c53030; padding: 10px 12px; border-radius: 6px; margin-bottom: 10px; }
 .dim { color: #a0aec0; padding: 32px; text-align: center; background: #fff; border-radius: 10px; }
+.dim.center { padding: 16px; background: transparent; }
+.dim-text { color: #8492a6; font-size: 11px; }
 
 .lf-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
 .lf-table th, .lf-table td { padding: 10px 12px; text-align: left; font-size: 13px; border-bottom: 1px solid #edf2f7; }
@@ -165,9 +313,11 @@ onMounted(load);
 .item-cell { cursor: pointer; }
 .item-cell strong { color: #1a3a6e; display: block; }
 .item-cell .desc { color: #8492a6; font-size: 11px; display: block; margin-top: 2px; }
-.actions { display: flex; gap: 6px; }
+.matched-tag { display: inline-block; margin-top: 3px; padding: 1px 6px; background: #e6fff0; color: #276749; font-size: 10px; border-radius: 4px; font-weight: 700; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .actions button { padding: 5px 10px; border-radius: 5px; border: 1px solid #cbd5e0; background: #f7fafc; font-size: 12px; font-weight: 700; cursor: pointer; }
 .actions button.warn { color: #c53030; border-color: #feb2b2; }
+.actions button.ghost { background: #fff; }
 
 .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
 .pill.st-reported  { background: #fff4e6; color: #ad6200; }
@@ -177,15 +327,42 @@ onMounted(load);
 .pill.st-disposed  { background: #f7fafc; color: #8492a6; }
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 400; padding: 20px; }
-.modal-card { background: #fff; border-radius: 12px; width: 100%; max-width: 480px; overflow: hidden; }
+.modal-card { background: #fff; border-radius: 12px; width: 100%; max-width: 520px; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; }
 .modal-head { padding: 16px 20px; background: #1a3a6e; color: #fff; display: flex; justify-content: space-between; align-items: center; }
 .modal-head h3 { margin: 0; font-size: 15px; }
 .modal-close { background: transparent; border: none; color: #fff; font-size: 18px; cursor: pointer; }
-.modal-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+.modal-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+.modal-body .hint { margin: 0 0 6px; font-size: 12px; color: #8492a6; }
 .row { display: flex; gap: 12px; font-size: 13px; }
 .lbl { min-width: 72px; color: #8492a6; font-size: 11px; font-weight: 700; text-transform: uppercase; padding-top: 2px; }
 .modal-actions { display: flex; justify-content: flex-end; padding: 12px 20px; border-top: 1px solid #edf2f7; gap: 8px; }
-.modal-actions button.ghost { padding: 7px 14px; border: 1px solid #cbd5e0; background: #fff; border-radius: 6px; cursor: pointer; }
+.modal-actions button { padding: 7px 14px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 13px; border: 1px solid #cbd5e0; }
+.modal-actions button.ghost { background: #fff; color: #4a5568; }
+.modal-actions button.primary { background: #1a3a6e; color: #fff; border-color: #1a3a6e; }
+.modal-actions button.primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.form .field { display: flex; flex-direction: column; gap: 4px; }
+.form .field span { font-size: 11px; color: #4a5568; font-weight: 700; text-transform: uppercase; }
+.form .field input, .form .field select, .form .field textarea {
+	padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 13px; font-family: inherit; box-sizing: border-box;
+}
+.form .field textarea { resize: vertical; }
+
+.match-source {
+	display: flex; gap: 8px; align-items: center; padding: 10px 12px;
+	background: #f7fafc; border-radius: 6px; border-left: 3px solid #1a3a6e;
+}
+.match-source strong { color: #1a3a6e; }
+
+.cand-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.cand-list li {
+	padding: 10px 12px; background: #fff; border: 1px solid #edf2f7; border-radius: 6px;
+	cursor: pointer; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+	transition: all 0.15s;
+}
+.cand-list li:hover { border-color: #1a3a6e; background: #f0f6ff; }
+.cand-list li strong { color: #1a3a6e; }
+.cand-list li .loc { font-size: 11px; color: #8492a6; margin-left: auto; }
 
 @media (max-width: 720px) {
 	.lf-table th, .lf-table td { padding: 8px; font-size: 12px; }

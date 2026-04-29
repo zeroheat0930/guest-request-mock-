@@ -431,6 +431,29 @@ com.daol.concierge.ccs/
 
 ## 🗓️ 진행 로그
 
+### 2026-04-29 — 어드민 QA fix 3차: LostFound 등록·매칭 UI + VOC 만족도 + DEMO_SCRIPT 정정 ✅
+
+§남은 것 1번 표의 마지막 두 행(`AdminLostFoundView` ⏳ / `AdminVocView` ⏳)을 닫음. 백엔드는 이미 모두 존재, 프론트만 보강.
+
+**AdminLostFoundView**
+- 헤더에 `+ 등록` 버튼 추가 → 스태프가 발견한 습득물 직접 등록 모달 (category / itemName / locationHint / rmNo / description, statusCd=`FOUND` 자동). `createLostFound` 호출. 백엔드는 `reporterType` 미지정 시 `STAFF` + 로그인 staffId 를 자동 주입
+- 행별 `매칭` 버튼 → 매칭 후보 모달. 같은 카테고리 + 미매칭 + REPORTED/FOUND 인 다른 행을 후보로 표시, 클릭 시 `matchLostFound(lfId, {matchedLfId})` 호출, 양 행 statusCd → MATCHED 로 자동 전환 (백엔드 `updateLostFoundMatch`)
+- 행에 매칭 표식(⇄ + 매칭 lfId 마지막 6자) 인라인 노출. 상세 모달에도 매칭 lfId 노출
+
+**AdminVocView**
+- URGENT/HIGH/NORMAL/LOW 자동 상단 정렬 (computed `sortedRows`)
+- RESOLVED/CLOSED 카드에 만족도 위젯: `satisfaction` 컬럼 있으면 ★ 5칸 별점 + `N.0 / 5`, 없으면 "미평가" 회색 배지
+- 해결 처리 메타 보강 — `handlerId`, `resolvedAt` 한 줄 노출 (기존엔 resolution 본문만)
+
+**DEMO_SCRIPT.md stale 표기 정정**
+- `fr001 / fr001` → 실제 시드 계정 `fr1 / test1234` (HK/ENG/FB 동일 패턴)
+- `admin / admin` → PMS_USER_MTR `USER_TP=00001/00002/00003` 로그인 → `/staff/context` 호텔 선택 단계 진입으로 변경
+- `X-Admin-Token` 3 계층 → 스태프 JWT 2 계층 + `MenuAccess.assertCanAccess` 백엔드 가드 + 라우터/메뉴 가드 이중 방어로 갱신 (단일 비밀번호 방식 폐기 명시)
+
+**검증**
+- `npx vite build` 클린 (237 modules, 4.16s, AdminLostFoundView 11.06kB / AdminVocView 6.91kB)
+- 기존 i18n 4개국어 키 활용 + 신규 키 8개 (등록·매칭·만족도·해결일시) 추가
+
 ### 2026-04-28 — 헤비 카드 4: 다국어 양방향 통역 위젯 (스태프) ✅
 
 스태프가 어느 페이지에서든 우측 하단 🌐 버튼으로 접근 가능한 통역 도우미.
@@ -1281,15 +1304,15 @@ LostFoundService.create(req)
 > **현황 (2026-04-27)**: 상용화 1.0 Phase A~G 완료 (메뉴별 하위 관리자 권한 부여 UI 추가) + 호텔 선택 플로우 완료. 심사 2026-05-20.
 
 ### 남은 것 (심사 전, 로컬 데모 기준)
-1. **어드민 화면 QA fix** — 1·2차 완료 ✅ (2026-04-28). 3차(LostFound 관리자 직접 등록·매칭 UI / VOC 만족도·해결 처리 보강)는 헤비 AI 카드 이후 시간 남으면 진행
+1. **어드민 화면 QA fix** — 1·2·3차 완료 ✅ (2026-04-29).
 
    | 화면 | 상태 |
    |---|---|
    | **AdminCcsView** | ✅ PMS 부서 read-only / INV.CCS 부서 CRUD / 직원 USE_YN 토글·부서 변경 (PmsRemoteApi 위임) |
    | **AdminDutyView** | ✅ Start 모달 / 인수인계 모달 / Close 모달 / 삭제 버튼 |
    | **AdminRentalView** | ✅ 카탈로그 USE_YN 토글 + 모달 체크박스 + 비활성 행 dim |
-   | AdminLostFoundView | ⏳ 3차 (관리자 직접 등록 + 매칭 UI) |
-   | AdminVocView | ⏳ 3차 (만족도/해결 처리 보강) |
+   | **AdminLostFoundView** | ✅ 등록 모달(스태프 직접 습득물 등록) + 매칭 모달(같은 카테고리 미매칭 후보 클릭→연결) |
+   | **AdminVocView** | ✅ URGENT 자동 상단 정렬 + 만족도 별점(★/5) + 담당자/해결일시 메타 |
    | AdminFeaturesView / Reports / Audit / RoleGrant | ✅ |
 
 2. **헤비 AI 풀패키지** (2026-04-28~) — 경쟁 트랙 차별화. AI 모델 4개(Claude/Voyage/Qdrant/Whisper) + Tool Use + RAG + 다국어 통역 카드들 박는 중
