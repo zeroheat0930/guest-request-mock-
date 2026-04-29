@@ -431,6 +431,55 @@ com.daol.concierge.ccs/
 
 ## 🗓️ 진행 로그
 
+### 2026-04-29 (회사 오후 세션) — 사내망 첫 부팅 + 회귀 일괄 fix + 메뉴 책임 분리 ✅
+
+회사 사무실에서 처음으로 사내 PMS DB 직결 환경에 띄워본 결과 시드 환경에선 안 잡히던 회귀 다수 + UX 어색함 다수 발견. 시연 직전이라 한 세션에 일괄 fix.
+
+**회사 환경 부팅 회귀 (`run.bat`)**
+- Claude Code 자동화 환경의 `NoDefaultCurrentDirectoryInExePath=1` 보안 정책 때문에 cmd 가 현재 디렉토리의 batch 파일을 명령어로 검색 안 함 → `call env.local.bat` 실패
+- spring-boot-maven-plugin fork 모드의 OS env 전파 신뢰성 저하로 mariadb-jdbc 가 `user.name` 시스템 프로퍼티(`dongj`)로 fallback → `Access denied (using password: NO)`
+- fix: `call "%~dp0env.local.bat"` 절대경로 + `-Dspring-boot.run.jvmArguments="-Dspring.datasource.username=... -Dspring.datasource.password=... -Danthropic.api-key=..."` 로 system property 직접 주입. 사용자 직접 cmd 환경에서도 무해
+
+**기능관리 silent-fail (가장 중요)**
+- 어드민이 토글하고 저장하면 "저장됨" 토스트 떴는데 DB 변경 0
+- 원인: `RequestParamsArgumentResolver` 가 body 의 InputStream 을 한번 소비한 후 `@RequestBody List<Map>` 가 또 읽으려 하여 `IllegalStateException`. resolver catch 가 warn 만 찍고 빈 list 로 진행 → 0 row update → 백엔드는 "SUCCESS" 본문에 -500 status code 박은 응답 → axios 가 200 OK 라 success 토스트
+- fix: `FeatureAdminController.upsert` 에서 `@RequestBody` 제거, body 를 `{ rows: [...] }` Map 형태로 받아 `requestParams.getParams().get("rows")` 로 추출. rows 비면 BAD_REQUEST 던져 silent fail 차단. 다른 컨트롤러는 raw List body 패턴 0건 (grep 확인)
+
+**configJson 그릇 → 도메인 코드 실연결**
+- 어드민 기능관리의 고급설정(`configJson`) 이 DB 컬럼에만 저장되고 어디서도 안 읽히던 미구현 그릇이었음
+- `FeatureService` 에 `getConfig(propCd, cmpxCd, featureCd)` 헬퍼 + `upsertBulk` 가 Map 입력을 ObjectMapper 로 JSON String 직렬화 (mybatis 의 `Map.toString()` 회귀도 같이 fix)
+- `NearbyController.search`: 검색 반경 우선순위 `configJson.radiusM` > `PROPERTY_EXT.nearbyRadius` > `yml 디폴트(1000)`
+- `GrService.getLateCheckoutInfo`: `configJson.hourlyRate` 박혀 있으면 단순 시간당 모드(`addAmt = diffH * rate`, `maxHours` 초과 시 거부), 없으면 기존 tier (2h 무료/반일/전일)
+- 시연 임팩트: 어드민에서 NEARBY `radiusM=1500` 토글 → 게스트 주변안내 즉시 1.5km 반경
+
+**기능관리 UX 보강**
+- 9 기능별 예시 JSON 사전 정의 (AMENITY/HK/LATE_CO/NEARBY/PARKING/CHAT/LOSTFOUND/VOC/RENTAL) + `예시 채우기` 버튼 + 키 설명 줄
+- `(idx+1)*10` 으로 70/80/90 떴던 sortOrd 디폴트 → 자연수 1~9
+
+**부서 관리 단순화 (AdminCcsView)**
+- 기존 두 표(PMS 마스터 read-only + INV 라우팅 부서 CRUD) 가 호텔 직원에게 헷갈렸음
+- PMS 부서 한 표만 노출 + USE_YN 토글/추가/수정/삭제 버튼. 클릭 시 `🚧 PMS REST API 연동 시 활성화` 토스트 (시연 셸 — 회사 PMS DB 0건 변경)
+- 컨시어지 라우팅 부서 섹션 숨김 (백엔드 디폴트 룰이 자동 처리)
+
+**그리드 정렬 — useSortableTable 공통 훅**
+- composable 1개 + 글로벌 `.sortable` / `.sort-ind` CSS 로 표 형식 6 그리드 일괄 적용
+- AdminCcs(직원/PMS부서), LostFound, Rental(주문/카탈로그), Duty, Reports daily
+- 헤더 클릭 → ▲ asc → 다시 → ▼ desc → 다른 컬럼 → 그 컬럼 ▲. PMS 그리드와 동일 UX
+
+**메뉴 책임 분리 (스태프 처리 vs 어드민 통계·설정)**
+- 분실물/VOC/대여/당직은 본질적으로 일선 스태프(프론트데스크/HK/ENG/F&B) 업무 → 어드민에서 스태프 메뉴로 이관
+- 어드민 그룹: 기능관리 / 스태프관리 / 리포트 / 감사로그 / QR / 권한관리 (운영 통계·설정만)
+- `/admin/lostfound`, `/admin/voc`, `/admin/rental`, `/admin/duty` 모두 `/staff/*` 로 backward 호환 redirect
+- `/staff/duty` 는 풀스펙 `AdminDutyView` 사용 (history/모달3종/삭제). 단순한 `staff/DutyLogView.vue` 는 deprecate
+- 어드민도 `hasStaff=true` 라 같은 메뉴로 모니터링 + 처리 가능
+
+**검증**
+- 회사 사내망에서 백엔드 부팅 성공 (`Started ConciergeApplication in 4.55s`, HikariPool DB 연결 OK, `/actuator/health` 200)
+- curl PUT NEARBY `{radiusM:2500}` → DB JSON String 박힘 + 재조회 확인
+- `npx vite build` 클린 (237 modules), `mvn -q test-compile` 클린
+
+**커밋**: 3331801 / 2244106 / f2507e9 / 6fe73d3 / b4f3585 / aac582b / fd46793 / c47d7d3 (8개)
+
 ### 2026-04-29 — 어드민 QA fix 3차: LostFound 등록·매칭 UI + VOC 만족도 + DEMO_SCRIPT 정정 ✅
 
 §남은 것 1번 표의 마지막 두 행(`AdminLostFoundView` ⏳ / `AdminVocView` ⏳)을 닫음. 백엔드는 이미 모두 존재, 프론트만 보강.
@@ -1301,10 +1350,10 @@ LostFoundService.create(req)
 
 ## 📋 남은 것
 
-> **현황 (2026-04-27)**: 상용화 1.0 Phase A~G 완료 (메뉴별 하위 관리자 권한 부여 UI 추가) + 호텔 선택 플로우 완료. 심사 2026-05-20.
+> **현황 (2026-04-29)**: 회사 사내망에서 첫 부팅 성공 + 시연 환경 회귀 일괄 fix + 메뉴 책임 분리(스태프 처리 vs 어드민 통계). 심사 2026-05-20.
 
 ### 남은 것 (심사 전, 로컬 데모 기준)
-1. **어드민 화면 QA fix** — 1·2·3차 완료 ✅ (2026-04-29).
+1. **어드민 화면 QA fix** — 1·2·3차 완료 ✅ (2026-04-29). 회사 환경 부팅 회귀 / silent-fail / configJson 실연결 / 부서 표 단순화 / 그리드 정렬 / 메뉴 책임 분리 모두 fix.
 
    | 화면 | 상태 |
    |---|---|
