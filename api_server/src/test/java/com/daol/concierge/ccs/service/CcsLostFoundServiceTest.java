@@ -112,6 +112,8 @@ public class CcsLostFoundServiceTest {
 		@Override public java.util.List<Map<String, Object>> selectLateCo(String a, String b, String c) { return null; }
 		@Override public int insertLateCo(Map<String, Object> p) { return 0; }
 		@Override public int updateLateCoStatus(Map<String, Object> p) { return 0; }
+		@Override public java.util.List<Map<String, Object>> selectDepartmentList(String a, String b) { return null; }
+		@Override public Map<String, Object> selectDepartment(String a, String b, String c) { return null; }
 		@Override public int insertDepartment(Map<String, Object> p) { return 0; }
 		@Override public int updateDepartment(Map<String, Object> p) { return 0; }
 		@Override public int deleteDepartment(String a, String b, String c) { return 0; }
@@ -148,6 +150,7 @@ public class CcsLostFoundServiceTest {
 		@Override public Map<String, Object> selectDutyLogToday(String a, String b, String c) { return null; }
 		@Override public int updateDutyLogHandover(Map<String, Object> p) { return 0; }
 		@Override public int updateDutyLogClose(Map<String, Object> p) { return 0; }
+		@Override public int deleteDutyLog(String logId) { return 0; }
 		@Override public Map<String, Object> selectPmsNightAuditStatus(String a, String b) { return null; }
 		@Override public int insertAuditLog(Map<String, Object> p) { return 0; }
 		@Override public java.util.List<Map<String, Object>> selectAuditLogList(Map<String, Object> p) { return null; }

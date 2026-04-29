@@ -222,7 +222,8 @@ async function save() {
 				configJson
 			};
 		});
-		const res = await axios.put(`${API_BASE}/concierge/admin/features`, payload, {
+		// 백엔드 RequestParams 가 body 를 Map 으로 파싱하므로 list 를 rows 키로 감싼다
+		const res = await axios.put(`${API_BASE}/concierge/admin/features`, { rows: payload }, {
 			params: { propCd: propCd.value, cmpxCd: ctx.cmpxCd.value },
 			headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
 			timeout: 8000
