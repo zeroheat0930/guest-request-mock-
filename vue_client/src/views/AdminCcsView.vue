@@ -18,12 +18,13 @@
 		<div v-if="err" class="err">{{ err }}</div>
 		<div v-if="msg" class="success">{{ msg }}</div>
 
-		<!-- 회사 PMS 부서 마스터 (read-only) -->
+		<!-- 부서 관리 (PMS 부서 마스터 — UI 만 시연, 실제 변경은 상용화 단계 PMS REST API 위임) -->
 		<section class="section">
 			<div class="section-head">
-				<h3>{{ t('admin.ccs.dept.list') }}
-					<span class="dim-note">— {{ t('admin.ccs.dept.readonly') }}</span>
-				</h3>
+				<h3>{{ t('admin.ccs.dept.list') }}</h3>
+				<button class="btn-add" @click="pmsDeptTodo()">
+					+ {{ t('admin.ccs.dept.add') }}
+				</button>
 			</div>
 
 			<div class="table-wrap">
@@ -33,6 +34,7 @@
 							<th>{{ t('admin.ccs.col.deptCd') }}</th>
 							<th>{{ t('admin.ccs.col.deptNm') }}</th>
 							<th>{{ t('admin.ccs.col.useYn') }}</th>
+							<th>{{ t('admin.ccs.col.action') }}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -40,21 +42,26 @@
 							<td class="mono">{{ d.deptCd }}</td>
 							<td>{{ d.deptNm || '-' }}</td>
 							<td>
-								<span :class="['badge', d.useYn === 'Y' ? 'badge-on' : 'badge-off']">
-									{{ d.useYn === 'Y' ? t('admin.ccs.on') : t('admin.ccs.off') }}
-								</span>
+								<label class="switch">
+									<input type="checkbox" :checked="d.useYn === 'Y'" @change="pmsDeptTodo()" />
+									<span class="slider"></span>
+								</label>
+							</td>
+							<td class="actions">
+								<button class="btn-sm btn-edit" @click="pmsDeptTodo()">{{ t('admin.ccs.edit') }}</button>
+								<button class="btn-sm btn-delete" @click="pmsDeptTodo()">{{ t('admin.ccs.delete') }}</button>
 							</td>
 						</tr>
 						<tr v-if="!pmsDepts.length">
-							<td colspan="3" class="dim">{{ t('admin.ccs.empty') }}</td>
+							<td colspan="4" class="dim">{{ t('admin.ccs.empty') }}</td>
 						</tr>
 					</tbody>
 				</table>
 			</div>
 		</section>
 
-		<!-- 컨시어지 자체 라우팅 부서 (INV.CCS_DEPARTMENT) — CRUD -->
-		<section class="section">
+		<!-- 컨시어지 자체 라우팅 부서 (INV.CCS_DEPARTMENT) — UI 비공개, 백엔드 디폴트 라우팅 룰이 자동 처리 -->
+		<section v-if="false" class="section">
 			<div class="section-head">
 				<h3>🛎️ 컨시어지 라우팅 부서
 					<span class="dim-note">— 게스트 요청이 라우팅되는 부서. 추가/수정/삭제 가능</span>
@@ -139,9 +146,7 @@
 
 		<!-- 직원 목록 (PMS 마스터 + 어드민 토글/부서 변경 — PMS REST API 위임) -->
 		<section class="section">
-			<h3>{{ t('admin.ccs.staff.list') }}
-				<span class="dim-note">— USE_YN/부서 변경은 PMS API 로 위임 ({{ pmsApiMode }})</span>
-			</h3>
+			<h3>{{ t('admin.ccs.staff.list') }}</h3>
 			<div class="table-wrap">
 				<table>
 					<thead>
@@ -261,6 +266,10 @@ function gotoLogin() {
 function goBack() { router.push('/admin/features'); }
 
 function flashOk(text) { msg.value = text; setTimeout(() => { msg.value = ''; }, 2500); }
+
+// 부서 마스터 변경(추가/수정/삭제/USE_YN 토글)은 PMS REST API 위임 어댑터 활성 시 동작.
+// 시연 환경에선 UI 만 노출하고 클릭 시 안내 토스트만.
+function pmsDeptTodo() { flashOk(t('admin.ccs.dept.todo')); }
 function flashErr(e) {
 	if (e?.response?.status === 401) { gotoLogin(); return; }
 	err.value = e?.response?.data?.message || e?.message || t('admin.ccs.unknownErr');

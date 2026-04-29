@@ -478,6 +478,7 @@ const messages = {
   'admin.ccs.dept.readonly':     { ko: 'PMS 마스터 (읽기 전용)', en: 'PMS master (read-only)',    ja: 'PMSマスター（読み取り専用）', zh: 'PMS主档（只读）' },
   'admin.ccs.dept.list':         { ko: '부서 목록',          en: 'Departments',                  ja: '部署一覧',               zh: '部门列表' },
   'admin.ccs.dept.add':          { ko: '부서 추가',          en: 'Add Department',               ja: '部署追加',               zh: '添加部门' },
+  'admin.ccs.dept.todo':         { ko: '🚧 PMS REST API 연동 시 활성화 — 상용화 단계 작업', en: '🚧 Pending PMS REST API integration — activated in production rollout', ja: '🚧 PMS REST API 連携時に有効化 — 本番展開段階', zh: '🚧 待 PMS REST API 集成 — 商用化阶段启用' },
   'admin.ccs.dept.code':         { ko: '부서 코드',          en: 'Dept Code',                    ja: '部署コード',             zh: '部门代码' },
   'admin.ccs.dept.code.placeholder': { ko: '예) FOOD',       en: 'e.g. FOOD',                    ja: '例) FOOD',               zh: '如: FOOD' },
   'admin.ccs.dept.name':         { ko: '부서명',             en: 'Dept Name',                    ja: '部署名',                 zh: '部门名称' },
