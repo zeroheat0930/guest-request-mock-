@@ -31,14 +31,20 @@
 				<table>
 					<thead>
 						<tr>
-							<th>{{ t('admin.ccs.col.deptCd') }}</th>
-							<th>{{ t('admin.ccs.col.deptNm') }}</th>
-							<th>{{ t('admin.ccs.col.useYn') }}</th>
+							<th class="sortable" @click="pmsDeptSort.sortBy('deptCd')">
+								{{ t('admin.ccs.col.deptCd') }} <span class="sort-ind">{{ pmsDeptSort.sortIcon('deptCd') }}</span>
+							</th>
+							<th class="sortable" @click="pmsDeptSort.sortBy('deptNm')">
+								{{ t('admin.ccs.col.deptNm') }} <span class="sort-ind">{{ pmsDeptSort.sortIcon('deptNm') }}</span>
+							</th>
+							<th class="sortable" @click="pmsDeptSort.sortBy('useYn')">
+								{{ t('admin.ccs.col.useYn') }} <span class="sort-ind">{{ pmsDeptSort.sortIcon('useYn') }}</span>
+							</th>
 							<th>{{ t('admin.ccs.col.action') }}</th>
 						</tr>
 					</thead>
 					<tbody>
-						<tr v-for="d in pmsDepts" :key="d.deptCd">
+						<tr v-for="d in sortedPmsDepts" :key="d.deptCd">
 							<td class="mono">{{ d.deptCd }}</td>
 							<td>{{ d.deptNm || '-' }}</td>
 							<td>
@@ -151,15 +157,25 @@
 				<table>
 					<thead>
 						<tr>
-							<th>{{ t('admin.ccs.col.loginId') }}</th>
-							<th>{{ t('admin.ccs.col.staffNm') }}</th>
-							<th>{{ t('admin.ccs.col.deptNm') }}</th>
-							<th>{{ t('admin.ccs.col.userTp') }}</th>
-							<th>{{ t('admin.ccs.col.useYn') }}</th>
+							<th class="sortable" @click="staffSort.sortBy('loginId')">
+								{{ t('admin.ccs.col.loginId') }} <span class="sort-ind">{{ staffSort.sortIcon('loginId') }}</span>
+							</th>
+							<th class="sortable" @click="staffSort.sortBy('staffNm')">
+								{{ t('admin.ccs.col.staffNm') }} <span class="sort-ind">{{ staffSort.sortIcon('staffNm') }}</span>
+							</th>
+							<th class="sortable" @click="staffSort.sortBy('deptNm')">
+								{{ t('admin.ccs.col.deptNm') }} <span class="sort-ind">{{ staffSort.sortIcon('deptNm') }}</span>
+							</th>
+							<th class="sortable" @click="staffSort.sortBy('userTp')">
+								{{ t('admin.ccs.col.userTp') }} <span class="sort-ind">{{ staffSort.sortIcon('userTp') }}</span>
+							</th>
+							<th class="sortable" @click="staffSort.sortBy('useYn')">
+								{{ t('admin.ccs.col.useYn') }} <span class="sort-ind">{{ staffSort.sortIcon('useYn') }}</span>
+							</th>
 						</tr>
 					</thead>
 					<tbody>
-						<tr v-for="s in staffList" :key="s.staffId" :class="{ 'row-disabled': s.useYn !== 'Y' }">
+						<tr v-for="s in sortedStaff" :key="s.staffId" :class="{ 'row-disabled': s.useYn !== 'Y' }">
 							<td class="mono">{{ s.loginId }}</td>
 							<td>{{ s.staffNm }}</td>
 							<td>
@@ -206,6 +222,7 @@ import { useRouter } from 'vue-router';
 import { API_BASE, updateAdminStaffUseYn, updateAdminStaffDept } from '../api/client.js';
 import { t } from '../i18n/ui.js';
 import { useAdminContext } from '../composables/useAdminContext.js';
+import { useSortableTable } from '../composables/useSortableTable.js';
 
 const TOKEN_KEY = 'ccs.token';
 
@@ -247,6 +264,11 @@ const pmsDepts = ref([]);
 const invDepts = ref([]);
 const staffList = ref([]);
 const busy = ref(false);
+
+const staffSort = useSortableTable('loginId', 'asc');
+const sortedStaff = computed(() => staffSort.applySort(staffList.value));
+const pmsDeptSort = useSortableTable('deptCd', 'asc');
+const sortedPmsDepts = computed(() => pmsDeptSort.applySort(pmsDepts.value));
 const err = ref('');
 const msg = ref('');
 

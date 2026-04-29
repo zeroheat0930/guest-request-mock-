@@ -32,17 +32,29 @@
 		<table v-if="rows.length" class="lf-table">
 			<thead>
 				<tr>
-					<th>{{ t('admin.lf.reportedAt') }}</th>
-					<th>{{ t('admin.lf.category') }}</th>
-					<th>{{ t('admin.lf.itemName') }}</th>
-					<th>{{ t('admin.lf.location') }}</th>
-					<th>{{ t('admin.lf.reporter') }}</th>
-					<th>{{ t('admin.lf.status') }}</th>
+					<th class="sortable" @click="sort.sortBy('createdAt')">
+						{{ t('admin.lf.reportedAt') }} <span class="sort-ind">{{ sort.sortIcon('createdAt') }}</span>
+					</th>
+					<th class="sortable" @click="sort.sortBy('category')">
+						{{ t('admin.lf.category') }} <span class="sort-ind">{{ sort.sortIcon('category') }}</span>
+					</th>
+					<th class="sortable" @click="sort.sortBy('itemName')">
+						{{ t('admin.lf.itemName') }} <span class="sort-ind">{{ sort.sortIcon('itemName') }}</span>
+					</th>
+					<th class="sortable" @click="sort.sortBy('locationHint')">
+						{{ t('admin.lf.location') }} <span class="sort-ind">{{ sort.sortIcon('locationHint') }}</span>
+					</th>
+					<th class="sortable" @click="sort.sortBy('reporterType')">
+						{{ t('admin.lf.reporter') }} <span class="sort-ind">{{ sort.sortIcon('reporterType') }}</span>
+					</th>
+					<th class="sortable" @click="sort.sortBy('statusCd')">
+						{{ t('admin.lf.status') }} <span class="sort-ind">{{ sort.sortIcon('statusCd') }}</span>
+					</th>
 					<th></th>
 				</tr>
 			</thead>
 			<tbody>
-				<tr v-for="r in rows" :key="r.lfId">
+				<tr v-for="r in sortedRows" :key="r.lfId">
 					<td>{{ fmt(r.createdAt) }}</td>
 					<td>{{ catLabel(r.category) }}</td>
 					<td class="item-cell" @click="detail = r">
@@ -166,8 +178,12 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { fetchLostFoundList, updateLostFoundStatus, createLostFound, matchLostFound } from '../api/client.js';
 import { t } from '../i18n/ui.js';
+import { useSortableTable } from '../composables/useSortableTable.js';
+
+const sort = useSortableTable('createdAt', 'desc');
 
 const rows = ref([]);
+const sortedRows = computed(() => sort.applySort(rows.value));
 const filter = reactive({ statusCd: '', category: '' });
 const busy = ref(false);
 const err = ref('');

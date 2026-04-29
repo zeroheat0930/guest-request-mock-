@@ -45,16 +45,24 @@
 		<table v-else class="tbl">
 			<thead>
 				<tr>
-					<th>{{ t('admin.reports.from') }}</th>
-					<th>{{ t('admin.duty.shift') }}</th>
-					<th>{{ t('admin.duty.manager') }}</th>
-					<th>{{ t('admin.duty.handover') }}</th>
+					<th class="sortable" @click="sort.sortBy('dutyDate')">
+						{{ t('admin.reports.from') }} <span class="sort-ind">{{ sort.sortIcon('dutyDate') }}</span>
+					</th>
+					<th class="sortable" @click="sort.sortBy('shiftCd')">
+						{{ t('admin.duty.shift') }} <span class="sort-ind">{{ sort.sortIcon('shiftCd') }}</span>
+					</th>
+					<th class="sortable" @click="sort.sortBy('managerId')">
+						{{ t('admin.duty.manager') }} <span class="sort-ind">{{ sort.sortIcon('managerId') }}</span>
+					</th>
+					<th class="sortable" @click="sort.sortBy('handoverTo')">
+						{{ t('admin.duty.handover') }} <span class="sort-ind">{{ sort.sortIcon('handoverTo') }}</span>
+					</th>
 					<th>{{ t('admin.duty.summary') }}</th>
 					<th>{{ t('admin.ccs.col.action') }}</th>
 				</tr>
 			</thead>
 			<tbody>
-				<tr v-for="l in history" :key="l.logId">
+				<tr v-for="l in sortedHistory" :key="l.logId">
 					<td>{{ l.dutyDate }}</td>
 					<td>{{ shiftLabel(l.shiftCd) }}</td>
 					<td>{{ l.managerId }}</td>
@@ -145,7 +153,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
+import { useSortableTable } from '../composables/useSortableTable.js';
 import {
 	fetchDutyLogToday, fetchDutyLogList, startDutyShift,
 	handoverDutyShift, closeDutyShift, deleteDutyShift
@@ -156,6 +165,8 @@ const today = new Date().toISOString().slice(0, 10);
 const todayLog = ref({ log: null });
 const audit = reactive({ auditDoneYn: 'N' });
 const history = ref([]);
+const sort = useSortableTable('dutyDate', 'desc');
+const sortedHistory = computed(() => sort.applySort(history.value));
 const busy = ref(false);
 const err = ref('');
 const msg = ref('');

@@ -23,15 +23,23 @@
 			<table v-else class="tbl">
 				<thead>
 					<tr>
-						<th>{{ t('admin.lf.reportedAt') }}</th>
-						<th>{{ t('admin.lf.itemName') }}</th>
-						<th>{{ t('admin.rental.qty') }}</th>
-						<th>{{ t('admin.voc.status') }}</th>
+						<th class="sortable" @click="orderSort.sortBy('requestedAt')">
+							{{ t('admin.lf.reportedAt') }} <span class="sort-ind">{{ orderSort.sortIcon('requestedAt') }}</span>
+						</th>
+						<th class="sortable" @click="orderSort.sortBy('itemId')">
+							{{ t('admin.lf.itemName') }} <span class="sort-ind">{{ orderSort.sortIcon('itemId') }}</span>
+						</th>
+						<th class="sortable" @click="orderSort.sortBy('qty')">
+							{{ t('admin.rental.qty') }} <span class="sort-ind">{{ orderSort.sortIcon('qty') }}</span>
+						</th>
+						<th class="sortable" @click="orderSort.sortBy('statusCd')">
+							{{ t('admin.voc.status') }} <span class="sort-ind">{{ orderSort.sortIcon('statusCd') }}</span>
+						</th>
 						<th></th>
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="o in orders" :key="o.orderId">
+					<tr v-for="o in sortedOrders" :key="o.orderId">
 						<td>{{ fmt(o.requestedAt) }}</td>
 						<td>{{ nameOfItem(o.itemId) }}</td>
 						<td>{{ o.qty }}</td>
@@ -55,15 +63,23 @@
 			<table v-else class="tbl">
 				<thead>
 					<tr>
-						<th>{{ t('admin.lf.itemName') }}</th>
-						<th>{{ t('admin.lf.category') }}</th>
-						<th>{{ t('admin.rental.stock') }}</th>
-						<th>{{ t('admin.ccs.col.useYn') }}</th>
+						<th class="sortable" @click="catSort.sortBy('name')">
+							{{ t('admin.lf.itemName') }} <span class="sort-ind">{{ catSort.sortIcon('name') }}</span>
+						</th>
+						<th class="sortable" @click="catSort.sortBy('category')">
+							{{ t('admin.lf.category') }} <span class="sort-ind">{{ catSort.sortIcon('category') }}</span>
+						</th>
+						<th class="sortable" @click="catSort.sortBy('stockAvailable')">
+							{{ t('admin.rental.stock') }} <span class="sort-ind">{{ catSort.sortIcon('stockAvailable') }}</span>
+						</th>
+						<th class="sortable" @click="catSort.sortBy('useYn')">
+							{{ t('admin.ccs.col.useYn') }} <span class="sort-ind">{{ catSort.sortIcon('useYn') }}</span>
+						</th>
 						<th></th>
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="i in catalog" :key="i.itemId" :class="{ 'row-disabled': i.useYn === 'N' }">
+					<tr v-for="i in sortedCatalog" :key="i.itemId" :class="{ 'row-disabled': i.useYn === 'N' }">
 						<td>{{ i.name }}</td>
 						<td>{{ catLabel(i.category) }}</td>
 						<td>{{ i.stockAvailable }} / {{ i.stockTotal }}</td>
@@ -121,10 +137,16 @@ import {
 	fetchRentalOrders, loanRentalOrder, returnRentalOrder
 } from '../api/client.js';
 import { t } from '../i18n/ui.js';
+import { useSortableTable } from '../composables/useSortableTable.js';
 
 const tab = ref('orders');
 const catalog = ref([]);
 const orders = ref([]);
+
+const orderSort = useSortableTable('requestedAt', 'desc');
+const catSort = useSortableTable('name', 'asc');
+const sortedOrders = computed(() => orderSort.applySort(orders.value));
+const sortedCatalog = computed(() => catSort.applySort(catalog.value));
 const orderFilter = reactive({ statusCd: '' });
 const editing = ref(null);
 const busy = ref(false);

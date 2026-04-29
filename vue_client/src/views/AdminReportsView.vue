@@ -59,10 +59,18 @@
 			<div v-if="!daily.length" class="dim">{{ t('admin.common.empty') }}</div>
 			<table v-else class="tbl">
 				<thead>
-					<tr><th>Date</th><th>Dept</th><th>Source</th><th>Req</th><th>Done</th><th>Avg(m)</th><th>SLA</th></tr>
+					<tr>
+						<th class="sortable" @click="dailySort.sortBy('dateYmd')">Date <span class="sort-ind">{{ dailySort.sortIcon('dateYmd') }}</span></th>
+						<th class="sortable" @click="dailySort.sortBy('deptCd')">Dept <span class="sort-ind">{{ dailySort.sortIcon('deptCd') }}</span></th>
+						<th class="sortable" @click="dailySort.sortBy('sourceType')">Source <span class="sort-ind">{{ dailySort.sortIcon('sourceType') }}</span></th>
+						<th class="sortable" @click="dailySort.sortBy('requestCount')">Req <span class="sort-ind">{{ dailySort.sortIcon('requestCount') }}</span></th>
+						<th class="sortable" @click="dailySort.sortBy('doneCount')">Done <span class="sort-ind">{{ dailySort.sortIcon('doneCount') }}</span></th>
+						<th class="sortable" @click="dailySort.sortBy('avgElapsedMin')">Avg(m) <span class="sort-ind">{{ dailySort.sortIcon('avgElapsedMin') }}</span></th>
+						<th class="sortable" @click="dailySort.sortBy('slaCompliance')">SLA <span class="sort-ind">{{ dailySort.sortIcon('slaCompliance') }}</span></th>
+					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="(r, idx) in daily" :key="idx">
+					<tr v-for="(r, idx) in sortedDaily" :key="idx">
 						<td>{{ r.dateYmd }}</td>
 						<td>{{ r.deptCd || '—' }}</td>
 						<td>{{ r.sourceType || '—' }}</td>
@@ -119,7 +127,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
+import { useSortableTable } from '../composables/useSortableTable.js';
 import { fetchReportDaily, fetchReportSla, fetchReportHeatmap, fetchAdminAiReport } from '../api/client.js';
 import { t } from '../i18n/ui.js';
 import { useAdminContext } from '../composables/useAdminContext.js';
@@ -154,6 +163,8 @@ const filter = reactive({ from: '', to: '' });
 const daily = ref([]);
 const sla = ref([]);
 const heatmap = ref([]);
+const dailySort = useSortableTable('dateYmd', 'desc');
+const sortedDaily = computed(() => dailySort.applySort(daily.value));
 
 const DOWS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 

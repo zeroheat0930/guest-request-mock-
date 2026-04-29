@@ -1,5 +1,22 @@
 @import './tokens.css';
 
+/* ── 어드민 표 헤더 정렬 (useSortableTable 공통 훅) ── */
+.sortable {
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	transition: background 0.12s;
+}
+.sortable:hover { background: rgba(26, 58, 110, 0.06); }
+.sort-ind {
+	display: inline-block;
+	margin-left: 4px;
+	font-size: 9px;
+	color: #1a3a6e;
+	min-width: 8px;
+	vertical-align: middle;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #app { height: 100%; }
 /* 모바일에서 예상치 못한 가로 스크롤 방지 — 특정 요소가 100vw 넘을 때 빈 흰 공간 나타나는 걸 막음 */
