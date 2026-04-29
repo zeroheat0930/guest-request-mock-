@@ -40,7 +40,13 @@
 					<router-link to="/staff/lostfound" class="item">
 						<span class="ic">🔍</span><span class="label">{{ t('shell.nav.lostfound') }}</span>
 					</router-link>
-					<router-link to="/staff/duty" class="item" v-if="hasStaff">
+					<router-link to="/staff/voc" class="item">
+						<span class="ic">💬</span><span class="label">{{ t('shell.nav.voc') }}</span>
+					</router-link>
+					<router-link to="/staff/rental" class="item">
+						<span class="ic">🏷️</span><span class="label">{{ t('shell.nav.rental') }}</span>
+					</router-link>
+					<router-link to="/staff/duty" class="item">
 						<span class="ic">🗓️</span><span class="label">{{ t('shell.nav.duty') }}</span>
 					</router-link>
 				</div>
@@ -52,15 +58,6 @@
 					</router-link>
 					<router-link v-if="canSee(MENU.ROUTING)" to="/admin/ccs" class="item">
 						<span class="ic">👥</span><span class="label">{{ t('shell.nav.ccs') }}</span>
-					</router-link>
-					<router-link v-if="canSee(MENU.VOC)" to="/admin/voc" class="item">
-						<span class="ic">💬</span><span class="label">{{ t('shell.nav.voc') }}</span>
-					</router-link>
-					<router-link v-if="canSee(MENU.RENTAL)" to="/admin/rental" class="item">
-						<span class="ic">🏷️</span><span class="label">{{ t('shell.nav.rental') }}</span>
-					</router-link>
-					<router-link v-if="canSee(MENU.DUTY)" to="/admin/duty" class="item">
-						<span class="ic">🗓️</span><span class="label">{{ t('shell.nav.duty') }}</span>
 					</router-link>
 					<router-link v-if="canSee(MENU.REPORTS)" to="/admin/reports" class="item">
 						<span class="ic">📊</span><span class="label">{{ t('shell.nav.reports') }}</span>

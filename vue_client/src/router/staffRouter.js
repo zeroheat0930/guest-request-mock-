@@ -18,18 +18,22 @@ const routes = [
 	{ path: '/staff/login',    component: StaffLoginView,     meta: { staff: true, public: true } },
 	{ path: '/staff/context',  component: () => import('../views/PropertyContextView.vue'), meta: { staff: true, context: true } },
 	{ path: '/staff',          component: StaffDashboardView, meta: { staff: true } },
-	{ path: '/staff/duty',     component: () => import('../views/staff/DutyLogView.vue'), meta: { staff: true } },
+	// 일선 스태프 처리 화면 — 어드민 메뉴에 있던 LOSTFOUND/VOC/RENTAL/DUTY 를 스태프로 이관
+	// (Duty 는 풀스펙인 AdminDutyView 채택, 기존 스태프 DutyLogView 는 deprecate)
 	{ path: '/staff/lostfound',component: () => import('../views/AdminLostFoundView.vue'),meta: { staff: true } },
+	{ path: '/staff/voc',      component: () => import('../views/AdminVocView.vue'),      meta: { staff: true } },
+	{ path: '/staff/rental',   component: () => import('../views/AdminRentalView.vue'),   meta: { staff: true } },
+	{ path: '/staff/duty',     component: () => import('../views/AdminDutyView.vue'),     meta: { staff: true } },
 	// 구 /admin/login 은 스태프 로그인으로 통합
 	{ path: '/admin/login',    redirect: '/staff/login' },
 	{ path: '/admin/features', component: AdminFeaturesView,  meta: { admin: true } },
 	{ path: '/admin/ccs',      component: AdminCcsView,       meta: { admin: true } },
 	{ path: '/admin/qr',       component: () => import('../views/staff/QrGeneratorView.vue'), meta: { admin: true } },
-	// 분실물 관리는 일선 스태프 업무로 이전됨 — /staff/lostfound 로 redirect
+	// 일선 처리 화면들은 /staff/* 로 이전됨 — backward 호환 redirect
 	{ path: '/admin/lostfound',redirect: '/staff/lostfound' },
-	{ path: '/admin/voc',      component: () => import('../views/AdminVocView.vue'),        meta: { admin: true } },
-	{ path: '/admin/rental',   component: () => import('../views/AdminRentalView.vue'),     meta: { admin: true } },
-	{ path: '/admin/duty',     component: () => import('../views/AdminDutyView.vue'),       meta: { admin: true } },
+	{ path: '/admin/voc',      redirect: '/staff/voc' },
+	{ path: '/admin/rental',   redirect: '/staff/rental' },
+	{ path: '/admin/duty',     redirect: '/staff/duty' },
 	{ path: '/admin/reports',  component: () => import('../views/AdminReportsView.vue'),    meta: { admin: true } },
 	{ path: '/admin/audit',    component: () => import('../views/AdminAuditView.vue'),      meta: { admin: true } },
 	{ path: '/admin/role-grant', component: () => import('../views/AdminRoleGrantView.vue'), meta: { admin: true, sysAdminOnly: true } },
