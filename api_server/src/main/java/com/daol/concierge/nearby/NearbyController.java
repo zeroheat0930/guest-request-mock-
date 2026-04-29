@@ -8,6 +8,7 @@ import com.daol.concierge.core.api.ApiStatus;
 import com.daol.concierge.core.api.Responses;
 import com.daol.concierge.core.controller.BaseController;
 import com.daol.concierge.core.parameter.RequestParams;
+import com.daol.concierge.feature.FeatureService;
 import com.daol.concierge.inv.mapper.InvMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +30,7 @@ public class NearbyController extends BaseController {
 
 	@Autowired private NearbyProvider provider;
 	@Autowired private InvMapper invMapper;
+	@Autowired private FeatureService featureService;
 
 	@Value("${nearby.default-radius-m:1000}")
 	private int defaultRadiusM;
@@ -46,7 +48,16 @@ public class NearbyController extends BaseController {
 
 		double lat = ((Number) ext.get("lat")).doubleValue();
 		double lng = ((Number) ext.get("lng")).doubleValue();
-		int radius = ext.get("nearbyRadius") != null ? ((Number) ext.get("nearbyRadius")).intValue() : defaultRadiusM;
+		// 우선순위: 어드민 기능관리의 NEARBY.configJson.radiusM > PROPERTY_EXT.nearbyRadius > yml 디폴트
+		Map<String, Object> cfg = featureService.getConfig(p.propCd(), p.cmpxCd(), "NEARBY");
+		int radius;
+		if (cfg.get("radiusM") instanceof Number n) {
+			radius = n.intValue();
+		} else if (ext.get("nearbyRadius") != null) {
+			radius = ((Number) ext.get("nearbyRadius")).intValue();
+		} else {
+			radius = defaultRadiusM;
+		}
 
 		List<NearbyPlace> places = provider.search(lat, lng, category, radius);
 

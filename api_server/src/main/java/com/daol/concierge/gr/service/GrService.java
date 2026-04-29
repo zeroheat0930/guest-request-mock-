@@ -5,6 +5,7 @@ import com.daol.concierge.core.api.ApiException;
 import com.daol.concierge.core.api.ApiStatus;
 import com.daol.concierge.dispatcher.RequestDispatcher;
 import com.daol.concierge.dispatcher.RequestEvent;
+import com.daol.concierge.feature.FeatureService;
 import com.daol.concierge.inv.mapper.InvMapper;
 import com.daol.concierge.pms.mapper.PmsMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ public class GrService {
 	@Autowired private PmsMapper pmsMapper;
 	@Autowired private InvMapper invMapper;
 	@Autowired private List<RequestDispatcher> requestDispatchers;
+	@Autowired private FeatureService featureService;
 
 	private static String pp() { return SecurityContextUtil.requirePrincipal().propCd(); }
 	private static String pc() { return SecurityContextUtil.requirePrincipal().cmpxCd(); }
@@ -197,9 +199,20 @@ public class GrService {
 		int reqH = Integer.parseInt(reqOutTm.substring(0, 2));
 		int diffH = reqH - curOutH;
 
+		// 어드민 기능관리의 LATE_CO.configJson 적용 (hourlyRate / maxHours).
+		// 둘 중 하나라도 있으면 단순 시간당 모드, 없으면 기존 tier 로직.
+		Map<String, Object> cfg = featureService.getConfig(pp(), pc(), "LATE_CO");
+		Integer hourlyRate = cfg.get("hourlyRate") instanceof Number n ? n.intValue() : null;
+		Integer maxHours   = cfg.get("maxHours") instanceof Number m ? m.intValue() : null;
+
 		String availYn, rateTpCd, rateTpNm;
 		int addAmt;
-		if (diffH <= 0) { availYn="N"; addAmt=0; rateTpCd="NONE"; rateTpNm="불가"; }
+		if (hourlyRate != null) {
+			int cap = maxHours != null ? maxHours : 8;
+			if (diffH <= 0) { availYn="N"; addAmt=0; rateTpCd="NONE"; rateTpNm="불가"; }
+			else if (diffH > cap) { availYn="N"; addAmt=0; rateTpCd="NONE"; rateTpNm="최대 " + cap + "시간 초과"; }
+			else { availYn="Y"; addAmt = diffH * hourlyRate; rateTpCd="HOURLY"; rateTpNm="시간당 " + hourlyRate + "원 × " + diffH + "h"; }
+		} else if (diffH <= 0) { availYn="N"; addAmt=0; rateTpCd="NONE"; rateTpNm="불가"; }
 		else if (diffH <= 2) { availYn="Y"; addAmt=0; rateTpCd="FREE"; rateTpNm="2시간 이내 무료"; }
 		else if (diffH <= 5) { availYn="Y"; addAmt=50000; rateTpCd="HALF"; rateTpNm="반일 요금"; }
 		else if (diffH <= 8) { availYn="Y"; addAmt=100000; rateTpCd="FULL"; rateTpNm="전일 요금"; }
