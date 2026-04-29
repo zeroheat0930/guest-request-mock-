@@ -446,6 +446,8 @@ const messages = {
   'admin.features.on':           { ko: '사용',               en: 'On',                           ja: '有効',                   zh: '启用' },
   'admin.features.off':          { ko: '미사용',             en: 'Off',                          ja: '無効',                   zh: '停用' },
   'admin.features.adv':          { ko: '고급 설정',          en: 'Advanced',                     ja: '詳細設定',               zh: '高级设置' },
+  'admin.features.adv.note':     { ko: '비워두면 기본값. 호텔별 커스터마이징용 슬롯', en: 'Leave empty for defaults. Per-hotel customization slot.', ja: '空欄で既定値。ホテル別カスタマイズ用スロット', zh: '留空使用默认值。各酒店自定义槽位' },
+  'admin.features.adv.fillExample': { ko: '예시 채우기',     en: 'Fill example',                 ja: '例を入力',               zh: '填入示例' },
   'admin.features.jsonErr':      { ko: 'JSON 형식 오류',     en: 'Invalid JSON format',          ja: 'JSON形式エラー',         zh: 'JSON格式错误' },
   'admin.features.empty':        { ko: '데이터 없음',        en: 'No data',                      ja: 'データなし',             zh: '暂无数据' },
   'admin.features.loadFail':     { ko: '조회 실패',          en: 'Load failed',                  ja: '読込失敗',               zh: '加载失败' },

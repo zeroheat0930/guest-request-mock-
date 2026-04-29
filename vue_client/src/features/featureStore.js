@@ -53,10 +53,10 @@ export async function loadFeatures() {
 		console.warn('[features] load failed', e?.message || e);
 		// 폴백: 기존 4탭만 노출해 앱이 빈 화면이 되지 않게
 		const fb = new Map();
-		fb.set('AMENITY', { useYn: 'Y', sortOrd: 10 });
-		fb.set('HK',      { useYn: 'Y', sortOrd: 20 });
-		fb.set('LATE_CO', { useYn: 'Y', sortOrd: 30 });
-		fb.set('CHAT',    { useYn: 'Y', sortOrd: 40 });
+		fb.set('AMENITY', { useYn: 'Y', sortOrd: 1 });
+		fb.set('HK',      { useYn: 'Y', sortOrd: 2 });
+		fb.set('LATE_CO', { useYn: 'Y', sortOrd: 3 });
+		fb.set('CHAT',    { useYn: 'Y', sortOrd: 4 });
 		features.value = fb;
 		featuresLoaded.value = true;
 	}

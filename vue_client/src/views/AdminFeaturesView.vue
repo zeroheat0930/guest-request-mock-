@@ -52,14 +52,21 @@
 					</div>
 				</div>
 				<div v-if="expanded[r.featureCd]" class="adv-panel">
+					<div class="adv-hint">
+						<span>{{ t('admin.features.adv.note') }}</span>
+						<button v-if="EXAMPLES[r.featureCd]" type="button" class="example-btn" @click="fillExample(r.featureCd)">
+							{{ t('admin.features.adv.fillExample') }}
+						</button>
+					</div>
 					<label>configJson
 						<textarea
 							rows="6"
 							v-model="cfgText[r.featureCd]"
 							@blur="validateJson(r.featureCd)"
-							placeholder='{ "key": "value" }'
+							:placeholder="EXAMPLES[r.featureCd] || '{ }'"
 						/>
 					</label>
+					<div v-if="EXAMPLES_DESC[r.featureCd]" class="adv-keys">{{ EXAMPLES_DESC[r.featureCd] }}</div>
 					<div v-if="cfgErr[r.featureCd]" class="json-err">{{ t('admin.features.jsonErr') }}</div>
 				</div>
 			</div>
@@ -102,6 +109,38 @@ const sortedRows = computed(() => rows.value);
 const expanded = reactive({});
 const cfgText = reactive({});
 const cfgErr = reactive({});
+
+// 기능별 configJson 예시 — 호텔별 커스터마이징 슬롯. 현재는 그릇만 정의되어 있고
+// 실제 도메인 코드가 이 값을 읽는 구간은 상용화 단계에 연결될 예정.
+const EXAMPLES = {
+	AMENITY:  JSON.stringify({ maxQtyPerOrder: 10, autoConfirm: false }, null, 2),
+	HK:       JSON.stringify({ allowMU: true, allowDND: true, allowCLR: true }, null, 2),
+	LATE_CO:  JSON.stringify({ hourlyRate: 30000, maxHours: 4, currency: 'KRW' }, null, 2),
+	NEARBY:   JSON.stringify({ radiusM: 1500, categories: ['food','cafe','convenience'] }, null, 2),
+	PARKING:  JSON.stringify({ requireCarType: true, autoSyncToPms: true }, null, 2),
+	CHAT:     JSON.stringify({ model: 'claude-haiku-4-5', maxTokens: 512, agentEnabled: true }, null, 2),
+	LOSTFOUND:JSON.stringify({ disposeAfterDays: 30, notifyFront: true }, null, 2),
+	VOC:      JSON.stringify({ urgentEscalateMin: 5, autoCloseAfterDays: 7 }, null, 2),
+	RENTAL:   JSON.stringify({ deposit: 0, maxDays: 3 }, null, 2),
+};
+const EXAMPLES_DESC = {
+	AMENITY:  '키: maxQtyPerOrder(주문당 최대 수량), autoConfirm(자동 확정 여부)',
+	HK:       '키: allowMU/allowDND/allowCLR(객실 청소 옵션 노출 여부)',
+	LATE_CO:  '키: hourlyRate(시간당 요금), maxHours(최대 연장 시간), currency',
+	NEARBY:   '키: radiusM(검색 반경 m), categories(카테고리 화이트리스트)',
+	PARKING:  '키: requireCarType(차종 필수 여부), autoSyncToPms(PMS 자동 전파)',
+	CHAT:     '키: model(LLM 모델), maxTokens(응답 토큰 한도), agentEnabled(Tool Use)',
+	LOSTFOUND:'키: disposeAfterDays(자동 폐기 일수), notifyFront(접수 시 프론트 알림)',
+	VOC:      '키: urgentEscalateMin(URGENT 에스컬레이션 분), autoCloseAfterDays',
+	RENTAL:   '키: deposit(보증금), maxDays(최대 대여 일수)',
+};
+
+function fillExample(cd) {
+	const ex = EXAMPLES[cd];
+	if (!ex) return;
+	cfgText[cd] = ex;
+	validateJson(cd);
+}
 
 const hasJsonErrors = computed(() => Object.values(cfgErr).some(Boolean));
 
@@ -149,7 +188,7 @@ function mergeWithCatalog(list) {
 			out.push({
 				featureCd: cd,
 				useYn: 'N',
-				sortOrd: (idx + 1) * 10,
+				sortOrd: idx + 1,
 				configJson: null
 			});
 		}
@@ -324,6 +363,17 @@ onMounted(() => {
 
 .adv-panel { margin-top: 14px; padding-top: 14px; border-top: 1px dashed #edf2f7; }
 .adv-panel label { display: block; font-size: 12px; color: #4a5568; font-weight: 600; }
+.adv-hint {
+	display: flex; gap: 10px; align-items: center; margin-bottom: 8px;
+	padding: 6px 10px; background: #f0f6ff; border-radius: 6px; font-size: 11px; color: #4a5568;
+}
+.adv-hint span { flex: 1; }
+.example-btn {
+	padding: 4px 10px; border: 1px solid #1a3a6e; background: #fff; color: #1a3a6e;
+	border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.example-btn:hover { background: #1a3a6e; color: #fff; }
+.adv-keys { margin-top: 4px; font-size: 11px; color: #8492a6; line-height: 1.4; }
 .adv-panel textarea {
 	display: block; width: 100%; margin-top: 6px;
 	padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 6px;
